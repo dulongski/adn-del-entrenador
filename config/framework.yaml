@@ -1,0 +1,70 @@
+# Marco analítico (sección 5.6). TODAS las métricas, modelos y visualizaciones se derivan
+# de estos objetos y umbrales. Coordenadas StatsBomb: campo 120x80 yardas, el equipo que
+# ejecuta la acción ataca siempre hacia x=120.
+
+pitch:
+  length: 120
+  width: 80
+  own_third_max_x: 40        # tercio propio: x < 40
+  final_third_min_x: 80      # último tercio: x >= 80
+  opp_half_min_x: 60
+  box: {x_min: 102, y_min: 18, y_max: 62}
+  wide_lane: {y_low: 18, y_high: 62}   # carriles exteriores: y < 18 o y > 62
+
+posesion:
+  # Posesión = id de posesión StatsBomb con el equipo como possession_team y al menos
+  # una acción propia con balón (pase, conducción, tiro, regate).
+  min_own_ball_actions: 1
+
+secuencia_ofensiva:
+  # Secuencia ofensiva = posesión que alcanza el último tercio.
+  min_x: 80
+
+pase_progresivo:
+  # Pase/conducción que acerca el balón a la portería rival al menos 25% y termina en x >= 48.
+  min_gain_ratio: 0.25
+  min_end_x: 48
+  min_carry_length: 5        # conducciones menores a 5 yd no cuentan
+
+pase_largo:
+  min_length: 35             # yardas
+
+transicion:
+  # Transición ofensiva: posesión que inicia con una recuperación en juego abierto
+  # (recuperación, intercepción, entrada ganada) — ataque rápido si llega al último
+  # tercio en <= window_s segundos.
+  window_s: 10
+  # Transición defensiva: tras perder el balón, el rival llega a nuestro último tercio en <= window_s.
+
+presion:
+  # Fase de presión = cadena de eventos Pressure del mismo equipo separados <= chain_gap_s.
+  chain_gap_s: 5
+  high_min_x: 80             # presión alta: x >= 80 (tercio rival)
+  mid_min_x: 40              # presión media: 40 <= x < 80; baja: x < 40
+  counterpress_window_s: 5   # contrapresión: presión <= 5 s tras pérdida (flag StatsBomb)
+
+ppda:
+  # PPDA = pases rivales en su 60% propio / acciones defensivas propias en esa zona.
+  zone_min_x: 48             # desde nuestra perspectiva, x >= 48
+
+recuperacion_alta:
+  min_x: 60                  # recuperación en campo rival
+
+bloque_360:
+  # Altura de línea defensiva: media de la distancia a nuestra portería de los 4 jugadores
+  # de campo más retrasados visibles en el freeze-frame 360 durante posesión rival.
+  n_defenders: 4
+  min_visible_defenders: 3
+
+stint:
+  # Stint = intervalo del partido sin cambios en los 22 jugadores en cancha ni en el marcador.
+  min_duration_s: 300
+
+balon_parado:
+  types: [Corner, Free Kick, Throw-in]
+  throw_in_danger_min_x: 80  # saque de banda "peligroso": en último tercio
+  window_s: 15               # la jugada de balón parado dura hasta 15 s o fin de posesión
+
+contexto:
+  score_states: [perdiendo, empatando, ganando]
+  minute_buckets: [0, 15, 30, 45, 60, 75, 200]

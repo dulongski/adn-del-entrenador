@@ -1,0 +1,48 @@
+/* ¿Y si…? — simulador aditivo DT + club + plantilla */
+.wi { display: grid; gap: 16px; min-width: 0; }
+.wi > .h2, .wi > .lede { margin-bottom: 0; }
+.wi-controls { display: grid; gap: 14px; }
+.wi-pickers { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.wi-field { display: grid; gap: 4px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); min-width: 0; }
+.wi-field select, .wi-field input { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--rule);
+  background: var(--bg); font-size: 15px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.wi-squad-head, .wi-table-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.wi-table-head { margin-bottom: 10px; align-items: center; }
+.wi-once { display: flex; align-items: center; gap: 6px; }
+.wi-xi { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 4px 16px; }
+.wi-xi li { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--rule); min-width: 0; }
+.wi-xi .chip { margin: 0; white-space: nowrap; }
+.wi-pname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.wi-x { border: 0; background: none; cursor: pointer; font-size: 18px; line-height: 1; color: var(--ink-3); padding: 2px 6px; border-radius: 6px; }
+.wi-x:hover { background: var(--surface-2); color: var(--ink); }
+.wi-warn { margin: 0; font-size: 13px; color: var(--ink); background: color-mix(in oklab, var(--c-rival) 18%, var(--surface)); border-left: 3px solid var(--c-rival); padding: 6px 10px; border-radius: 4px; }
+.wi-sign { position: relative; display: grid; gap: 8px; }
+.wi-sugg { list-style: none; margin: 0; padding: 4px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+.wi-sugg button { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: none; cursor: pointer; padding: 6px; border-radius: 6px; text-align: left; flex-wrap: wrap; }
+.wi-sugg button:hover { background: var(--surface-2); }
+.wi-sugg .note { font-size: 12px; }
+.wi-bench { line-height: 2; }
+.wi-chip { border: 0; cursor: pointer; }
+.wi-chip:hover { background: var(--rule); }
+.wi-summary { border-left: 4px solid var(--c-dt); }
+.wi-sentence { margin: 0; font-size: 17px; line-height: 1.45; }
+.wi-table th { vertical-align: bottom; min-width: 96px; }
+.wi-table th:first-child { min-width: 150px; }
+.wi-th { display: block; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--ink); }
+.wi-th-sub { display: block; text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 11.5px; }
+th.wi-sim .wi-th, td.wi-sim { font-weight: 700; color: var(--ink); }
+th.wi-sim, td.wi-sim { background: color-mix(in oklab, var(--c-dt) 9%, transparent); }
+.wi-fam td { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); background: var(--surface-2); }
+.wi-delta { display: inline-block; width: 1.3em; margin-left: 4px; font-size: 11px; text-align: center; }
+.wi-delta.up { color: var(--c-dt); }
+.wi-delta.down { color: var(--c-plantilla); }
+.wi-delta.flat { color: var(--ink-3); }
+.wi-total td { font-weight: 700; border-bottom: 0; }
+.wi-spec { background: color-mix(in oklab, var(--c-rival) 22%, var(--surface)); color: var(--ink); font-weight: 600; margin: 0; }
+.wi-cred p { margin: 0 0 8px; font-size: 14px; color: var(--ink-2); }
+.wi-cred p:last-child { margin-bottom: 0; }
+@media (max-width: 520px) {
+  .wi-xi { grid-template-columns: 1fr; }
+  .wi-sentence { font-size: 15.5px; }
+  .wi-table th:first-child { min-width: 120px; }
+}

@@ -1,0 +1,40 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "coach-dna-api",
+      "runtimeExecutable": "/Users/sdulongsalazar/Desktop/coach-dna/.venv/bin/uvicorn",
+      "runtimeArgs": [
+        "api.main:app",
+        "--port",
+        "8765",
+        "--app-dir",
+        "/Users/sdulongsalazar/Desktop/coach-dna"
+      ],
+      "port": 8765
+    },
+    {
+      "name": "coach-dna-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/sdulongsalazar/Desktop/coach-dna/web",
+        "run",
+        "dev"
+      ],
+      "port": 5199
+    },
+    {
+      "name": "coach-dna-static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5300",
+        "--directory",
+        "/Users/sdulongsalazar/Desktop/coach-dna/web/dist"
+      ],
+      "port": 5300
+    }
+  ]
+}
