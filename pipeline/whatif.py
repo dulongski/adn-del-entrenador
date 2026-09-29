@@ -251,6 +251,7 @@ def main():
                                 "Fuera de muestra: se reajusta sin ese mandato y se predice con α del DT aprendido en otros clubes, "
                                 "φ del club aprendido con otros DTs y β de los jugadores; mandatos de DTs con ≥2 clubes.")},
     }
+    add_roles(out)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     json.dump(out, open(OUT, "w"), ensure_ascii=False, separators=(",", ":"))
     print(f"whatif.json: {OUT.stat().st_size / 1024:.0f} KB, {len(players)} jugadores, {len(coaches)} DTs, {len(clubs)} clubes")
@@ -260,5 +261,48 @@ def main():
           f"(liga {val_out['rmse_media_liga']}) sin DT r={val_out['sin_dt']['correlacion_media']} rmse={val_out['sin_dt']['rmse']}")
 
 
+def add_roles(out: dict) -> None:
+    """XI coherente y rol de cada jugador en SU club (no su posición más frecuente en toda la carrera).
+    Formación modal de la temporada de la plantilla; cada puesto de esa formación se asigna al jugador
+    que más veces fue titular ahí (asignación ávida por frecuencia). Sólo usa alineaciones: no toca el ajuste."""
+    M = pd.read_parquet(PROC / "matches.parquet")
+    LU = pd.read_parquet(PROC / "lineups.parquet")
+    known = {int(p) for p in out["players"]}
+    for cname, sq in out["squads"].items():
+        cid = out["clubs"].get(cname, {}).get("id")
+        if cid is None:
+            continue
+        mids = M[(M.season == sq["temporada"]) & ((M.home_id == cid) | (M.away_id == cid))].match_id
+        lu = LU[(LU.team_id == cid) & LU.match_id.isin(mids)].dropna(subset=["position"])
+        # rol en el club: posición más frecuente con este club en la temporada
+        role = lu.drop_duplicates(["match_id", "player_id", "position"]).groupby("player_id").position \
+                 .agg(lambda x: x.value_counts().index[0]).map(lambda q: POS_ES.get(q, q))
+        sq["pos"] = {int(p): role[p] for p in role.index if int(p) in known}
+        st = lu[(lu.period == 1) & (lu.ts == 0)]
+        if st.empty:
+            continue
+        form = st.drop_duplicates("match_id").formation.value_counts().index[0]
+        st = st[st.formation == form]
+        slots = st.groupby("match_id").position.apply(list).iloc[0]
+        cnt = st.groupby(["player_id", "position"]).size().sort_values(ascending=False)
+        free, used, xi, spos = list(slots), set(), [], {}
+        for (pid, ps), _ in cnt.items():
+            if ps in free and pid not in used and int(pid) in known:
+                free.remove(ps); used.add(pid); xi.append(int(pid)); spos[int(pid)] = POS_ES.get(ps, ps)
+        for ps in free:  # puesto sin titular conocido: el de más minutos que falte
+            rest = [p for p, _ in sq["jugadores"] if p not in xi]
+            if rest:
+                xi.append(rest[0]); spos[rest[0]] = POS_ES.get(ps, ps)
+        sq["xi"], sq["formacion"] = xi, formation_str(form)
+        sq["pos"].update(spos)  # en el XI, el puesto que ocupa en la formación
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--roles" in sys.argv:  # sólo recalcula XI y roles sobre el whatif.json existente (sin reajustar)
+        out = json.load(open(OUT))
+        add_roles(out)
+        json.dump(out, open(OUT, "w"), ensure_ascii=False, separators=(",", ":"))
+        print("roles y XI actualizados")
+    else:
+        main()

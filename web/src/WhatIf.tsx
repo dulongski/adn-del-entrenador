@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ClubName, PosTag } from './charts'
+import { ClubLogo, ClubName, Pitch, PosTag } from './charts'
 import { type Any, dataUrl, fmt, getJSON, jugadorCorto, posTag, shortName } from './lib'
 import './whatif.css'
 
@@ -25,7 +25,7 @@ const PHRASE: Record<string, [string, string]> = {
   xg_contra_90: ['concedería más ocasiones', 'concedería menos ocasiones'],
 }
 
-const GROUP_ORDER: Record<string, number> = { por: 0, def: 1, med: 2, del: 3, none: 4 }
+const apellido = (n: string) => { const t = n.trim().split(/\s+/); let i = t.length - 1; while (i > 1 && /^(de|del|la|las|los|da|do|dos|van|von|di)$/i.test(t[i - 1])) i--; return t.length > 1 ? t.slice(i).join(' ') : n }
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
 function unitOf(etiqueta: string) {
@@ -45,6 +45,50 @@ function poisson(lf: number, la: number) {
   for (let i = 0; i <= 10; i++) for (let j = 0; j <= 10; j++) { if (i > j) w += a[i] * b[j]; else if (i === j) d += a[i] * b[j] }
   const l = Math.max(0, 1 - w - d)
   return { w, d, l, xpts: 3 * w + d }
+}
+
+
+/* ------------------------------------------------------------ formación a partir de las posiciones del XI
+ * Cada posición cae en una línea (0 POR … 5 DEL) y un carril (−3 banda izq. … +3 banda der.).
+ * La formación se recalcula con quien esté en la cancha. */
+const SIDE = (pos: string) => (/izq\./.test(pos) ? -1 : /der\./.test(pos) ? 1 : 0)
+function slotOf(pos: string | undefined, hayMediapunta: boolean): { line: number; lat: number } {
+  const p = pos ?? '', s = SIDE(p)
+  if (p === 'Portero') return { line: 0, lat: 0 }
+  if (p.startsWith('Lateral')) return { line: 1, lat: 3 * s }
+  if (p.startsWith('Central')) return { line: 1, lat: s }
+  if (p.startsWith('Carrilero')) return { line: 2, lat: 3 * s }
+  if (p.startsWith('Pivote')) return { line: 2, lat: s }
+  if (p.startsWith('Volante')) return { line: 3, lat: 3 * s }
+  if (p.startsWith('Interior') || p === 'Mediocentro') return { line: 3, lat: 1.2 * s }
+  if (p.startsWith('Mediapunta')) return { line: 4, lat: 1.5 * s }
+  if (p.startsWith('Extremo')) return { line: hayMediapunta ? 4 : 5, lat: 3 * s }
+  if (p.startsWith('Delantero') || p === 'Segundo delantero') return { line: 5, lat: s }
+  return { line: 3, lat: 0 }
+}
+const LINE_Y = [6, 22, 38, 52, 68, 83]   // % de la cancha desde la portería propia
+
+function formationLayout(ids: number[], posOf: (id: number) => string | undefined) {
+  const hayMP = ids.some(id => (posOf(id) ?? '').startsWith('Mediapunta'))
+  const byLine = new Map<number, { id: number; lat: number }[]>()
+  ids.forEach(id => { const { line, lat } = slotOf(posOf(id), hayMP); if (!byLine.has(line)) byLine.set(line, []); byLine.get(line)!.push({ id, lat }) })
+  const out: { id: number; x: number; y: number }[] = []
+  byLine.forEach((ps, line) => {
+    ps.sort((a, b) => a.lat - b.lat)
+    const base = ps.map(p => 50 + p.lat * 13)
+    const xs = [...base]
+    for (let i = 1; i < xs.length; i++) xs[i] = Math.max(xs[i], xs[i - 1] + 17)   // separa a los que comparten carril
+    const shift = base.reduce((a, b) => a + b, 0) / base.length - xs.reduce((a, b) => a + b, 0) / xs.length
+    let adj = xs.map(x => x + shift)
+    const lo = Math.min(...adj), hi = Math.max(...adj)
+    if (lo < 9 || hi > 91) { const c = (lo + hi) / 2, k = Math.min(1, 41 / Math.max(1e-6, (hi - lo) / 2)); adj = adj.map(x => 50 + (x - c) * k) }
+    ps.forEach((p, i) => out.push({ id: p.id, x: adj[i], y: LINE_Y[line] }))
+  })
+  const n = [1, 2, 3, 4, 5].map(l => byLine.get(l)?.length ?? 0)
+  // pivotes + interiores se leen como una sola línea de medios (4-3-3, 3-5-2, 4-3-1-2) salvo el 4-1-4-1
+  const merge = n[1] && n[2] && (!n[3] || n[1] <= 1 || n[2] <= 1) && !(n[1] === 1 && n[2] >= 4)
+  const lines = merge ? [n[0], n[1] + n[2], n[3], n[4]] : n
+  return { pts: out, formacion: lines.filter(Boolean).join('-'), porteros: byLine.get(0)?.length ?? 0 }
 }
 
 type Scenario = { key: string; title: string; sub: string; z: number[]; raw: number[] }
@@ -78,8 +122,14 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
   const [xi, setXi] = useState<number[]>(() => [...data.squads[defaultClub].xi])
   const [query, setQuery] = useState('')
   const [showAll, setShowAll] = useState(false)
+  const [fPos, setFPos] = useState('todas')
+  const [fClub, setFClub] = useState('todos')
+  const [fMin, setFMin] = useState(450)
+  const [orden, setOrden] = useState<'min' | 'xg' | 'nombre'>('min')
+  const [nRes, setNRes] = useState(12)
+  const [sel, setSel] = useState<number | null>(null)
 
-  const setClub = (c: string) => { setClubState(c); setXi([...data.squads[c].xi]) }
+  const setClub = (c: string) => { setClubState(c); setXi([...data.squads[c].xi]); setSel(null) }
   const P = (id: number) => data.players[id]
   const n = kpis.length
 
@@ -131,18 +181,38 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
   const pts = (s: Scenario) => ({ lf: s.raw[ixf], la: s.raw[ixa], ...poisson(s.raw[ixf], s.raw[ixa]) })
   const pHoy = pts(hoy), pSim = pts(sim)
 
-  /* ---------------- plantilla */
-  const xiSorted = [...xi].sort((a, b) => (GROUP_ORDER[posTag(P(a)?.pos).group] ?? 4) - (GROUP_ORDER[posTag(P(b)?.pos).group] ?? 4))
+  /* ---------------- plantilla y mercado */
+  // rol en este club (alineaciones reales de la temporada); fichajes de fuera usan su posición habitual
+  const posOf = (id: number): string | undefined => sq.pos?.[id] ?? P(id)?.pos
+  const layout = formationLayout(xi, posOf)
   const bench = (sq.jugadores as [number, number][]).map(([p]) => p).filter(p => !xi.includes(p)).slice(0, 9)
-  const suggestions = useMemo(() => {
+  const ixfK = kidx['xg_90'], ixaK = kidx['xg_contra_90']
+  const netXg = (p: Any) => { const bb = p?.b ?? data.otros; return bb ? bb[ixfK] * kpis[ixfK].sd - bb[ixaK] * kpis[ixaK].sd : 0 }
+  const playerClubs = useMemo(() => [...new Set(Object.values(data.players as Record<string, Any>).map(p => p.club).filter(Boolean))].sort((a: Any, b: Any) => a.localeCompare(b, 'es')) as string[], [data])
+  const selGroup = sel ? posTag(posOf(sel)).group : null
+  const posFilter = sel && fPos === 'todas' ? `g:${selGroup}` : fPos
+  const results = useMemo(() => {
     const q = norm(query.trim())
-    if (q.length < 2) return []
-    return Object.entries(data.players as Record<string, Any>)
-      .filter(([id, p]) => norm(p.n).includes(q) && !xi.includes(Number(id)))
-      .sort((a, b) => b[1].min - a[1].min).slice(0, 8)
-  }, [query, data, xi])
+    const list = Object.entries(data.players as Record<string, Any>).filter(([id, p]) => {
+      if (xi.includes(Number(id))) return false
+      if (q && !norm(p.n).includes(q) && !norm(p.c ?? '').includes(q)) return false
+      if (fClub !== 'todos' && p.club !== fClub) return false
+      if ((p.min ?? 0) < fMin) return false
+      if (posFilter.startsWith('g:')) { if (posTag(p.pos).group !== posFilter.slice(2)) return false }
+      else if (posFilter !== 'todas' && posTag(p.pos).abbr !== posFilter) return false
+      return true
+    })
+    list.sort((a, b) => orden === 'nombre' ? (a[1].c ?? a[1].n).localeCompare(b[1].c ?? b[1].n, 'es') : orden === 'xg' ? netXg(b[1]) - netXg(a[1]) : b[1].min - a[1].min)
+    return list
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, data, xi, fClub, fMin, posFilter, orden])
   const full = xi.length >= 11
-  const addPlayer = (id: number) => { if (!full && !xi.includes(id)) setXi([...xi, id]); setQuery('') }
+  const addPlayer = (id: number) => {
+    if (xi.includes(id)) return
+    if (sel) { setXi(xi.map(q => (q === sel ? id : q))); setSel(null) }
+    else if (!full) setXi([...xi, id])
+  }
+  const removePlayer = (id: number) => { setXi(xi.filter(q => q !== id)); if (sel === id) setSel(null) }
   const nOtros = xi.filter(p => !P(p)?.b).length
 
   /* ---------------- credibilidad */
@@ -193,52 +263,106 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
           <div>
             <div className="h3 wi-once" style={{ margin: 0 }}>Once de <ClubName club={club} media={media} /></div>
             <div className="note">
-              XI más utilizado en {sq.temporada} ({sq.partidos} partidos{sq.formacion ? `, ${sq.formacion}` : ''}). DT actual: {coachName(hoyCoach)}.
+              XI tipo de {sq.temporada} ({sq.partidos} partidos): su formación más usada{sq.formacion ? ` (${sq.formacion})` : ''} con el titular más frecuente en cada puesto. DT actual: {coachName(hoyCoach)}.
             </div>
           </div>
-          <button className="btn ghost" onClick={() => setXi([...sq.xi])}>Restablecer plantilla</button>
+          <button className="btn ghost" onClick={() => { setXi([...sq.xi]); setSel(null) }}>Restablecer plantilla</button>
         </div>
 
-        <ul className="wi-xi">
-          {xiSorted.map(p => (
-            <li key={p}>
-              <PosTag pos={P(p)?.pos ?? ''} />
-              <span className="wi-pname">{jugadorCorto(p, P(p)?.n ?? String(p))}</span>
-              {P(p)?.club && P(p).club !== club && <span className="chip">{P(p).club}</span>}
-              {!P(p)?.b && <span className="chip" title="Pocos minutos en la muestra: usa el efecto promedio de 'otros'">prom.</span>}
-              <button className="wi-x" aria-label={`Quitar a ${P(p)?.n ?? p}`} onClick={() => setXi(xi.filter(q => q !== p))}>×</button>
-            </li>
-          ))}
-        </ul>
-        {xi.length !== 11 && (
-          <p className="wi-warn">El XI tiene {xi.length} jugadores. {xi.length < 11 ? `Añade ${11 - xi.length} para comparar en igualdad.` : ''}</p>
-        )}
-
-        <div className="wi-sign">
-          <label className="wi-field">
-            <span>Fichar jugador</span>
-            <input type="search" value={query} placeholder={full ? 'Quita a alguien del XI para fichar' : 'Busca por nombre…'}
-                   disabled={full} onChange={e => setQuery(e.target.value)} />
-          </label>
-          {suggestions.length > 0 && (
-            <ul className="wi-sugg" role="listbox">
-              {suggestions.map(([id, p]) => (
-                <li key={id}>
-                  <button onClick={() => addPlayer(Number(id))}>
-                    <PosTag pos={p.pos ?? ''} />
-                    <span className="wi-pname">{p.n}</span>
-                    <span className="note">{p.club ?? '—'} · {fmt(p.min, 0)} min</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {!full && bench.length > 0 && (
-            <div className="wi-bench">
-              <span className="note">Otros de la plantilla:</span>{' '}
-              {bench.map(p => <button key={p} className="chip wi-chip" onClick={() => addPlayer(p)}>+ {jugadorCorto(p, P(p)?.n ?? String(p))}</button>)}
+        <div className="wi-builder">
+          <div className="wi-pitch-col">
+            <div className="wi-form-head">
+              <span className="note">Formación resultante</span>
+              <b className="wi-form">{layout.formacion || '—'}</b>
+              {sel && <span className="chip wi-selchip">Cambiando a {jugadorCorto(sel, P(sel)?.n ?? '')} · <button className="wi-link" onClick={() => setSel(null)}>cancelar</button></span>}
             </div>
-          )}
+            <div className="wi-pitch">
+              <Pitch vertical />
+              {layout.pts.map(({ id, x, y }) => {
+                const p = P(id), t = posTag(posOf(id))
+                return (
+                  <div key={id} className={`wi-tok${sel === id ? ' sel' : ''}${!p?.b ? ' prom' : ''}`}
+                       style={{ left: `${(2 + 0.8 * x) / 84 * 100}%`, top: `${(2 + 120 * (1 - y / 100)) / 124 * 100}%` }}>
+                    <button className={`wi-dot pos-${t.group}`} title={`${p?.n ?? id} · ${posOf(id) ?? '—'}${p?.club ? ` · ${p.club}` : ''}\nClic: cambiarlo por otro`}
+                            onClick={() => setSel(sel === id ? null : id)}>
+                      {t.abbr}
+                      {p?.club && p.club !== club && <span className="wi-tok-logo"><ClubLogo club={p.club} media={media} size={14} /></span>}
+                    </button>
+                    <span className="wi-tok-name">{apellido(jugadorCorto(id, p?.n ?? String(id)))}</span>
+                    <button className="wi-tok-x" aria-label={`Quitar a ${p?.n ?? id}`} onClick={() => removePlayer(id)}>×</button>
+                  </div>
+                )
+              })}
+            </div>
+            {(xi.length !== 11 || layout.porteros !== 1) && (
+              <p className="wi-warn">
+                {xi.length !== 11 && `El XI tiene ${xi.length} jugadores.${xi.length < 11 ? ` Añade ${11 - xi.length} para comparar en igualdad.` : ''} `}
+                {layout.porteros === 0 && 'No hay portero en la cancha. '}{layout.porteros > 1 && `Hay ${layout.porteros} porteros en la cancha.`}
+              </p>
+            )}
+            <p className="note" style={{ margin: 0 }}>Clic en un jugador para cambiarlo; × para quitarlo. Borde punteado = pocos minutos (efecto promedio). Escudo = viene de otro club.</p>
+            {bench.length > 0 && (!full || sel) && (
+              <div className="wi-bench">
+                <span className="note">Otros de la plantilla:</span>{' '}
+                {bench.map(p => <button key={p} className="chip wi-chip" onClick={() => addPlayer(p)}>{sel ? '⇄' : '+'} {jugadorCorto(p, P(p)?.n ?? String(p))}</button>)}
+              </div>
+            )}
+          </div>
+
+          <div className="wi-market">
+            <div className="h3" style={{ margin: 0 }}>{sel ? `Reemplazo para ${jugadorCorto(sel, P(sel)?.n ?? '')}` : 'Fichar jugador'}</div>
+            <input className="wi-search" type="search" value={query} placeholder="Busca por nombre…" onChange={e => { setQuery(e.target.value); setNRes(12) }} />
+            <div className="wi-filters">
+              <label className="wi-field"><span>Posición</span>
+                <select value={posFilter} onChange={e => { setFPos(e.target.value); setNRes(12) }}>
+                  <option value="todas">Todas</option>
+                  <optgroup label="Línea">
+                    <option value="g:por">Porteros</option><option value="g:def">Defensas</option>
+                    <option value="g:med">Medios</option><option value="g:del">Delanteros</option>
+                  </optgroup>
+                  <optgroup label="Posición">
+                    {['POR', 'LI', 'DFC', 'LD', 'CAI', 'CAD', 'MCD', 'MC', 'MI', 'MD', 'MCO', 'EI', 'ED', 'DC', 'SD'].map(a => <option key={a} value={a}>{a}</option>)}
+                  </optgroup>
+                </select>
+              </label>
+              <label className="wi-field"><span>Club</span>
+                <select value={fClub} onChange={e => { setFClub(e.target.value); setNRes(12) }}>
+                  <option value="todos">Todos</option>
+                  {playerClubs.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </label>
+              <label className="wi-field"><span>Minutos mín.</span>
+                <select value={fMin} onChange={e => { setFMin(Number(e.target.value)); setNRes(12) }}>
+                  {[0, 450, 900, 1800, 2700, 4500].map(m => <option key={m} value={m}>{m === 0 ? 'Cualquiera' : `${fmt(m, 0)}+`}</option>)}
+                </select>
+              </label>
+              <label className="wi-field"><span>Ordenar por</span>
+                <select value={orden} onChange={e => setOrden(e.target.value as 'min' | 'xg' | 'nombre')}>
+                  <option value="min">Minutos</option><option value="xg">Impacto en xG neto</option><option value="nombre">Nombre</option>
+                </select>
+              </label>
+            </div>
+            <div className="note">{fmt(results.length, 0)} jugadores{full && !sel ? ' · XI completo: haz clic en un jugador de la cancha para cambiarlo' : ''}</div>
+            <ul className="wi-sugg">
+              {results.slice(0, nRes).map(([id, p]) => {
+                const nx = netXg(p)
+                return (
+                  <li key={id}>
+                    <button onClick={() => addPlayer(Number(id))} disabled={full && !sel}>
+                      <PosTag pos={p.pos ?? ''} />
+                      <span className="wi-pname">{p.c ?? p.n}</span>
+                      <span className="wi-res-club">{p.club && <ClubLogo club={p.club} media={media} size={14} />}{p.club ?? '—'}</span>
+                      <span className="wi-res-num">{fmt(p.min, 0)}′</span>
+                      <span className={`wi-res-num ${nx >= 0 ? 'up' : 'down'}`} title="Impacto modelado en xG a favor − xG en contra por 90 cuando está en la cancha">{signed(nx, 2)}</span>
+                    </button>
+                  </li>
+                )
+              })}
+              {results.length === 0 && <li className="note" style={{ padding: 8 }}>Nadie cumple esos filtros.</li>}
+            </ul>
+            {results.length > nRes && <button className="btn ghost" onClick={() => setNRes(nRes + 20)}>Mostrar más</button>}
+            <p className="note" style={{ margin: 0 }}>Columnas: minutos en la muestra · impacto en xG neto por 90 (β del jugador en xG a favor − en contra).</p>
+          </div>
         </div>
       </div>
 
