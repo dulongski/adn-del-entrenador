@@ -480,3 +480,25 @@ table.att td.obs .num { color: var(--ink); font-weight: 600; }
 .sim-box .legend { font-size: 12px; margin: 4px 0; gap: 4px 12px; }
 .sim-box .sim-head > .note { font-size: 12px; }
 .sim-grid .note { font-size: 11.5px; }
+
+/* córners 3D */
+.c3d { display: flex; flex-direction: column; gap: 10px; }
+.c3d-ctrl { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.c3d-main { display: grid; grid-template-columns: 1fr 300px; gap: 14px; align-items: stretch; }
+@media (max-width: 960px) { .c3d-main { grid-template-columns: 1fr; } }
+.c3d-stage { position: relative; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.c3d-canvas { width: 100%; aspect-ratio: 16 / 10; display: block; cursor: grab; touch-action: none; }
+.c3d-canvas:active { cursor: grabbing; }
+.c3d-hint { position: absolute; bottom: 8px; left: 12px; pointer-events: none; }
+.c3d-result { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.72); color: #fff; padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 16px; animation: banin .3s ease-out; white-space: nowrap; }
+.c3d-result.gol { font-family: var(--display); font-size: 34px; background: rgba(0,0,0,.8); }
+.c3d-side { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.c3d-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.c3d-kpis > div { display: flex; flex-direction: column; }
+.c3d-kpis b { font-family: var(--display); font-size: 26px; line-height: 1.05; }
+.c3d-batch { border-top: 1px solid var(--rule); padding-top: 10px; font-size: 14px; }
+.c3d-legend { border-top: 1px solid var(--rule); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.c3d-scale { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center; font-size: 12px; font-family: var(--mono); }
+.c3d-scale i { height: 10px; border-radius: 4px; display: block; }
+.c3d-dots { display: flex; gap: 14px; font-size: 13px; }
+.c3d-dots i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; border: 1px solid rgba(0,0,0,.4); }

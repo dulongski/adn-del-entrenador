@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { clubColor, COMP, dataUrl, fmt, getJSON, jugadorCorto, matchColors, pct, shortName, sig, simulateMatch, type Any } from './lib'
 import MatchSim from './MatchSim'
+import Corners3D from './Corners3D'
 import { ClubName, DotCI, HBar, HeatGrid, How, Legend, MiniLines, Pitch, pitchXY, PosTag, PrismDetail, prismSentence, useTip } from './charts'
 
 type P = { art: Any; glob: Any; media?: Any }
@@ -310,6 +311,15 @@ export function Fases({ art, glob, media }: P) {
   )
 }
 
+/** Etiqueta mínima para la red de pases: apodo de una palabra o apellido (con partículas: «de la Rosa»). */
+function apellidoCorto(n: string) {
+  const t = n.trim().split(/\s+/)
+  if (t.length <= 1) return n
+  let i = t.length - 1
+  while (i > 1 && /^(de|del|la|las|los|da|do|dos|van|von|di)$/i.test(t[i - 1])) i--
+  return t.slice(i).join(' ')
+}
+
 function PassNet({ net, art, color }: { net: Any; art: Any; color: string }) {
   const tip = useTip()
   // un solo portero: el de más minutos (la red usa los 11 con más minutos y a veces entran dos)
@@ -321,18 +331,47 @@ function PassNet({ net, art, color }: { net: Any; art: Any; color: string }) {
   const byId = Object.fromEntries(nodos.map((n: Any) => [n.id, n]))
   const maxE = Math.max(...aristas.map((e: Any) => e.n), 1)
   const maxP = Math.max(...nodos.map((n: Any) => n.pases), 1)
-  // etiquetas sin encimarse: si dos nombres chocan, el de abajo baja un renglón
-  const labels: { id: number; x: number; y: number; t: string }[] = []
-  ;[...nodos].map((n: Any) => { const [x, y] = pitchXY(n.x, n.y, true); return { id: n.id, x, y: y + 6.2, t: jugadorCorto(n.id, n.nombre) } })
-    .sort((a, b) => a.y - b.y)
-    .forEach(l => {
-      const w = l.t.length * 1.8
-      while (labels.some(o => Math.abs(o.x - l.x) < (w + o.t.length * 1.8) / 2 + 0.6 && Math.abs(o.y - l.y) < 3.9)) l.y += 3.9
-      labels.push(l)
-    })
+  // etiquetas: ancho real del texto (canvas) y la primera posición libre alrededor del nodo
+  // (abajo, arriba, derecha, izquierda, diagonales); si ninguna está libre, abajo con línea guía
+  const FS = 2.7
+  const ctx = typeof document !== 'undefined' ? document.createElement('canvas').getContext('2d') : null
+  if (ctx) ctx.font = '600 100px "Source Sans 3", system-ui, sans-serif'
+  const textW = (t: string) => (ctx ? ctx.measureText(t).width / 100 * FS : t.length * FS * 0.55)
+  type Box = { x0: number; y0: number; x1: number; y1: number }
+  const hit = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
+  const nodeBoxes: Box[] = nodos.map((n: Any) => { const [x, y] = pitchXY(n.x, n.y, true); const r = 1.8 + 2.2 * n.pases / maxP; return { x0: x - r, y0: y - r, x1: x + r, y1: y + r } })
+  const placed: Box[] = []
+  const labels: { id: number; x: number; y: number; t: string; lx?: number; ly?: number; anchor: 'middle' | 'start' | 'end' }[] = []
+  ;[...nodos].sort((a: Any, b: Any) => b.pases - a.pases).forEach((n: Any) => {
+    const [cx, cy] = pitchXY(n.x, n.y, true)
+    const r = 1.8 + 2.2 * n.pases / maxP
+    const t = apellidoCorto(jugadorCorto(n.id, n.nombre))
+    const w = textW(t), h = FS * 1.05
+    const cands: [number, number, 'middle' | 'start' | 'end'][] = [
+      [cx, cy + r + h * 0.95, 'middle'], [cx, cy - r - 0.6, 'middle'], [cx + r + 0.8, cy + h * 0.35, 'start'], [cx - r - 0.8, cy + h * 0.35, 'end'],
+      [cx + r * 0.7, cy + r + h * 0.95, 'start'], [cx - r * 0.7, cy + r + h * 0.95, 'end'], [cx + r * 0.7, cy - r - 0.6, 'start'], [cx - r * 0.7, cy - r - 0.6, 'end'],
+    ]
+    const boxOf = ([x, y, an]: [number, number, 'middle' | 'start' | 'end']): Box => {
+      const x0 = an === 'middle' ? x - w / 2 : an === 'start' ? x : x - w
+      return { x0: x0 - 0.3, y0: y - h * 0.8, x1: x0 + w + 0.3, y1: y + h * 0.25 }
+    }
+    const inside = (b: Box) => b.x0 >= -1 && b.x1 <= 81 && b.y0 >= -1 && b.y1 <= 121
+    let pick = cands.find(c => { const b = boxOf(c); return inside(b) && !placed.some(o => hit(o, b)) && !nodeBoxes.some(o => hit(o, b)) })
+    let lead = false
+    if (!pick) { // bajar hasta encontrar hueco, con línea guía al nodo
+      let yy = cy + r + h
+      while (yy < 118 && placed.some(o => hit(o, boxOf([cx, yy, 'middle'])))) yy += h * 1.05
+      pick = [cx, yy, 'middle']; lead = true
+    }
+    placed.push(boxOf(pick))
+    labels.push({ id: n.id, x: pick[0], y: pick[1], t, anchor: pick[2], ...(lead ? { lx: cx, ly: cy + r } : {}) })
+  })
   return (
     <>
-      <Pitch vertical labels={labels.map(l => <text key={l.id} x={l.x} y={l.y} fontSize={2.9} textAnchor="middle" fill="var(--ink)" pointerEvents="none" style={{ paintOrder: 'stroke', stroke: 'var(--pitch)', strokeWidth: 0.8 }}>{l.t}</text>)}>
+      <Pitch vertical labels={labels.map(l => <g key={l.id} pointerEvents="none">
+        {l.lx != null && <line x1={l.lx} y1={l.ly} x2={l.x} y2={l.y - FS * 0.8} stroke="var(--ink-3)" strokeWidth={0.2} />}
+        <text x={l.x} y={l.y} fontSize={FS} fontWeight={600} textAnchor={l.anchor} fill="var(--ink)" style={{ paintOrder: 'stroke', stroke: 'var(--pitch)', strokeWidth: 0.7 }}>{l.t}</text>
+      </g>)}>
         {aristas.map((e: Any, i: number) => byId[e.a] && byId[e.b] ? (
           <line key={i} x1={byId[e.a].x} y1={byId[e.a].y} x2={byId[e.b].x} y2={byId[e.b].y} stroke={color} strokeOpacity={0.3 + 0.6 * e.n / maxE} strokeWidth={0.3 + 1.6 * e.n / maxE} strokeLinecap="round" />
         ) : null)}
@@ -543,7 +582,7 @@ export function Jugadores({ art, glob }: P) {
 }
 
 /* ================================================================ BALÓN PARADO */
-export function BalonParado({ art }: { art: Any }) {
+export function BalonParado({ art, media }: { art: Any; media?: Any }) {
   const B = art.balon_parado
   const o = B.ofensivo || {}, d = B.defensivo || {}, l = B.liga || {}
   const rows: [string, string, number | null, number | null, number | null, number?][] = [
@@ -559,40 +598,17 @@ export function BalonParado({ art }: { art: Any }) {
     ['Saques de banda en último tercio / partido', '', o.banda_peligrosa_por_partido, d.banda_peligrosa_por_partido, l.banda_peligrosa_por_partido],
     ['xG de balón parado por partido', '', o.xg_total_por_partido, d.xg_total_por_partido, l.xg_total_por_partido, 2],
   ]
-  const zones = (z: Any) => Object.entries(z || {}).map(([k, v]) => ({ label: k, v: v as number }))
   return (
     <div>
       <h3 className="h2">Balón parado</h3>
-      <p className="lede">A favor (sus envíos) y en contra (envíos del rival contra su equipo). Una jugada a balón parado dura hasta 15 segundos o hasta que termina la posesión.</p>
-      <div className="grid2">
-        <div className="card"><div className="h3">Córners a favor: dónde caen</div>
-          <SetPieceMap pts={o.envios || []} shots={o.remates || []} />
-          <HBar items={zones(o.corner_zonas)} unit="%" />
-        </div>
-        <div className="card"><div className="h3">Córners en contra: dónde caen y desde dónde rematan</div>
-          <SetPieceMap pts={d.envios || []} shots={d.remates || []} against />
-          <HBar items={zones(d.corner_zonas)} unit="%" color="var(--c-plantilla)" />
-        </div>
-      </div>
+      <p className="lede">Córners en 3D: cada barra es una zona del área; su <b>altura</b> dice cuántos envíos caen ahí y su <b>color</b>, cuánto xG generan. Los muñecos marcan dónde se paran atacantes y defensores al momento del envío (fotogramas 360). Puedes re-jugar sus córners reales.</p>
+      <Corners3D art={art} media={media} />
       <div className="card tbl-wrap" style={{ marginTop: 20 }}>
         <table className="t"><thead><tr><th>Indicador</th><th style={{ textAlign: 'right' }}>A favor</th><th style={{ textAlign: 'right' }}>En contra</th><th style={{ textAlign: 'right' }}>Liga</th></tr></thead>
           <tbody>{rows.map(([n, u, a, b, c, dd]) => <tr key={n}><td>{n}</td><td className="num">{fmt(a, dd ?? 1)}{u}</td><td className="num">{fmt(b, dd ?? 1)}{u}</td><td className="num">{fmt(c, dd ?? 1)}{u}</td></tr>)}</tbody></table>
         <div className="note">«Primer contacto propio» en contra = % de córners rivales en los que su equipo toca primero. Los goles a favor/en contra son {o.goles ?? 0}/{d.goles ?? 0}.</div>
       </div>
     </div>
-  )
-}
-
-function SetPieceMap({ pts, shots, against }: { pts: number[][]; shots: number[][]; against?: boolean }) {
-  const c = against ? 'var(--c-plantilla)' : 'var(--c-dt)'
-  return (
-    <>
-      <Pitch half>
-        {pts.map(([x, y, s], i) => <circle key={i} cx={x} cy={y} r={0.7} fill={s ? c : 'none'} stroke={c} strokeWidth={0.25} opacity={0.7} />)}
-        {shots.map(([x, y, xg], i) => <rect key={`s${i}`} x={x - 0.6} y={y - 0.6} width={1.2} height={1.2} fill="var(--ink)" opacity={0.3 + Math.min(0.7, xg * 3)} />)}
-      </Pitch>
-      <div className="note">Círculo: destino del envío (relleno si terminó en remate). Cuadro: remate a balón parado (más oscuro = más xG). Ataque hacia la derecha.</div>
-    </>
   )
 }
 

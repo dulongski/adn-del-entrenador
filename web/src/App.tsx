@@ -144,7 +144,7 @@ export default function App() {
               {tab === 'fases' && <Fases art={art} glob={glob} media={media} />}
               {tab === 'contexto' && <Contexto art={art} glob={glob} media={media} />}
               {tab === 'jugadores' && <Jugadores art={art} glob={glob} media={media} />}
-              {tab === 'bp' && <BalonParado art={art} />}
+              {tab === 'bp' && <BalonParado art={art} media={media} />}
               {tab === 'sim' && <Simulador art={art} media={media} />}
               {tab === 'whatif' && <WhatIf art={art} glob={glob} media={media} />}
               {tab === 'metodo' && <Metodo glob={glob} />}

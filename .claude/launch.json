@@ -3,13 +3,13 @@
   "configurations": [
     {
       "name": "coach-dna-api",
-      "runtimeExecutable": "/Users/sdulongsalazar/Desktop/coach-dna/.venv/bin/uvicorn",
+      "runtimeExecutable": "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/.venv/bin/uvicorn",
       "runtimeArgs": [
         "api.main:app",
         "--port",
         "8765",
         "--app-dir",
-        "/Users/sdulongsalazar/Desktop/coach-dna"
+        "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna"
       ],
       "port": 8765
     },
@@ -18,7 +18,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        "/Users/sdulongsalazar/Desktop/coach-dna/web",
+        "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web",
         "run",
         "dev"
       ],
@@ -32,7 +32,7 @@
         "http.server",
         "5300",
         "--directory",
-        "/Users/sdulongsalazar/Desktop/coach-dna/web/dist"
+        "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web/dist"
       ],
       "port": 5300
     }

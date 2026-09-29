@@ -351,6 +351,8 @@ def main(coach_filter=None, fast=False, n_boot=30, solo_extra=False):
         whatif.main()  # datos del simulador «¿Y si…?» (web/public/data/whatif.json)
     from pipeline import shapes
     shapes.main()  # formas por fase para el partido animado
+    from pipeline import corners
+    corners.main()  # córners 3D: envíos + posiciones 360 (web/public/data/corners_*.json)
     from pipeline import export_static
     export_static.main()  # datos para la web estática (web/src/boot.json + web/public/data)
     log("listo")
