@@ -251,7 +251,7 @@ table.att td.obs .num { color: var(--ink); font-weight: 600; }
   .side-open:not(.on-map) .side { position: sticky !important; box-shadow: none; }
   .side-open:not(.on-map) .scrim { display: none; }
 }
-.hero { padding-top: 70px !important; }
+.hero { padding-top: 28px !important; }
 .map-link { border: 1px solid var(--rule); background: var(--bg); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: 600; font-size: 14px; margin-bottom: 16px; }
 .map-link:hover { background: var(--surface-2); }
 

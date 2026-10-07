@@ -6,16 +6,14 @@ import StyleMap from './StyleMap'
 import WhatIf from './WhatIf'
 import { Resumen, DtVsPlantilla, Transferencia, Fases, Contexto, Jugadores, BalonParado, Simulador, Metodo } from './tabs'
 
-const TABS = [
-  ['resumen', 'Resumen'], ['dt', 'DT vs Plantilla'], ['transfer', 'Prueba de transferencia'], ['fases', 'Estilo'],
-  ['contexto', 'Contexto'], ['jugadores', 'Jugadores'], ['bp', 'Balón parado'], ['sim', 'Simulador'], ['whatif', '¿Y si…?'], ['metodo', 'Método'],
-] as const
-type TabKey = typeof TABS[number][0]
+import Hub from './Hub'
+import Compare from './Compare'
+import { MODES, TAB_KEYS, inkOn, modeOf, type TabKey, type View } from './modes'
 
 function readHash() {
   const [c, t] = window.location.hash.replace('#', '').split('/')
   const n = Number(c)
-  return { c: c && Number.isFinite(n) ? n : null, t: (t as TabKey) || 'resumen' }
+  return { c: c && Number.isFinite(n) ? n : null, t: (TAB_KEYS.includes(t as TabKey) ? t : 'hub') as View }
 }
 const wide = () => window.matchMedia('(min-width: 900px)').matches
 // en un visor embebido (p.ej. Artifact) cambiar la URL puede estar prohibido: nunca debe romper la app
@@ -27,7 +25,8 @@ export default function App() {
   const media: Any = (boot as Any).media
   const [err, setErr] = useState<string | null>(null)
   const [coachId, setCoachId] = useState<number | null>(readHash().c)
-  const [tab, setTab] = useState<TabKey>(readHash().t)
+  const [tab, setTabRaw] = useState<View>(readHash().t)
+  const setTab = (t: View) => { setTabRaw(t); window.scrollTo({ top: 0 }) }
   const [art, setArt] = useState<Any>(null)
   const [q, setQ] = useState('')
   const [activos, setActivos] = useState<boolean>(() => { try { return localStorage.getItem('soloActivos') === '1' } catch { return false } })
@@ -38,7 +37,7 @@ export default function App() {
   const [theme, setTheme] = useState<string | null>(() => { try { return localStorage.getItem('theme') } catch { return null } })
 
   useEffect(() => {
-    const onHash = () => { const h = readHash(); setCoachId(h.c); if (h.c !== null) setTab(h.t) }
+    const onHash = () => { const h = readHash(); setCoachId(h.c); if (h.c !== null) setTabRaw(h.t) }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
@@ -47,7 +46,7 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-  const openCoach = (id: number) => { setTab('resumen'); setCoachId(id); setSideOpen(wide()); window.scrollTo({ top: 0 }) }
+  const openCoach = (id: number) => { setTabRaw('hub'); setCoachId(id); setSideOpen(wide()); window.scrollTo({ top: 0 }) }
   const goMap = () => { setCoachId(null); setArt(null); setSideOpen(false); setHash('#mapa') }
   useEffect(() => {
     if (coachId === null) return
@@ -113,45 +112,95 @@ export default function App() {
           ) : <div className="empty">Cargando mapa…</div>
         ) : !art ? <div className="empty">Cargando DT…</div> : (
           <>
-            <header className="hero">
-              <div className="hero-top">
-                <CoachPhoto name={art.nombre} src={media.dts[art.id]?.foto} />
-                <div style={{ minWidth: 0 }}>
-                  <div className="eyebrow">Historia de un entrenador a través de los datos</div>
-                  <h2 className="coach-title">{(() => { const nm = nombreDT(art.id, art.nombre); return nm ? <><span className="light">{nm.nombres}</span> <span className="surname">{nm.apellidos}</span></> : art.nombre })()}</h2>
-                  {media.dts[art.id]?.club && (
-                    <div className="current-club">
-                      <span className={media.dts[art.id].vigente ? 'badge-live' : 'badge-past'}>{media.dts[art.id].vigente ? 'Club actual' : 'Último club'}</span>
-                      <ClubName club={media.dts[art.id].club} media={media} size={22} />
-                      <span className="note">· último partido registrado {media.dts[art.id].ultimo_partido}</span>
+            <CoachBar art={art} media={media} tab={tab} setTab={setTab} />
+            {tab === 'hub' ? (
+              <>
+                <header className="hero">
+                  <div className="hero-top">
+                    <CoachPhoto name={art.nombre} src={media.dts[art.id]?.foto} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="eyebrow">Historia de un entrenador a través de los datos</div>
+                      <h2 className="coach-title">{(() => { const nm = nombreDT(art.id, art.nombre); return nm ? <><span className="light">{nm.nombres}</span> <span className="surname">{nm.apellidos}</span></> : art.nombre })()}</h2>
+                      {media.dts[art.id]?.club && (
+                        <div className="current-club">
+                          <span className={media.dts[art.id].vigente ? 'badge-live' : 'badge-past'}>{media.dts[art.id].vigente ? 'Club actual' : 'Último club'}</span>
+                          <ClubName club={media.dts[art.id].club} media={media} size={22} />
+                          <span className="note">· último partido registrado {media.dts[art.id].ultimo_partido}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-              <div className="spells" style={{ marginTop: 14 }}>
-                {art.etapas.map((e: Any) => <span key={e.club} className="spell"><ClubName club={e.club} media={media} size={16} /> · <b>{e.partidos}</b> p. · {e.desde.slice(0, 4)}–{e.hasta.slice(0, 4)}</span>)}
-                <span className="spell">Identificabilidad <b>{fmt(art.identificabilidad.indice, 0)}</b>/100</span>
-                {art.partidos_total < 10 && <span className="spell warn" title="Con menos de 10 partidos el modelo encoge su estilo hacia el promedio de la liga">⚠ Solo {art.partidos_total} partidos: perfil preliminar</span>}
-              </div>
-            </header>
-            <nav className="tabs" role="tablist">
-              {TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className="tab" onClick={() => setTab(k)}>{l}</button>)}
-            </nav>
-            <section className="panel" role="tabpanel">
-              {tab === 'resumen' && <Resumen art={art} glob={glob} media={media} go={setTab} />}
-              {tab === 'dt' && <DtVsPlantilla art={art} glob={glob} media={media} />}
-              {tab === 'transfer' && <Transferencia art={art} glob={glob} media={media} />}
-              {tab === 'fases' && <Fases art={art} glob={glob} media={media} />}
-              {tab === 'contexto' && <Contexto art={art} glob={glob} media={media} />}
-              {tab === 'jugadores' && <Jugadores art={art} glob={glob} media={media} />}
-              {tab === 'bp' && <BalonParado art={art} media={media} />}
-              {tab === 'sim' && <Simulador art={art} media={media} />}
-              {tab === 'whatif' && <WhatIf art={art} glob={glob} media={media} />}
-              {tab === 'metodo' && <Metodo glob={glob} />}
-            </section>
+                  </div>
+                  <div className="spells" style={{ marginTop: 14, marginBottom: 0 }}>
+                    {art.etapas.map((e: Any) => <span key={e.club} className="spell"><ClubName club={e.club} media={media} size={16} /> · <b>{e.partidos}</b> p. · {e.desde.slice(0, 4)}–{e.hasta.slice(0, 4)}</span>)}
+                    <span className="spell">Identificabilidad <b>{fmt(art.identificabilidad.indice, 0)}</b>/100</span>
+                    {art.partidos_total < 10 && <span className="spell warn" title="Con menos de 10 partidos el modelo encoge su estilo hacia el promedio de la liga">⚠ Solo {art.partidos_total} partidos: perfil preliminar</span>}
+                  </div>
+                </header>
+                <section className="panel hub-panel">
+                  <h3 className="hub-lead">¿Qué quieres saber de {shortName(art.nombre)}?</h3>
+                  <Hub art={art} media={media} mapa={mapa} go={setTab} />
+                </section>
+              </>
+            ) : (
+              <section className="panel" role="tabpanel" style={{ ['--mc' as string]: modeOf(tab).color }}>
+                <header className="mode-head">
+                  <span className="mode-q">{modeOf(tab).q}</span>
+                  <p className="mode-desc">{modeOf(tab).desc}</p>
+                </header>
+                {tab === 'resumen' && <Resumen art={art} glob={glob} media={media} go={setTab} />}
+                {tab === 'dt' && <DtVsPlantilla art={art} glob={glob} media={media} />}
+                {tab === 'transfer' && <Transferencia art={art} glob={glob} media={media} />}
+                {tab === 'fases' && <Fases art={art} glob={glob} media={media} />}
+                {tab === 'contexto' && <Contexto art={art} glob={glob} media={media} />}
+                {tab === 'jugadores' && <Jugadores art={art} glob={glob} media={media} />}
+                {tab === 'bp' && <BalonParado art={art} media={media} />}
+                {tab === 'sim' && <Simulador art={art} media={media} />}
+                {tab === 'whatif' && <WhatIf art={art} glob={glob} media={media} />}
+                {tab === 'vs' && <Compare key={art.id} art={art} glob={glob} media={media} mapa={mapa} onOpen={openCoach} />}
+                {tab === 'metodo' && <Metodo glob={glob} />}
+              </section>
+            )}
           </>
         )}
       </main>
+    </div>
+  )
+}
+
+/** Barra fija: tarjeta compacta del DT que estás viendo + modos + subpestañas del modo actual. */
+function CoachBar({ art, media, tab, setTab }: { art: Any; media: Any; tab: View; setTab: (t: View) => void }) {
+  const mode = modeOf(tab), hub = tab === 'hub'
+  const nm = nombreDT(art.id, art.nombre)
+  const club = media.dts[art.id]?.club
+  return (
+    <div className="coachbar" style={{ ['--mc' as string]: hub ? 'var(--ink-3)' : mode.color }}>
+      <div className="cb-row">
+        <button className="cb-id" onClick={() => setTab('hub')} title="Volver al menú de este DT">
+          <CoachPhoto name={art.nombre} src={media.dts[art.id]?.foto} size={40} />
+          <span className="cb-who">
+            <span className="cb-name">{nm ? <><span className="light">{nm.nombres.split(' ')[0]}</span> {nm.apellidos}</> : art.nombre}</span>
+            <span className="cb-club">{club && <ClubLogo club={club} media={media} size={14} />}{club ?? ''}{art.partidos_total ? ` · ${art.partidos_total} p.` : ''}</span>
+          </span>
+        </button>
+        <nav className="cb-modes" aria-label="Modos">
+          <button className="cb-mode cb-hubbtn" aria-pressed={hub} onClick={() => setTab('hub')}>Menú</button>
+          {MODES.map(m => (
+            <button key={m.k} className="cb-mode" style={{ ['--pc' as string]: m.color, ['--pt' as string]: inkOn(m.color) }} aria-pressed={!hub && mode.k === m.k} onClick={() => setTab(m.subs[0][0])}>
+              <i aria-hidden />{m.name}
+            </button>
+          ))}
+        </nav>
+      </div>
+      {!hub && (
+        <div className="cb-subrow">
+          <b className="cb-mode-title">{mode.title}</b>
+          {mode.subs.length > 1 && (
+            <div className="cb-subs" role="tablist">
+              {mode.subs.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>{l}</button>)}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
