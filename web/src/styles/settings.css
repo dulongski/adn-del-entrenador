@@ -1,0 +1,35 @@
+/* logo */
+.logo { display: inline-flex; align-items: baseline; gap: calc(var(--logo-size) * .16); color: var(--ink); line-height: 1; }
+/* la hélice mide la altura de las mayúsculas de Big Shoulders (~.72 em) y se apoya en la línea base */
+/* un 35% más alta que las mayúsculas y centrada sobre ellas (baja la mitad del excedente) */
+.logo-mark { --cap: calc(var(--logo-size) * .92 * .72); height: calc(var(--cap) * 1.35); width: calc(var(--cap) * 1.35 * .5); flex: none; display: inline-block; align-self: baseline; position: relative; top: calc(var(--cap) * .175); }
+.logo-mark:only-child { height: var(--logo-size); width: calc(var(--logo-size) * .5); }
+.logo-mark svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.logo-word { display: grid; grid-auto-flow: column; align-items: baseline; gap: .18em; font-family: var(--display); font-weight: 900; font-size: calc(var(--logo-size) * .92); letter-spacing: .01em; position: relative; }
+.logo-word .logo-dna { color: var(--logo-acc); }
+.logo-word small { position: absolute; top: 100%; left: 0; font-family: var(--body); font-weight: 500; font-size: 12px; letter-spacing: 0; color: var(--ink-3); white-space: nowrap; margin-top: 4px; }
+
+/* engrane + panel de ajustes */
+.cfg { position: fixed; top: 62px; left: 14px; z-index: 41; }
+.cfg-btn { width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--rule); background: var(--surface); display: grid; place-items: center; cursor: pointer; color: var(--ink-2); box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+.cfg-btn svg { width: 20px; height: 20px; fill: currentColor; transition: transform .4s; }
+.cfg-btn:hover { color: var(--ink); }
+.cfg-btn:hover svg, .cfg-btn[aria-expanded='true'] svg { transform: rotate(60deg); }
+.cfg-panel { position: absolute; top: 0; left: 52px; width: min(380px, calc(100vw - 80px)); max-height: calc(100vh - 90px); overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px 16px; box-shadow: 0 18px 50px rgba(0,0,0,.35); animation: cardin .16s ease-out; }
+.cfg-head { display: grid; gap: 2px; margin-bottom: 4px; }
+.cfg-head b { font-family: var(--display); font-size: 22px; text-transform: uppercase; }
+.cfg-sec { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 14px 0 6px; }
+.cfg-pals { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.cfg-pal, .cfg-font, .cfg-logo { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); border-radius: 10px; padding: 7px 9px; cursor: pointer; font-size: 13.5px; text-align: left; }
+.cfg-pal:hover, .cfg-font:hover, .cfg-logo:hover { border-color: var(--ink-3); }
+.cfg-pal[aria-pressed='true'], .cfg-font[aria-pressed='true'], .cfg-logo[aria-pressed='true'] { border-color: var(--focus); box-shadow: inset 0 0 0 1px var(--focus); }
+.cfg-pal small { color: var(--ink-3); }
+.cfg-sw { width: 40px; height: 26px; border-radius: 6px; flex: none; display: grid; grid-template-columns: repeat(4, 1fr); align-items: end; gap: 2px; padding: 4px; box-shadow: inset 0 0 0 1px rgba(127,127,127,.35); }
+.cfg-sw i { height: 9px; border-radius: 2px; }
+.cfg-fonts { display: grid; gap: 6px; }
+.cfg-aa { font-size: 20px; font-weight: 600; width: 30px; }
+.cfg-lang { margin: 0; }
+.cfg-logos { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.cfg-logo { justify-content: center; padding: 8px 4px; }
+@media (max-width: 700px) { .cfg-panel { left: 0; top: 52px; width: calc(100vw - 28px); } }

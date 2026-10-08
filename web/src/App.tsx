@@ -3,6 +3,9 @@ import { dataUrl, getJSON, nombreDT, shortName, fmt, type Any } from './lib'
 import boot from './boot.json'
 import { ClubLogo, ClubName, CoachPhoto } from './charts'
 import StyleMap from './StyleMap'
+import Logo from './Logo'
+import SettingsMenu from './SettingsMenu'
+import { L, LOCALE, SETTINGS } from './settings'
 import WhatIf from './WhatIf'
 import { Resumen, DtVsPlantilla, Transferencia, Fases, Contexto, Jugadores, BalonParado, Simulador, Metodo } from './tabs'
 
@@ -34,7 +37,6 @@ export default function App() {
   const nActivos = useMemo(() => (glob?.dts || []).filter((d: Any) => media.dts?.[d.id]?.vigente).length, [glob, media])
   const mapa: Any = (boot as Any).mapa
   const [sideOpen, setSideOpen] = useState(() => readHash().c !== null && wide())
-  const [theme, setTheme] = useState<string | null>(() => { try { return localStorage.getItem('theme') } catch { return null } })
 
   useEffect(() => {
     const onHash = () => { const h = readHash(); setCoachId(h.c); if (h.c !== null) setTabRaw(h.t); else setSideOpen(false) }
@@ -62,10 +64,6 @@ export default function App() {
     setHash(`#${coachId}/${tab}`)
   }, [coachId]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (coachId !== null) setHash(`#${coachId}/${tab}`) }, [tab, coachId])
-  useEffect(() => {
-    if (theme) document.documentElement.setAttribute('data-theme', theme); else document.documentElement.removeAttribute('data-theme')
-    try { if (theme) localStorage.setItem('theme', theme); else localStorage.removeItem('theme') } catch { /* sin almacenamiento */ }
-  }, [theme])
 
   const groups = useMemo(() => {
     if (!glob) return []
@@ -84,10 +82,11 @@ export default function App() {
       <button className="burger" aria-label={sideOpen ? 'Cerrar menú' : 'Abrir menú de entrenadores'} aria-expanded={sideOpen} onClick={() => setSideOpen(o => !o)}>
         <span /><span /><span />
       </button>
+      <SettingsMenu />
       {sideOpen && <div className="scrim" onClick={() => setSideOpen(false)} />}
       <aside className="side" aria-hidden={!sideOpen}>
         <button className="map-link" onClick={goMap}>◎ Mapa de estilos</button>
-        <h1 className="brand">ADN del<br />Entrenador<small>Qué parte del estilo es del DT y qué parte de su plantilla. Liga MX {glob.muestra.temporadas[0]}–{glob.muestra.temporadas.at(-1)}, {glob.muestra.partidos.toLocaleString('es-MX')} partidos.</small></h1>
+        <h1 className="brand"><Logo kind={SETTINGS.logo} size={30} /><small>{L('Qué parte del estilo es del DT y qué parte de su plantilla.', 'How much of the style is the coach and how much is the squad.')} Liga MX {glob.muestra.temporadas[0]}–{glob.muestra.temporadas.at(-1)}, {glob.muestra.partidos.toLocaleString(LOCALE)} {L('partidos', 'matches')}.</small></h1>
         <input className="search" placeholder="Buscar DT o club" value={q} onChange={e => setQ(e.target.value)} aria-label="Buscar DT o club" />
         <label className="toggle-activos" htmlFor="solo-activos"><input id="solo-activos" type="checkbox" checked={activos} onChange={e => setActivos(e.target.checked)} /> Solo DTs activos <span className="note">({nActivos} con club actual)</span></label>
         {groups.map(([title, items]) => items.length ? (
@@ -102,16 +101,13 @@ export default function App() {
             ))}
           </div>
         ) : null)}
-        <button className="theme-toggle" onClick={() => setTheme(t => (t === 'dark' ? 'light' : t === 'light' ? null : 'dark'))}>
-          Tema: {theme === 'dark' ? 'oscuro' : theme === 'light' ? 'claro' : 'sistema'}
-        </button>
       </aside>
       <main className="main">
         {coachId === null ? (
           mapa ? (
             <section className="landing">
               <header className="landing-head">
-                <h1 className="landing-title">ADN del Entrenador</h1>
+                <h1 className="landing-title"><Logo kind={SETTINGS.logo} size={40} /></h1>
                 <p className="landing-sub">Cada burbuja es un DT de Liga MX. Cerca = ideas de juego parecidas, <b>ya descontada su plantilla</b>. Toca una para abrir su perfil.</p>
               </header>
               <StyleMap mapa={mapa} media={media} kpis={glob.kpis} onPick={openCoach} activos={activos} setActivos={setActivos} />

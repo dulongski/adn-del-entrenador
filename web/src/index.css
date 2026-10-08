@@ -1,60 +1,57 @@
-/* ADN del Entrenador — tokens.
-   Superficie: gris tiza (pintura de cancha sobre cemento). Tinta: verde botella profundo.
-   Los cinco componentes de la descomposición usan la paleta categórica validada en orden fijo:
-   DT=azul, Plantilla=naranja, Club=aqua, Rival=amarillo, Contexto=magenta. */
-:root {
-  color-scheme: light;
-  --bg: #e9ece8;
-  --surface: #f7f8f6;
-  --surface-2: #dfe4df;
-  --ink: #0f1f19;
-  --ink-2: #44524c;
-  --ink-3: #6f7b75;
-  --rule: #c9d0ca;
-  --pitch: #d3dbd4;
-  --pitch-line: #f9fbf9;
-  --c-dt: #2a78d6;
-  --c-plantilla: #eb6834;
-  --c-club: #1baf7a;
-  --c-rival: #eda100;
-  --c-ctx: #e87ba4;
-  --c-resid: #b9c0bb;
-  --div-neg: #d03b3b;
-  --div-mid: #f0efec;
-  --div-pos: #2a78d6;
-  --focus: #2a78d6;
+/* Coach DNA — tokens por paleta. "Noche" es la de siempre (por defecto); el visitante elige otra en
+   Ajustes (settings.ts pone data-theme en <html>). Los cinco componentes de la descomposición
+   conservan un orden fijo de color: DT, Plantilla, Club, Rival, Contexto. */
+:root, :root[data-theme='noche'] {
+  color-scheme: dark;
+  --bg: #111814; --surface: #18211c; --surface-2: #222d27;
+  --ink: #eef3ef; --ink-2: #b8c4bd; --ink-3: #85928b; --rule: #2e3b34;
+  --pitch: #1d2922; --pitch-line: #3b4b42;
+  --c-dt: #3987e5; --c-plantilla: #d95926; --c-club: #199e70; --c-rival: #c98500; --c-ctx: #d55181; --c-resid: #4a5650;
+  --div-neg: #e66767; --div-mid: #383835; --div-pos: #3987e5;
+  --focus: #3987e5; --logo-acc: #3ddc97;
   --display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
-  --body: 'Source Sans 3', system-ui, sans-serif;
+  --body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, monospace;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    color-scheme: dark;
-    --bg: #111814;
-    --surface: #18211c;
-    --surface-2: #222d27;
-    --ink: #eef3ef;
-    --ink-2: #b8c4bd;
-    --ink-3: #85928b;
-    --rule: #2e3b34;
-    --pitch: #1d2922;
-    --pitch-line: #3b4b42;
-    --c-dt: #3987e5;
-    --c-plantilla: #d95926;
-    --c-club: #199e70;
-    --c-rival: #c98500;
-    --c-ctx: #d55181;
-    --c-resid: #4a5650;
-    --div-neg: #e66767;
-    --div-mid: #383835;
-    --div-pos: #3987e5;
-  }
+/* Crema: fondo crema, blanco en tarjetas, tinta verde-negra, menta como color principal y rojo rosado para el detalle. */
+:root[data-theme='crema'] {
+  color-scheme: light;
+  --bg: #F4F0E6; --surface: #FFFFFF; --surface-2: #ECE6D8;
+  --ink: #10201A; --ink-2: #3E4C45; --ink-3: #6E7A73; --rule: #DDD5C4;
+  --pitch: #E4F2EA; --pitch-line: #9FC9B4;
+  --c-dt: #1FA97A; --c-plantilla: #EF4B5F; --c-club: #3D7BD9; --c-rival: #D99A00; --c-ctx: #9B6BD6; --c-resid: #C9C2B2;
+  --div-neg: #EF4B5F; --div-mid: #F1EDE4; --div-pos: #1FA97A;
+  --focus: #1FA97A; --logo-acc: #EF4B5F;
 }
-:root[data-theme='dark'] {
+/* Estadio: noche de partido bajo reflectores (azul marino y amarillo de luz). */
+:root[data-theme='estadio'] {
   color-scheme: dark;
-  --bg: #111814; --surface: #18211c; --surface-2: #222d27; --ink: #eef3ef; --ink-2: #b8c4bd; --ink-3: #85928b;
-  --rule: #2e3b34; --pitch: #1d2922; --pitch-line: #3b4b42; --c-dt: #3987e5; --c-plantilla: #d95926; --c-club: #199e70;
-  --c-rival: #c98500; --c-ctx: #d55181; --c-resid: #4a5650; --div-neg: #e66767; --div-mid: #383835; --div-pos: #3987e5;
+  --bg: #0B1226; --surface: #121B36; --surface-2: #1B2647;
+  --ink: #EEF2FF; --ink-2: #B7C0DB; --ink-3: #7F8AAD; --rule: #263257;
+  --pitch: #12301F; --pitch-line: #2E5A40;
+  --c-dt: #FFD23F; --c-plantilla: #FF6B6B; --c-club: #4CC9F0; --c-rival: #B388FF; --c-ctx: #FF8FAB; --c-resid: #3A4570;
+  --div-neg: #FF6B6B; --div-mid: #2A3352; --div-pos: #4CC9F0;
+  --focus: #FFD23F; --logo-acc: #FFD23F;
+}
+/* Pizarra: pizarrón del vestidor, gis blanco y gises de colores. */
+:root[data-theme='pizarra'] {
+  color-scheme: dark;
+  --bg: #1F2A27; --surface: #263330; --surface-2: #2F3E3A;
+  --ink: #F2EFE6; --ink-2: #C9C6BC; --ink-3: #959A90; --rule: #3B4A45;
+  --pitch: #22312D; --pitch-line: #5B6B65;
+  --c-dt: #8EC5FF; --c-plantilla: #FFB38A; --c-club: #9EE6B8; --c-rival: #FFE38A; --c-ctx: #F7A8D8; --c-resid: #4F5D58;
+  --div-neg: #FF9C9C; --div-mid: #34413D; --div-pos: #8EC5FF;
+  --focus: #FFE38A; --logo-acc: #FFE38A;
+}
+/* Atardecer: partido de las 5 de la tarde, cielo morado y luz naranja. */
+:root[data-theme='atardecer'] {
+  color-scheme: dark;
+  --bg: #1A1220; --surface: #241A2C; --surface-2: #2F2338;
+  --ink: #F6EDF2; --ink-2: #CDBFCA; --ink-3: #998A97; --rule: #3B2D45;
+  --pitch: #22262A; --pitch-line: #4A4450;
+  --c-dt: #FF7A59; --c-plantilla: #2EC4B6; --c-club: #FFC857; --c-rival: #B497FF; --c-ctx: #FF5D8F; --c-resid: #4A3D52;
+  --div-neg: #FF5D8F; --div-mid: #3A2E42; --div-pos: #2EC4B6;
+  --focus: #FF7A59; --logo-acc: #FF7A59;
 }
 
 * { box-sizing: border-box; }
@@ -217,7 +214,7 @@ table.att td.obs .num { color: var(--ink); font-weight: 600; }
 .side-open .burger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .side-open .burger span:nth-child(2) { opacity: 0; }
 .side-open .burger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-.side { position: fixed !important; top: 0; left: 0; bottom: 0; width: 300px; height: 100vh; z-index: 30; transform: translateX(-100%); transition: transform .25s ease; padding-top: 68px !important; box-shadow: 0 0 30px rgba(0,0,0,.15); }
+.side { position: fixed !important; top: 0; left: 0; bottom: 0; width: 300px; height: 100vh; z-index: 30; transform: translateX(-100%); transition: transform .25s ease; padding-top: 116px !important; box-shadow: 0 0 30px rgba(0,0,0,.15); }
 .side-open .side { transform: none; }
 .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 25; }
 @media (min-width: 900px) {
@@ -253,7 +250,7 @@ table.att td.obs .num { color: var(--ink); font-weight: 600; }
 .bub-logo { position: absolute; left: -12%; bottom: -12%; border-radius: 50%; background: #fff; display: grid; place-items: center; box-shadow: 0 0 0 1.5px var(--surface), 0 1px 4px rgba(0,0,0,.2); overflow: hidden; }
 .bub-logo img { width: 78%; height: 78%; object-fit: contain; pointer-events: none; }
 .bub-name { position: absolute; left: 50%; top: 104%; transform: translateX(-50%); white-space: nowrap; font-weight: 600; color: var(--ink); background: color-mix(in oklab, var(--surface) 80%, transparent); padding: 0 .4em; border-radius: 4px; line-height: 1.4; }
-@keyframes bubfloat { from { translate: 0 0; } to { translate: var(--dx, 0) var(--dy, 0); } }
+@keyframes bubfloat { 0% { translate: calc(var(--dx, 0px) * -0.5) calc(var(--dy, 0px) * 0.4); } 50% { translate: calc(var(--dx, 0px) * 0.3) calc(var(--dy, 0px) * -0.6); } 100% { translate: var(--dx, 0) var(--dy, 0); } }
 .smap-axis { position: absolute; z-index: 4; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); pointer-events: none; }
 .ax-left, .ax-right { top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .ax-left { left: 12px; }
