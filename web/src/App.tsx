@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { dataUrl, getJSON, nombreDT, shortName, fmt, type Any } from './lib'
 import boot from './boot.json'
 import { ClubLogo, ClubName, CoachPhoto } from './charts'
@@ -55,8 +56,15 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-  const openCoach = (id: number) => { setTabRaw('hub'); setCoachId(id); setSideOpen(false); window.scrollTo({ top: 0 }) }
-  const goMap = () => { setCoachId(null); setArt(null); setSideOpen(false); setHash('#mapa') }
+  // cambio de pantalla con fundido (View Transitions si el navegador lo soporta; si no, cambio directo + animación CSS)
+  const swap = (fn: () => void) => {
+    const d = document as Document & { startViewTransition?: (cb: () => void) => unknown }
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (d.startViewTransition && !reduce) d.startViewTransition(() => flushSync(fn))
+    else fn()
+  }
+  const openCoach = (id: number) => swap(() => { setTabRaw('hub'); setCoachId(id); setSideOpen(false); window.scrollTo({ top: 0 }) })
+  const goMap = () => swap(() => { setCoachId(null); setArt(null); setSideOpen(false); setHash('#mapa'); window.scrollTo({ top: 0 }) })
   useEffect(() => {
     if (coachId === null) return
     setArt(null)

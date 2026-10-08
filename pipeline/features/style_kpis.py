@@ -48,7 +48,7 @@ KPIS = {
     "xg_transicion": ("xg_fast", "npxg", 100, "xG de transiciones rápidas (%)", "Transiciones", "Parte del xG que nace de transiciones rápidas."),
     "transicion_def": ("fb_against", "loss_open", 100, "Transiciones rápidas concedidas (%)", "Transiciones", "Pérdidas en juego tras las que el rival llega a nuestro último tercio en <= 10 s."),
     "field_tilt": ("f3_pass_own", "f3_pass_all", 100, "Field tilt (%)", "Dominio", "Pases propios en último tercio / pases totales en último tercio."),
-    "xg_balon_parado_90": ("xg_sp", "dur", 5400, "xG de balón parado por 90", "Balón parado", "xG de posesiones iniciadas en córner, tiro libre o saque de banda."),
+    "xg_balon_parado_90": ("xg_sp", "dur", 5400, "xG de jugadas que nacen de balón parado (por 90)", "Balón parado", "xG de toda posesión que empieza con un córner, un tiro libre o un saque de banda en cualquier parte de la cancha, hasta que termina. Incluye mucho juego abierto (sobre todo tras saques de banda), por eso es mayor que el xG de balón parado de la pestaña Balón parado, que sólo cuenta los 15 s siguientes a envíos peligrosos."),
 }
 
 COUNTERS = sorted({v[0] for v in KPIS.values()} | {v[1] for v in KPIS.values()})

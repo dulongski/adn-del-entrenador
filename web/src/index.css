@@ -517,3 +517,14 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 .info-pop p { margin: 0 0 6px; } .info-pop p:last-child { margin: 0; }
 
 @media (max-width: 700px) { .panel { padding-bottom: 76px !important; } }
+
+/* transición entre el mapa y el perfil de un DT */
+::view-transition-old(root) { animation: vt-out .22s ease-in both; }
+::view-transition-new(root) { animation: vt-in .32s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes vt-out { to { opacity: 0; transform: scale(.985); } }
+@keyframes vt-in { from { opacity: 0; transform: scale(1.015); } }
+.landing { animation: landing-in .45s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes landing-in { from { opacity: 0; } }
+.landing .smap-world { animation: map-settle .6s cubic-bezier(.2, .7, .2, 1) both; transform-origin: 50% 50%; }
+@keyframes map-settle { from { opacity: 0; scale: .96; } }
+@media (prefers-reduced-motion: reduce) { ::view-transition-old(root), ::view-transition-new(root), .landing, .landing .smap-world { animation: none; } }

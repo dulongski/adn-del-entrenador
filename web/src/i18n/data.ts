@@ -40,7 +40,7 @@ export const KPI_EN: Record<string, { etiqueta: string; descripcion?: string }> 
   xg_transicion: { etiqueta: 'xG from fast transitions (%)', descripcion: 'Share of xG that comes from fast transitions.' },
   transicion_def: { etiqueta: 'Fast transitions conceded (%)', descripcion: 'Open-play losses after which the opponent reaches our final third within <= 10 s.' },
   field_tilt: { etiqueta: 'Field tilt (%)', descripcion: 'Own final-third passes / all final-third passes.' },
-  xg_balon_parado_90: { etiqueta: 'Set-piece xG per 90', descripcion: 'xG from possessions starting with a corner, free kick or throw-in.' },
+  xg_balon_parado_90: { etiqueta: 'xG from set-piece-started plays (per 90)', descripcion: 'xG of every possession that starts with a corner, a free kick or a throw-in anywhere on the pitch, until it ends. It includes a lot of open play (especially after throw-ins), so it is higher than the set-piece xG on the Set pieces tab, which only counts the 15 s after dangerous deliveries.' },
   arq_0: { etiqueta: 'Goalkeeper build-up that stalls', descripcion: "% of open-play possessions of the 'Goalkeeper build-up that stalls' type." },
   arq_1: { etiqueta: 'Vertical attempt cut out', descripcion: "% of open-play possessions of the 'Vertical attempt cut out' type." },
   arq_2: { etiqueta: 'Progression into the final third', descripcion: "% of open-play possessions of the 'Progression into the final third' type." },

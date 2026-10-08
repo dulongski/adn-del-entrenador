@@ -24,7 +24,7 @@ export const KU: Record<string, [string, string, number]> = {
   linea_360: ['Altura de la línea defensiva', ' yd', 1], compacidad_360: ['Longitud del bloque', ' yd', 1],
   posesion_rival_dur: ['Duración de la posesión rival', ' s', 1], xg_contra_90: ['xG en contra', ' por 90', 2],
   contraataque: ['Transiciones rápidas', '%', 1], xg_transicion: ['xG de transiciones rápidas', '%', 1],
-  transicion_def: ['Contras rápidas concedidas', '%', 1], field_tilt: ['Dominio territorial', '%', 1], xg_balon_parado_90: ['xG a balón parado', ' por 90', 2],
+  transicion_def: ['Contras rápidas concedidas', '%', 1], field_tilt: ['Dominio territorial', '%', 1], xg_balon_parado_90: ['xG tras balón parado', ' por 90', 2],
 }
 /** Las mismas etiquetas cortas y unidades en inglés: forma corta de KPI_EN (i18n/data.ts), iguales a CORTO_EN de la narrativa. */
 const KU_EN: Record<string, [string, string]> = {
@@ -41,7 +41,7 @@ const KU_EN: Record<string, [string, string]> = {
   linea_360: ['Defensive line height', ' yd'], compacidad_360: ['Block length', ' yd'],
   posesion_rival_dur: ['Average opponent possession length', ' s'], xg_contra_90: ['xG against', ' per 90'],
   contraataque: ['Fast transitions', '%'], xg_transicion: ['xG from fast transitions', '%'],
-  transicion_def: ['Fast transitions conceded', '%'], field_tilt: ['Field tilt', '%'], xg_balon_parado_90: ['Set-piece xG', ' per 90'],
+  transicion_def: ['Fast transitions conceded', '%'], field_tilt: ['Field tilt', '%'], xg_balon_parado_90: ['xG after set pieces', ' per 90'],
 }
 if (LANG === 'en') for (const k in KU_EN) if (KU[k]) KU[k] = [KU_EN[k][0], KU_EN[k][1], KU[k][2]]
 export const kName = (k: string, glob: Any) => KU[k]?.[0] ?? kpiLabel(k, String(glob.kpis[k]?.etiqueta ?? k)).split(' (')[0]

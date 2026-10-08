@@ -55,7 +55,7 @@ PRINCIPIOS = {
     ("transicion_def", -1): ("Protección ante la contra", "Concede pocas transiciones rápidas tras perder."),
     ("xg_contra_90", -1): ("Solidez defensiva", "Concede poco xG."),
     ("field_tilt", 1): ("Dominio territorial", "Juega mucho más en el último tercio rival que el rival en el suyo."),
-    ("xg_balon_parado_90", 1): ("Balón parado como arma", "Genera más xG a balón parado que el promedio."),
+    ("xg_balon_parado_90", 1): ("Balón parado como arma", "Sus jugadas que nacen de balón parado generan más xG que el promedio."),
 }
 PRINCIPIOS_EN = {
     ("posesion", 1): ("Takes charge on the ball", "The team wants the ball and keeps it more than the league average."),
@@ -94,7 +94,7 @@ PRINCIPIOS_EN = {
     ("transicion_def", -1): ("Guards against the counter", "Concedes few fast transitions after losing the ball."),
     ("xg_contra_90", -1): ("Defensive solidity", "Concedes little xG."),
     ("field_tilt", 1): ("Territorial control", "Spends far more time in the opponent's final third than the opponent does in its own."),
-    ("xg_balon_parado_90", 1): ("Set pieces as a weapon", "Generates more set-piece xG than the league average."),
+    ("xg_balon_parado_90", 1): ("Set pieces as a weapon", "Plays that start from set pieces generate more xG than the league average."),
 }
 
 DIM_ES = {"marcador": "el marcador", "minuto": "el minuto", "localia": "la localía", "rival": "la fuerza del rival"}
@@ -479,7 +479,7 @@ CORTO = {
     "xg_transicion": ("xG de transiciones rápidas", "%"),
     "transicion_def": ("Contras rápidas concedidas", "%"),
     "field_tilt": ("Dominio territorial", "%"),
-    "xg_balon_parado_90": ("xG a balón parado", " por 90"),
+    "xg_balon_parado_90": ("xG tras balón parado", " por 90"),
 }
 CORTO_EN = {
     "posesion": ("Possession", "%"),
@@ -515,7 +515,7 @@ CORTO_EN = {
     "xg_transicion": ("xG from fast transitions", "%"),
     "transicion_def": ("Fast transitions conceded", "%"),
     "field_tilt": ("Field tilt", "%"),
-    "xg_balon_parado_90": ("Set-piece xG", " per 90"),
+    "xg_balon_parado_90": ("xG after set pieces", " per 90"),
 }
 
 # Frase verbal (sin sujeto) para la «idea» de cada rasgo según el signo del efecto del DT.
