@@ -7,6 +7,7 @@ import { apellido, famHue, ordinal, signed } from './compare/util'
 import { useDistData } from './Dist'
 import { clubColor, dataUrl, fmt, getJSON, nombreDT, shortName, type Any } from './lib'
 import { L } from './settings'
+import Info from './Info'
 import { kpiLabel, mapLabel } from './i18n/data'
 import './styles/compare.css'
 
@@ -34,6 +35,7 @@ const verdict = (r: number) => r >= 0.6 ? L('muy parecidos', 'very similar') : r
 const hexRgb = (h: string) => { const m = /^#?([0-9a-f]{6})$/i.exec(h); if (!m) return null; const n = parseInt(m[1], 16); return [n >> 16 & 255, n >> 8 & 255, n & 255] }
 const dist3 = (a: string, b: string) => { const x = hexRgb(a), y = hexRgb(b); return x && y ? Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) : 999 }
 const ALT = ['#3987e5', '#e5484d', '#F5A623', '#2FB24A', '#9b6bd6']
+const cap = (t: string) => t[0].toUpperCase() + t.slice(1)
 const fmtForm = (f?: string) => (f ? f.split('').join('-') : '—')
 
 type Fact = { label: string; get: (f: Any) => number | string | null; show: (v: Any, f: Any) => string; better?: 'hi' | 'lo'; hint?: string }
@@ -137,20 +139,26 @@ export default function Compare({ art, glob, media, mapa, onOpen }: { art: Any; 
       </div>
 
       <div className="card vs-sum">
-        <p>
-          {L(`Quitando lo que aportan sus jugadores, ${nA} y ${nB} tienen estilos `, `Stripping out what their players bring, ${nA} and ${nB} have `)}<b>{verdict(r)}</b>{L(`: ${nB} es el ${pos}º más parecido a ${nA} de ${sims.length} DTs.`, ` styles: ${nB} is the ${pos === 1 ? '' : `${ordinal(pos)} `}closest match to ${nA} out of ${sims.length} coaches.`)}
-          {' '}{L('Donde más se separan: ', 'Where they differ most: ')}{top.map((o, i) => (
-            <span key={o.k}>{i ? (i === top.length - 1 ? L(' y ', ' and ') : ', ') : ''}<b>{low(o.k)}</b> ({quien(o)})</span>
-          ))}.
-          {same.length > 0 && <> {L('Se parecen en', 'They’re alike in')} {same.map((o, i) => <span key={o.k}>{i ? L(' y ', ' and ') : ''}{low(o.k)}</span>)}.</>}
-        </p>
+        <div className="vs-sum-line">
+          <b>{cap(verdict(r))}</b>{L(`: ${apellido(nB)} es el ${pos}º más parecido a ${apellido(nA)} de ${sims.length} DTs.`, `: ${apellido(nB)} is the ${pos === 1 ? '' : `${ordinal(pos)} `}closest match to ${apellido(nA)} out of ${sims.length} coaches.`)}
+          <Info wide label={L('Detalle de la comparación', 'Comparison details')}>
+            <p>{L(`Quitando lo que aportan sus jugadores, ${nA} y ${nB} tienen estilos `, `Stripping out what their players bring, ${nA} and ${nB} have `)}<b>{verdict(r)}</b>{L(`: ${nB} es el ${pos}º más parecido a ${nA} de ${sims.length} DTs.`, ` styles: ${nB} is the ${pos === 1 ? '' : `${ordinal(pos)} `}closest match to ${nA} out of ${sims.length} coaches.`)}</p>
+            <p>{L('Donde más se separan: ', 'Where they differ most: ')}{top.map((o, i) => (
+              <span key={o.k}>{i ? (i === top.length - 1 ? L(' y ', ' and ') : ', ') : ''}<b>{low(o.k)}</b> ({quien(o)})</span>
+            ))}.
+            {same.length > 0 && <> {L('Se parecen en', 'They’re alike in')} {same.map((o, i) => <span key={o.k}>{i ? L(' y ', ' and ') : ''}{low(o.k)}</span>)}.</>}</p>
+          </Info>
+        </div>
       </div>
 
       <div className="card">
         <div className="vs-head">
-          <div>
-            <div className="h3" style={{ margin: 0 }}>{L('Rasgo por rasgo', 'Trait by trait')}</div>
-            <p className="note" style={{ margin: '2px 0 0' }}>{L('Haz clic en un rasgo para ver dónde quedan entre todos los DTs.', 'Click a trait to see where they sit among all coaches.')}</p>
+          <div className="h3" style={{ margin: 0 }}>{L('Rasgo por rasgo', 'Trait by trait')}
+            <Info wide>
+              <p>{L('Haz clic en un rasgo para ver dónde quedan entre todos los DTs.', 'Click a trait to see where they sit among all coaches.')}</p>
+              <p>{L('Cómo leerlo: 0 es el DT promedio de la liga. +1 quiere decir que ese DT empuja el rasgo bastante más que lo normal; +2, muchísimo más; los negativos, lo contrario.', 'How to read it: 0 is the league’s average coach. +1 means that coach pushes the trait well above normal; +2, far above; negatives, the opposite.')}
+              {' '}{L('Las cifras están en desviaciones respecto al DT promedio y ya descuentan lo que aportan sus jugadores, el club y los rivales.', 'Figures are in standard deviations from the average coach and already strip out what his players, the club and opponents bring.')}</p>
+            </Info>
           </div>
           <div className="seg" style={{ margin: 0 }}>
             <button aria-pressed={!all} onClick={() => setAll(false)}>{L('Mayores diferencias', 'Biggest gaps')}</button>
@@ -158,22 +166,17 @@ export default function Compare({ art, glob, media, mapa, onOpen }: { art: Any; 
           </div>
         </div>
         <TraitBars rows={shown} lab={lab} A={SA} B={SB} dd={dd} />
-        <p className="note vs-scale-note">
-          {L('Cómo leerlo: 0 es el DT promedio de la liga. +1 quiere decir que ese DT empuja el rasgo bastante más que lo normal; +2, muchísimo más; los negativos, lo contrario.', 'How to read it: 0 is the league’s average coach. +1 means that coach pushes the trait well above normal; +2, far above; negatives, the opposite.')}
-          {' '}{L('Las cifras están en desviaciones respecto al DT promedio y ya descuentan lo que aportan sus jugadores, el club y los rivales.', 'Figures are in standard deviations from the average coach and already strip out what his players, the club and opponents bring.')}
-        </p>
       </div>
 
       <DistGrid rows={rows} lab={lab} A={SA} B={SB} dd={dd} />
 
       <div className="vs-col">
         <div className="card">
-          <div className="h3" style={{ marginTop: 0 }}>{L('En el mapa de estilos', 'On the style map')}</div>
+          <div className="h3" style={{ marginTop: 0 }}>{L('En el mapa de estilos', 'On the style map')}<Info>{L('Cerca = ideas de juego parecidas. Pasa el cursor por cualquier punto para ver qué DT es y haz clic para compararlo.', 'Close together = similar ideas about the game. Hover any dot to see which coach it is and click to compare.')}</Info></div>
           <StyleMini mapa={mapa} media={media} A={A} B={B} ca={ca} cb={cb} onPick={pick} />
-          <p className="note" style={{ margin: '6px 0 0' }}>{L('Cerca = ideas de juego parecidas. Pasa el cursor por cualquier punto para ver qué DT es y haz clic para compararlo.', 'Close together = similar ideas about the game. Hover any dot to see which coach it is and click to compare.')}</p>
         </div>
         <div className="card">
-          <div className="h3" style={{ marginTop: 0 }}>{L('Ficha', 'Fact sheet')}</div>
+          <div className="h3" style={{ marginTop: 0 }}>{L('Ficha', 'Fact sheet')}<Info>{L('Resaltado = mejor de los dos en ese dato.', 'Highlighted = the better of the two on that stat.')}</Info></div>
           <table className="t vs-facts">
             <colgroup><col style={{ width: '42%' }} /><col /><col /></colgroup>
             <thead><tr><th></th>
@@ -184,7 +187,7 @@ export default function Compare({ art, glob, media, mapa, onOpen }: { art: Any; 
                 const w = winner(row)
                 return (
                   <tr key={row.label}>
-                    <td title={row.hint}>{row.label}{row.hint && <span className="vs-hint"> ⓘ</span>}</td>
+                    <td>{row.label}{row.hint && <Info>{row.hint}</Info>}</td>
                     <td className={`num${typeof (fa && row.get(fa)) === 'string' ? ' vs-txt' : ''}${w === 'a' ? ' win' : ''}`} style={{ ['--vc' as string]: ca }}>{cell(fa, row)}</td>
                     <td className={`num${typeof (fa && row.get(fa)) === 'string' ? ' vs-txt' : ''}${w === 'b' ? ' win' : ''}`} style={{ ['--vc' as string]: cb }}>{fb ? cell(fb, row) : other === false ? '—' : '…'}</td>
                   </tr>
@@ -192,7 +195,6 @@ export default function Compare({ art, glob, media, mapa, onOpen }: { art: Any; 
               })}
             </tbody>
           </table>
-          <p className="note" style={{ margin: '8px 0 0' }}>{L('Resaltado = mejor de los dos en ese dato.', 'Highlighted = the better of the two on that stat.')}</p>
         </div>
       </div>
     </div>

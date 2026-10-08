@@ -3,6 +3,7 @@ import Dist, { rankOf, toValues } from '../Dist'
 import { fmt, type Any } from '../lib'
 import { apellido, rawFormat, signed } from './util'
 import { L } from '../settings'
+import Info from '../Info'
 
 export type Row = { k: string; a: number; b: number; d: number }
 type Side = { id: number; name: string; color: string }
@@ -89,9 +90,12 @@ export function DistGrid({ rows, lab, A, B, dd }: { rows: Row[]; lab: (k: string
   return (
     <div className="card">
       <div className="vs-head">
-        <div>
-          <div className="h3" style={{ margin: 0 }}>{L('Dónde quedan entre todos los DTs', 'Where they sit among all coaches')}</div>
-          <p className="note" style={{ margin: '2px 0 0' }}>{L('Cada punto gris es un DT de la liga. Pasa el cursor para ver quién es.', 'Each grey dot is a league coach. Hover to see who.')}</p>
+        <div className="h3" style={{ margin: 0 }}>{L('Dónde quedan entre todos los DTs', 'Where they sit among all coaches')}
+          <Info wide>
+            <p>{L('Cada punto gris es un DT de la liga. Pasa el cursor para ver quién es.', 'Each grey dot is a league coach. Hover to see who.')}</p>
+            <p>{L('Sello propio: cuánto empuja el DT ese rasgo por encima o por debajo del DT promedio, ya descontado lo que aportan sus jugadores, el club y los rivales.', 'Own stamp: how far the coach pushes that trait above or below the average coach, after stripping out what his players, the club and opponents bring.')}</p>
+            <p>{L('En sus partidos: el valor tal cual en los partidos que dirigió; la línea punteada es el promedio de la liga.', 'In his matches: the raw value in the matches he coached; the dotted line is the league average.')}</p>
+          </Info>
         </div>
         <div className="seg" style={{ margin: 0 }}>
           <button aria-pressed={modo === 'a'} onClick={() => setModo('a')}>{L('Sello propio', 'Own stamp')}</button>
@@ -106,11 +110,6 @@ export function DistGrid({ rows, lab, A, B, dd }: { rows: Row[]; lab: (k: string
           </div>
         ))}
       </div>
-      <p className="note" style={{ margin: '8px 0 0' }}>
-        {modo === 'a'
-          ? L('Sello propio: cuánto empuja el DT ese rasgo por encima o por debajo del DT promedio, ya descontado lo que aportan sus jugadores, el club y los rivales.', 'Own stamp: how far the coach pushes that trait above or below the average coach, after stripping out what his players, the club and opponents bring.')
-          : L('En sus partidos: el valor tal cual en los partidos que dirigió; la línea punteada es el promedio de la liga.', 'In his matches: the raw value in the matches he coached; the dotted line is the league average.')}
-      </p>
     </div>
   )
 }

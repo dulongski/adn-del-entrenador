@@ -1,3 +1,4 @@
+import Info from './Info'
 import { useEffect, useMemo, useState } from 'react'
 import { fmt, jugadorCorto, type Any } from './lib'
 import { ClubLogo, Pitch, useTip } from './charts'
@@ -133,7 +134,7 @@ export function ShotExplorer({ shots, color, media }: { shots: Shot[]; color: st
           })}
         </div>
       )}
-      <div className="note st-foot">{L(`${fmt(goles, 0)} goles con ${fmt(xg, 1)} xG (goles esperados). Tamaño = xG, relleno = gol. Abajo, la portería vista desde el tirador (tenues: sus otros goles). ‹ › va de la ocasión más clara a la menos clara.`, `${fmt(goles, 0)} ${goles === 1 ? 'goal' : 'goals'} from ${fmt(xg, 1)} xG (expected goals). Size = xG, filled = goal. Below, the goal as the shooter sees it (faded: his other goals). ‹ › runs from the clearest chance to the least clear.`)}</div>
+      <div className="note st-foot">{L(`${fmt(goles, 0)} goles con ${fmt(xg, 1)} xG (goles esperados).`, `${fmt(goles, 0)} ${goles === 1 ? 'goal' : 'goals'} from ${fmt(xg, 1)} xG (expected goals).`)} <Info wide>{L('Tamaño = xG, relleno = gol. Abajo, la portería vista desde el tirador (tenues: sus otros goles). ‹ › va de la ocasión más clara a la menos clara.', 'Size = xG, filled = goal. Below, the goal as the shooter sees it (faded: his other goals). ‹ › runs from the clearest chance to the least clear.')}</Info></div>
       {tip.el}
     </div>
   )

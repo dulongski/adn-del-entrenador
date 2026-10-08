@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ClubLogo, ClubName, Pitch, PosTag } from './charts'
 import { type Any, dataUrl, fmt, getJSON, jugadorCorto, posTag, shortName } from './lib'
 import { L, LANG } from './settings'
+import Info from './Info'
 import { famLabel, kpiLabel, posAbbr, posLabel } from './i18n/data'
 import './whatif.css'
 
@@ -274,8 +275,7 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
 
   return (
     <div className="wi">
-      <h3 className="h2">{L('Llévalo a otro club', 'Take him to another club')}</h3>
-      <p className="lede">{L('Elige un club y arma el once: te decimos cómo jugaría ese equipo con este DT en el banquillo. Arranca con su club actual; cambia de club o de jugadores para comparar. Es una estimación: no sabe de química, lesiones ni vestidor.', 'Pick a club and build the XI: we tell you how that team would play with this coach on the bench. It starts with his current club; swap the club or the players to compare. It’s an estimate: it knows nothing about chemistry, injuries or the dressing room.')}</p>
+      <h3 className="h2">{L('Llévalo a otro club', 'Take him to another club')}<Info wide>{L('Elige un club y arma el once: te decimos cómo jugaría ese equipo con este DT en el banquillo. Arranca con su club actual; cambia de club o de jugadores para comparar. Es una estimación: no sabe de química, lesiones ni vestidor.', 'Pick a club and build the XI: we tell you how that team would play with this coach on the bench. It starts with his current club; swap the club or the players to compare. It’s an estimate: it knows nothing about chemistry, injuries or the dressing room.')}</Info></h3>
 
       <div className="wi-controls card">
         <div className="wi-pickers">
@@ -295,10 +295,7 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
 
         <div className="wi-squad-head">
           <div>
-            <div className="h3 wi-once" style={{ margin: 0 }}>{L('Once de', 'XI of')} <ClubName club={club} media={media} /></div>
-            <div className="note">
-              {L(`XI tipo de ${sq.temporada} (${sq.partidos} partidos): su formación más usada${sq.formacion ? ` (${sq.formacion})` : ''} con el titular más frecuente en cada puesto. DT actual: `, `Typical ${sq.temporada} XI (${sq.partidos} matches): their most-used formation${sq.formacion ? ` (${sq.formacion})` : ''} with the most frequent starter in each spot. Current coach: `)}{coachName(hoyCoach)}.
-            </div>
+            <div className="h3 wi-once" style={{ margin: 0 }}>{L('Once de', 'XI of')} <ClubName club={club} media={media} /><Info wide>{L(`XI tipo de ${sq.temporada} (${sq.partidos} partidos): su formación más usada${sq.formacion ? ` (${sq.formacion})` : ''} con el titular más frecuente en cada puesto. DT actual: `, `Typical ${sq.temporada} XI (${sq.partidos} matches): their most-used formation${sq.formacion ? ` (${sq.formacion})` : ''} with the most frequent starter in each spot. Current coach: `)}{coachName(hoyCoach)}.</Info></div>
           </div>
           <button className="btn ghost" onClick={() => { setXi([...sq.xi]); setSel(null) }}>{L('Restablecer plantilla', 'Reset squad')}</button>
         </div>
@@ -308,6 +305,7 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
             <div className="wi-form-head">
               <span className="note">{L('Formación resultante', 'Resulting formation')}</span>
               <b className="wi-form">{layout.formacion || '—'}</b>
+              <Info label={L('Cómo usar la cancha', 'How to use the pitch')}>{L('Clic en un jugador para cambiarlo; × para quitarlo. Borde punteado = pocos minutos (efecto promedio). Escudo = viene de otro club.', 'Click a player to swap him; × to remove him. Dashed outline = few minutes (average effect). Crest = comes from another club.')}</Info>
               {sel && <span className="chip wi-selchip">{L('Cambiando a', 'Swapping out')} {jugadorCorto(sel, P(sel)?.n ?? '')} · <button className="wi-link" onClick={() => setSel(null)}>{L('cancelar', 'cancel')}</button></span>}
             </div>
             <div className="wi-pitch">
@@ -334,7 +332,6 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
                 {layout.porteros === 0 && L('No hay portero en la cancha. ', 'No goalkeeper on the pitch. ')}{layout.porteros > 1 && L(`Hay ${layout.porteros} porteros en la cancha.`, `There are ${layout.porteros} goalkeepers on the pitch.`)}
               </p>
             )}
-            <p className="note" style={{ margin: 0 }}>{L('Clic en un jugador para cambiarlo; × para quitarlo. Borde punteado = pocos minutos (efecto promedio). Escudo = viene de otro club.', 'Click a player to swap him; × to remove him. Dashed outline = few minutes (average effect). Crest = comes from another club.')}</p>
             {bench.length > 0 && (!full || sel) && (
               <div className="wi-bench">
                 <span className="note">{L('Otros de la plantilla:', 'Rest of the squad:')}</span>{' '}
@@ -344,7 +341,7 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
           </div>
 
           <div className="wi-market">
-            <div className="h3" style={{ margin: 0 }}>{sel ? L(`Reemplazo para ${jugadorCorto(sel, P(sel)?.n ?? '')}`, `Replacement for ${jugadorCorto(sel, P(sel)?.n ?? '')}`) : L('Fichar jugador', 'Sign a player')}</div>
+            <div className="h3" style={{ margin: 0 }}>{sel ? L(`Reemplazo para ${jugadorCorto(sel, P(sel)?.n ?? '')}`, `Replacement for ${jugadorCorto(sel, P(sel)?.n ?? '')}`) : L('Fichar jugador', 'Sign a player')}<Info>{L('Columnas: minutos en la muestra · impacto en xG neto por 90 (β del jugador en xG a favor − en contra).', 'Columns: minutes in the sample · net xG impact per 90 (player β on xG for − against).')}</Info></div>
             <input className="wi-search" type="search" value={query} placeholder={L('Busca por nombre…', 'Search by name…')} onChange={e => { setQuery(e.target.value); setNRes(12) }} />
             <div className="wi-filters">
               <label className="wi-field"><span>{L('Posición', 'Position')}</span>
@@ -395,7 +392,6 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
               {results.length === 0 && <li className="note" style={{ padding: 8 }}>{L('Nadie cumple esos filtros.', 'Nobody matches those filters.')}</li>}
             </ul>
             {results.length > nRes && <button className="btn ghost" onClick={() => setNRes(nRes + 20)}>{L('Mostrar más', 'Show more')}</button>}
-            <p className="note" style={{ margin: 0 }}>{L('Columnas: minutos en la muestra · impacto en xG neto por 90 (β del jugador en xG a favor − en contra).', 'Columns: minutes in the sample · net xG impact per 90 (player β on xG for − against).')}</p>
           </div>
         </div>
       </div>
@@ -406,7 +402,7 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
 
       <div className="card">
         <div className="wi-table-head">
-          <div className="h3" style={{ margin: 0 }}>{L('Estilo previsto', 'Predicted style')}</div>
+          <div className="h3" style={{ margin: 0 }}>{L('Estilo previsto', 'Predicted style')}<Info wide>{L(`Valores previstos en sus unidades para un partido promedio (mitad local, mitad visitante, marcador y minuto típicos). ▲▼ = cambio frente a ${club} hoy; ＝ si es menor a 0.15 desviaciones típicas.`, `Predicted values in their own units for an average match (half home, half away, typical score and minute). ▲▼ = change vs ${club} today; ＝ if under 0.15 standard deviations.`)}</Info></div>
           <div className="seg" style={{ margin: 0 }}>
             <button aria-pressed={!showAll} onClick={() => setShowAll(false)}>{L('Rasgos clave', 'Key traits')}</button>
             <button aria-pressed={showAll} onClick={() => setShowAll(true)}>{L('Todos', 'All')} ({kpis.length})</button>
@@ -441,14 +437,12 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
             </tbody>
           </table>
         </div>
-        <p className="note" style={{ marginTop: 8 }}>
-          {L(`Valores previstos en sus unidades para un partido promedio (mitad local, mitad visitante, marcador y minuto típicos). ▲▼ = cambio frente a ${club} hoy; ＝ si es menor a 0.15 desviaciones típicas.`, `Predicted values in their own units for an average match (half home, half away, typical score and minute). ▲▼ = change vs ${club} today; ＝ if under 0.15 standard deviations.`)}
-        </p>
       </div>
 
       <div className="card wi-xg">
         <div className="wi-table-head">
-          <div className="h3" style={{ margin: 0 }}>{L('Ocasiones y puntos', 'Chances and points')}</div>
+          <div className="h3" style={{ margin: 0 }}>{L('Ocasiones y puntos', 'Chances and points')}<Info wide>{L('Se toman el xG a favor y en contra previstos (sin penales) como goles esperados de cada equipo ante un rival promedio y se supone que los goles son independientes (Poisson).', 'Predicted xG for and against (non-penalty) are taken as each side’s expected goals against an average opponent, with goals assumed independent (Poisson).')}
+          {' '}{L('Ignora penales, calendario, rachas y la calidad de definición: sirve para comparar escenarios, no para pronosticar la tabla.', 'It ignores penalties, fixtures, streaks and finishing quality: it’s for comparing scenarios, not for predicting the table.')}</Info></div>
           <span className="chip wi-spec">{L('Estimación especulativa', 'Speculative estimate')}</span>
         </div>
         <div className="tbl-wrap">
@@ -475,10 +469,6 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
             </tbody>
           </table>
         </div>
-        <p className="note" style={{ marginTop: 8 }}>
-          {L('Se toman el xG a favor y en contra previstos (sin penales) como goles esperados de cada equipo ante un rival promedio y se supone que los goles son independientes (Poisson).', 'Predicted xG for and against (non-penalty) are taken as each side’s expected goals against an average opponent, with goals assumed independent (Poisson).')}
-          {' '}{L('Ignora penales, calendario, rachas y la calidad de definición: sirve para comparar escenarios, no para pronosticar la tabla.', 'It ignores penalties, fixtures, streaks and finishing quality: it’s for comparing scenarios, not for predicting the table.')}
-        </p>
       </div>
 
       <div className="card wi-cred">

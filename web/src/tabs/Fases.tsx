@@ -3,6 +3,7 @@ import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, sig, type Any } from '.
 import { ClubLogo, DotCI, HeatGrid, Pitch, pitchXY, useTip } from '../charts'
 import { apellidoCorto, PlayAnim } from '../PlayAnim'
 import { parseShots, ShotExplorer } from '../ShotExplorer'
+import Info from '../Info'
 import '../styles/juego.css'
 import { L } from '../settings'
 import { archLabel, famLabel, kpiDesc, kpiLabel } from '../i18n/data'
@@ -31,27 +32,24 @@ export function Fases({ art, glob, media }: P) {
   const total = clubes.reduce((a, c) => a + c.partidos, 0)
   return (
     <div>
-      <h3 className="h2">{L('Jugadas tipo', 'Signature plays')}</h3>
-      <p className="lede">{L('Cada posesión de sus equipos cae en uno de 8 tipos de jugada según dónde empieza, cuánto avanza, cuánto dura y cuánto peligro genera. Elige un tipo para ver, paso a paso, jugadas reales de sus equipos.', 'Every possession his teams have falls into one of 8 play types, based on where it starts, how far it gets, how long it lasts and how much danger it creates. Pick a type to watch real moves from his teams, step by step.')}</p>
+      <h3 className="h2">{L('Jugadas tipo', 'Signature plays')} <Info wide><p>{L('Cada posesión de sus equipos cae en uno de 8 tipos de jugada según dónde empieza, cuánto avanza, cuánto dura y cuánto peligro genera. Elige un tipo para ver, paso a paso, jugadas reales de sus equipos.', 'Every possession his teams have falls into one of 8 play types, based on where it starts, how far it gets, how long it lasts and how much danger it creates. Pick a type to watch real moves from his teams, step by step.')}</p><p>{L('Barra azul: % de sus posesiones · línea negra: promedio de la liga', 'Blue bar: % of his possessions · black line: league average')}</p></Info></h3>
       <Archetypes art={art} J={J || null} media={media} />
 
       <h3 className="h2">{L('Dónde ocurre', 'Where it happens')}</h3>
       <div className="jg-grid">
         <div className="card jg-heat">
-          <div className="h3">{L('Mapa de calor', 'Heat map')}</div>
+          <div className="h3">{L('Mapa de calor', 'Heat map')} <Info wide><p>{mapLabels[map]} {L('por partido', 'per match')}{mode === 'div' ? L(', comparado con el promedio de la liga', ', compared with the league average') : ''}. {L('Todos sus partidos', 'All his matches')}{total ? ` (${total})` : ''}, {L('en todos sus clubes', 'across all his clubs')}.</p><p>{L('Su equipo ataca hacia arriba. Es lo que pasó en sus partidos: incluye lo que ponen sus jugadores.', 'His team attacks upwards. This is what happened in his matches, so it includes what his players bring.')}</p></Info></div>
           <div className="jg-heat-in">
             <div className="jg-ctrl">
               <span className="jg-ctrl-label">{L('Qué mostrar', 'Show')}</span>
               <Seg opts={[['presion', L('Presión', 'Pressing')], ['recuperaciones', L('Recuperaciones', 'Recoveries')], ['progresion', L('Progresión', 'Progression')]]} v={map} set={setMap} />
               <span className="jg-ctrl-label">{L('Cómo', 'View')}</span>
               <Seg opts={[['div', L('Diferencia vs liga', 'Vs league average')], ['seq', L('Volumen del DT', 'Coach volume')]]} v={mode} set={s => setMode(s as Any)} />
-              <div className="note">{mapLabels[map]} {L('por partido', 'per match')}{mode === 'div' ? L(', comparado con el promedio de la liga', ', compared with the league average') : ''}. {L('Todos sus partidos', 'All his matches')}{total ? ` (${total})` : ''}, {L('en todos sus clubes', 'across all his clubs')}.</div>
             </div>
             <div className="jg-grow">
               <HeatGrid grid={mode === 'div' ? M[map].dif : M[map].dt} mode={mode} label={mapLabels[map]} unit={mode === 'div' ? L('vs liga, por partido', 'vs league, per match') : L('por partido', 'per match')} color={tc} vertical />
             </div>
           </div>
-          <div className="note jg-card-foot">{L('Su equipo ataca hacia arriba. Es lo que pasó en sus partidos: incluye lo que ponen sus jugadores.', 'His team attacks upwards. This is what happened in his matches, so it includes what his players bring.')}</div>
         </div>
         <div className="jg-clubs" role="group" aria-label={L('Club para la red de pases y los tiros', 'Club for the passing network and shots')}>
           <span className="jg-clubs-label">{L('Red y tiros con', 'Network and shots for')}</span>
@@ -63,9 +61,8 @@ export function Fases({ art, glob, media }: P) {
           )) : <span className="note">{J === false ? L('Sin datos por club.', 'No club data.') : L('Cargando…', 'Loading…')}</span>}
         </div>
         <div className="card jg-net">
-          <div className="h3">{L('Red de pases', 'Passing network')} · {club_}</div>
+          <div className="h3">{L('Red de pases', 'Passing network')} · {club_}{net && <> <Info wide>{L(`Los 11 con más minutos en ${club_} (${net.partidos} partidos). Ataca hacia arriba. Cada punto es la posición media de sus pases (más grande = más pases); las líneas unen parejas con al menos un pase por partido.`, `The 11 players with the most minutes at ${club_} (${net.partidos} matches). Attacking upwards. Each dot is a player's average passing position (bigger = more passes); lines link pairs with at least one pass per match.`)}</Info></>}</div>
           <div className="jg-grow">{net ? <PassNet net={net} J={J} color={cc} /> : <div className="note">{J === false ? L('Sin datos.', 'No data.') : L('Cargando…', 'Loading…')}</div>}</div>
-          {net && <div className="note jg-card-foot">{L(`Los 11 con más minutos en ${club_} (${net.partidos} partidos). Ataca hacia arriba. Cada punto es la posición media de sus pases (más grande = más pases); las líneas unen parejas con al menos un pase por partido.`, `The 11 players with the most minutes at ${club_} (${net.partidos} matches). Attacking upwards. Each dot is a player's average passing position (bigger = more passes); lines link pairs with at least one pass per match.`)}</div>}
         </div>
         <div className="card jg-shots">
           <div className="h3">{L('Tiros', 'Shots')} · {club_}</div>
@@ -73,8 +70,7 @@ export function Fases({ art, glob, media }: P) {
         </div>
       </div>
 
-      <h3 className="h2">{L('Huella de estilo', 'Style fingerprint')}</h3>
-      <p className="lede">{L('Su sello en cada aspecto del juego: lo que harían sus equipos con jugadores, club y rivales promedio. Punto a la derecha del centro: más que el DT típico; a la izquierda: menos. Relleno: la diferencia es clara, no ruido. La raya es el margen de error.', 'His mark on every part of the game: what his teams would do with average players, club and opponents. Dot right of center: more than the typical coach; left: less. Filled: the difference is real, not noise. The line is the margin of error.')}</p>
+      <h3 className="h2">{L('Huella de estilo', 'Style fingerprint')} <Info wide><p>{L('Su sello en cada aspecto del juego: lo que harían sus equipos con jugadores, club y rivales promedio. Punto a la derecha del centro: más que el DT típico; a la izquierda: menos. Relleno: la diferencia es clara, no ruido. La raya es el margen de error.', 'His mark on every part of the game: what his teams would do with average players, club and opponents. Dot right of center: more than the typical coach; left: less. Filled: the difference is real, not noise. The line is the margin of error.')}</p><p>{L('Centro: el DT típico. Números: lo que se vio en sus partidos / promedio de la liga.', 'Center: the typical coach. Numbers: what we saw in his matches / league average.')}</p></Info></h3>
       <div className="grid2">
         {FAM_ORDER.map(f => {
           const rs = hu.filter((h: Any) => h.familia === f)
@@ -88,7 +84,6 @@ export function Fases({ art, glob, media }: P) {
                   <span className="mono" style={{ fontSize: 12, textAlign: 'right' }}>{fmt(h.crudo)} <span style={{ color: 'var(--ink-3)' }}>/ {fmt(h.liga)}</span></span>
                 </div>
               ))}
-              <div className="note" style={{ marginTop: 4 }}>{L('Centro: el DT típico. Números: lo que se vio en sus partidos / promedio de la liga.', 'Center: the typical coach. Numbers: what we saw in his matches / league average.')}</div>
             </div>
           ) : null
         })}
@@ -181,12 +176,11 @@ function Archetypes({ art, J, media }: { art: Any; J: Any; media: Any }) {
             <span className="mono arq-val">{fmt(a.dt_pct)}%</span>
           </button>
         ))}
-        <div className="note" style={{ marginTop: 6 }}>{L('Barra azul: % de sus posesiones · línea negra: promedio de la liga', 'Blue bar: % of his possessions · black line: league average')}</div>
       </div>
       <div className="card arq-ex">
         <div className="arq-head">
           <div>
-            <div className="h3" style={{ margin: 0 }}>{cur?.nombre ? archLabel(cur.nombre) : null}</div>
+            <div className="h3" style={{ margin: 0 }}>{cur?.nombre ? archLabel(cur.nombre) : null}{ex.length > 0 && <> <Info wide>{L('Una de sus jugadas más valiosas de este tipo. Sólo aparecen los jugadores que tocan el balón. Línea continua: pase; discontinua: conducción; punteada gris: tramo que los datos no registran. Ataque hacia la derecha.', 'One of his most valuable plays of this type. Only players who touch the ball are shown. Solid line: pass; dashed: carry; grey dotted: a stretch the data doesn\'t capture. Attacking to the right.')}</Info></>}</div>
             <div className="note">{fmt(cur?.dt_pct)}% {L('de sus posesiones', 'of his possessions')} ({L('liga', 'league')} {fmt(cur?.liga_pct)}%) · {L('efecto DT', 'coach effect')} {sig(cur?.alpha)}</div>
           </div>
           {ex.length > 0 && (
@@ -200,7 +194,6 @@ function Archetypes({ art, J, media }: { art: Any; J: Any; media: Any }) {
         {ex.length ? (
           <>
             <PlayAnim key={`${sel}-${k}`} seq={seq} meta={meta} jugadores={J?.jugadores} partido={partido} club={club} color={color} media={media} />
-            <div className="note">{L('Una de sus jugadas más valiosas de este tipo. Sólo aparecen los jugadores que tocan el balón. Línea continua: pase; discontinua: conducción; punteada gris: tramo que los datos no registran. Ataque hacia la derecha.', 'One of his most valuable plays of this type. Only players who touch the ball are shown. Solid line: pass; dashed: carry; grey dotted: a stretch the data doesn\'t capture. Attacking to the right.')}</div>
           </>
         ) : <div className="note">{L('Sin ejemplos para este tipo de jugada.', 'No examples for this play type.')}</div>}
       </div>

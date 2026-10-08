@@ -4,6 +4,7 @@ import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, sig, type Any } from '.
 import { type P } from './common'
 import { CARRERA, ClubSwitch, dibujo, FormList, OncePitch, OnceList } from './JugOnce'
 import { CambiosBells } from './JugCambios'
+import Info from '../Info'
 import '../styles/jugadores.css'
 import { L, LANG } from '../settings'
 import { kpiLabel, posLabel, td } from '../i18n/data'
@@ -84,8 +85,7 @@ export function Jugadores({ art, glob, media }: P) {
 
   return (
     <div className="jg">
-      <h3 className="h2">{L('Su once y su dibujo', 'His XI and formation')}</h3>
-      <p className="lede">{L('Cómo para al equipo desde el arranque y cuánto toca el once. Elige un club o mira toda su carrera.', 'How he lines the team up from kick-off and how much he tinkers with the XI. Pick a club or view his whole career.')}</p>
+      <h3 className="h2">{L('Su once y su dibujo', 'His XI and formation')} <Info>{L('Cómo para al equipo desde el arranque y cuánto toca el once. Elige un club o mira toda su carrera.', 'How he lines the team up from kick-off and how much he tinkers with the XI. Pick a club or view his whole career.')}</Info></h3>
       {X === false && <div className="card note">{L('No se pudieron cargar las alineaciones de este DT.', 'Couldn\'t load this coach\'s line-ups.')}</div>}
       {X === null && <div className="card note">{L('Cargando alineaciones…', 'Loading line-ups…')}</div>}
       {sel && (
@@ -126,16 +126,14 @@ export function Jugadores({ art, glob, media }: P) {
         </>
       )}
 
-      <h3 className="h2">{L('Sus cambios', 'His substitutions')}</h3>
-      <p className="lede">{L('Cuándo mete los cambios, de qué tipo según cómo va el partido y qué le pasa a su equipo después. Toda su carrera.', 'When he makes his subs, what kind depending on the score, and what happens to his team afterwards. Whole career.')}</p>
+      <h3 className="h2">{L('Sus cambios', 'His substitutions')} <Info>{L('Cuándo mete los cambios, de qué tipo según cómo va el partido y qué le pasa a su equipo después. Toda su carrera.', 'When he makes his subs, what kind depending on the score, and what happens to his team afterwards. Whole career.')}</Info></h3>
       <div className="grid2">
         <div className="card">
-          <div className="h3">{L('En qué minuto hace cada cambio', 'When each sub comes on')}</div>
+          <div className="h3">{L('En qué minuto hace cada cambio', 'When each sub comes on')} <Info>{L('Minuto típico de cada cambio. La raya marca lo habitual en la liga.', 'Typical minute of each sub. The tick marks the league norm.')}</Info></div>
           <div className="jg-hbar"><HBar items={Object.keys(mc).map(n => ({ label: L(`${n}º cambio`, `Sub ${n}`), v: mc[n], ref: ml[n] }))} max={95} unit="'" /></div>
-          <div className="note">{L('Minuto típico de cada cambio. La raya marca lo habitual en la liga.', 'Typical minute of each sub. The tick marks the league norm.')}</div>
         </div>
         <div className="card">
-          <div className="h3">{L('Qué tipo de cambio hace según el marcador', 'Type of sub by scoreline')}</div>
+          <div className="h3">{L('Qué tipo de cambio hace según el marcador', 'Type of sub by scoreline')} <Info>{L('Cambios de toda su carrera. «Más ofensivo»: entra alguien que juega más adelante que el que sale.', 'Subs across his whole career. “More attacking”: the player coming on plays further forward than the one going off.')}</Info></div>
           <table className="t jg-tipo"><thead><tr><th></th><th>{L('Más ofensivo', 'More attacking')}</th><th>{L('Mismo puesto', 'Same role')}</th><th>{L('Más defensivo', 'More defensive')}</th></tr></thead>
             <tbody>{Object.entries(J.cambios_por_estado).map(([e, v]: Any) => {
               const tot = ['Más ofensivo', 'Misma línea', 'Más defensivo'].reduce((s, t) => s + v[t], 0) || 1
@@ -143,21 +141,18 @@ export function Jugadores({ art, glob, media }: P) {
               return <tr key={e}><td>{td(e)}</td>{['Más ofensivo', 'Misma línea', 'Más defensivo'].map(t => (
                 <td key={t} className={`num${v[t] === mx && mx > 0 ? ' jg-max' : ''}`}>{v[t]}<small> · {fmt(100 * v[t] / tot, 0)}%</small></td>))}</tr>
             })}</tbody></table>
-          <div className="note">{L('Cambios de toda su carrera. «Más ofensivo»: entra alguien que juega más adelante que el que sale.', 'Subs across his whole career. “More attacking”: the player coming on plays further forward than the one going off.')}</div>
         </div>
       </div>
 
-      <h3 className="h3 jg-sub">{L('Qué le pasa a su equipo después de un cambio', 'What happens to his team after a sub')}</h3>
-      <p className="lede">{L('Cada punto es un DT de la liga; el resaltado es él. A la derecha, más de lo que dice el título. Primero lo que más lo distingue', 'Each dot is a league coach; the highlighted one is him. Further right means more of what the title says. What sets him apart most comes first')}{art.impacto_cambios?.length ? ` (${art.impacto_cambios[0].n} ${L('cambios', 'subs')})` : ''}.</p>
+      <h3 className="h3 jg-sub">{L('Qué le pasa a su equipo después de un cambio', 'What happens to his team after a sub')} <Info wide>{L('Cada punto es un DT de la liga; el resaltado es él. A la derecha, más de lo que dice el título. Primero lo que más lo distingue', 'Each dot is a league coach; the highlighted one is him. Further right means more of what the title says. What sets him apart most comes first')}{art.impacto_cambios?.length ? ` (${art.impacto_cambios[0].n} ${L('cambios', 'subs')})` : ''}.</Info></h3>
       <CambiosBells art={art} glob={glob} />
 
-      <h3 className="h2">{L('Quién juega y dónde', 'Who plays where')}</h3>
-      <p className="lede">{L(`Los jugadores que más usó ${quien}: por dónde se mueven en la cancha y qué cambia en el equipo cuando están en ella.`, `The players he used most ${quien}: where they move on the pitch and what changes for the team when they're on it.`)}</p>
+      <h3 className="h2">{L('Quién juega y dónde', 'Who plays where')} <Info>{L(`Los jugadores que más usó ${quien}: por dónde se mueven en la cancha y qué cambia en el equipo cuando están en ella.`, `The players he used most ${quien}: where they move on the pitch and what changes for the team when they're on it.`)}</Info></h3>
       {switcher && clubes.length > 1 && <div className="jg-switch-again">{switcher}</div>}
       {sel && (
         <div className="card tbl-wrap">
           <table className="t jg-roles">
-            <thead><tr><th>{L('Jugador', 'Player')}</th><th>{L('Posición', 'Position')}</th><th>{L('Por dónde se mueve', 'Where he moves')}</th><th style={{ textAlign: 'right' }}>{L('Minutos', 'Minutes')}</th><th style={{ textAlign: 'right' }}>{L('Titular', 'Starts')}</th><th>{L('Con él en la cancha el equipo…', 'With him on the pitch, the team…')}</th></tr></thead>
+            <thead><tr><th>{L('Jugador', 'Player')}</th><th>{L('Posición', 'Position')}</th><th>{L('Por dónde se mueve', 'Where he moves')}</th><th style={{ textAlign: 'right' }}>{L('Minutos', 'Minutes')}</th><th style={{ textAlign: 'right' }}>{L('Titular', 'Starts')}</th><th>{L('Con él en la cancha el equipo…', 'With him on the pitch, the team…')} <Info>{L('▲ / ▼: lo que más sube o baja en el juego del equipo cuando él está en la cancha, ya descontado lo que pone el DT. Pasa el cursor para ver el detalle.', '▲ / ▼: what rises or drops most in the team\'s game when he\'s on the pitch, with the coach\'s effect already removed. Hover for details.')}</Info></th></tr></thead>
             <tbody>{(allRows ? tabla : tabla.slice(0, 18)).map(r => (
               <tr key={r.id}>
                 <td><b>{jugadorCorto(r.id, r.j?.nombre ?? '')}</b><div className="note jg-full">{r.j?.nombre}</div><div className="note jg-mob">{fmt(r.min, 0)} min · {r.tit} {L('de titular', r.tit === 1 ? 'start' : 'starts')} · {rolLlano(r.j?.rol_espacial).toLowerCase()}</div></td>
@@ -169,7 +164,6 @@ export function Jugadores({ art, glob, media }: P) {
             ))}</tbody>
           </table>
           {tabla.length > 18 && <button className="jg-more" onClick={() => setAllRows(a => !a)}>{allRows ? L('Ver menos', 'Show fewer') : L(`Ver los ${tabla.length} jugadores`, `Show all ${tabla.length} players`)}</button>}
-          <div className="note jg-gap">{L('▲ / ▼: lo que más sube o baja en el juego del equipo cuando él está en la cancha, ya descontado lo que pone el DT. Pasa el cursor para ver el detalle.', '▲ / ▼: what rises or drops most in the team\'s game when he\'s on the pitch, with the coach\'s effect already removed. Hover for details.')}</div>
         </div>
       )}
     </div>

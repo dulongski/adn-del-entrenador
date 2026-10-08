@@ -4,6 +4,7 @@ import { ClubName, Legend, Pitch, useTip } from '../charts'
 import { Seg } from './common'
 import MatchSim from '../MatchSim'
 import { L, LOCALE } from '../settings'
+import Info from '../Info'
 import MatchPicker, { currentClub, type MatchRow } from '../MatchPicker'
 
 export function Simulador({ art, media }: { art: Any; media?: Any }) {
@@ -56,8 +57,7 @@ export function Simulador({ art, media }: { art: Any; media?: Any }) {
   }
   return (
     <div>
-      <h3 className="h2">{L('Rejugar sus partidos', 'Replay his matches')}</h3>
-      <p className="lede">{L('Volvemos a jugar cada partido 50,000 veces con los mismos tiros: cada uno entra con la probabilidad que marca su xG. Así se ve si el marcador fue justo con lo que pasó en la cancha.', 'We replay every match 50,000 times with the same shots: each one goes in with the probability its xG says. That shows whether the scoreline was fair to what happened on the pitch.')}</p>
+      <h3 className="h2">{L('Rejugar sus partidos', 'Replay his matches')}<Info>{L('Volvemos a jugar cada partido 50,000 veces con los mismos tiros: cada uno entra con la probabilidad que marca su xG. Así se ve si el marcador fue justo con lo que pasó en la cancha.', 'We replay every match 50,000 times with the same shots: each one goes in with the probability its xG says. That shows whether the scoreline was fair to what happened on the pitch.')}</Info></h3>
       <Seg opts={[['mil', L('Probabilidades', 'Probabilities')], ['uno', L('Verlo jugada a jugada', 'Watch it play by play')]]} v={modo} set={v => setModo(v as 'mil' | 'uno')} />
       <MatchPicker key={art.id} rows={rows} value={mid} onChange={setMid} media={media} defaultClub={clubActual} />
       {err && <p className="note">{err}</p>}
@@ -75,8 +75,7 @@ export function Simulador({ art, media }: { art: Any; media?: Any }) {
               <circle cx={X} cy={Y} r={Math.max(r + 1.2, 2.2)} fill="transparent" />
             </g>
           })}</Pitch> : <Pitch />}
-          {res && <Legend items={[{ key: 'a', label: L(`${res.partido.club} ataca → · xG ${fmt(res.xg, 2)}`, `${res.partido.club} attack → · xG ${fmt(res.xg, 2)}`), color: cols[0] }, { key: 'b', label: L(`← ${res.partido.rival} ataca · xG ${fmt(res.xg_rival, 2)}`, `← ${res.partido.rival} attack · xG ${fmt(res.xg_rival, 2)}`), color: cols[1] }]} />}
-          {res && <div className="note">{L('Cada círculo es un tiro; más grande, más claro el chance (xG). ', 'Each circle is a shot; the bigger it is, the better the chance (xG). ')}<b>{L('Relleno', 'Filled')}</b>{L(': gol en una rejugada que terminó con el marcador más probable', ': goal in a replay that ended with the most likely score')} ({res.modal[0]}–{res.modal[1]}). <b>{L('Anillo', 'Ring')}</b>{L(': gol real', ': actual goal')} ({res.partido.gf}–{res.partido.gc}). {L('Pasa el cursor por un tiro para ver quién lo hizo.', 'Hover over a shot to see who took it.')}</div>}
+          {res && <Legend items={[{ key: 'a', label: L(`${res.partido.club} ataca → · xG ${fmt(res.xg, 2)}`, `${res.partido.club} attack → · xG ${fmt(res.xg, 2)}`), color: cols[0] }, { key: 'b', label: L(`← ${res.partido.rival} ataca · xG ${fmt(res.xg_rival, 2)}`, `← ${res.partido.rival} attack · xG ${fmt(res.xg_rival, 2)}`), color: cols[1] }]} extra={<Info wide label={L('Cómo leer la cancha', 'How to read the pitch')}>{L('Cada círculo es un tiro; más grande, más claro el chance (xG). ', 'Each circle is a shot; the bigger it is, the better the chance (xG). ')}<b>{L('Relleno', 'Filled')}</b>{L(': gol en una rejugada que terminó con el marcador más probable', ': goal in a replay that ended with the most likely score')} ({res.modal[0]}–{res.modal[1]}). <b>{L('Anillo', 'Ring')}</b>{L(': gol real', ': actual goal')} ({res.partido.gf}–{res.partido.gc}). {L('Pasa el cursor por un tiro para ver quién lo hizo.', 'Hover over a shot to see who took it.')}</Info>} />}
           {tip.el}
         </div>
         <div className="card sim-box">
@@ -144,7 +143,7 @@ function SimScoreGrid({ r, media }: { r: Any; media?: Any }) {
   }
   return (
     <div className="sim-grid">
-      <div className="h3">{L('Marcadores más probables', 'Most likely scorelines')}</div>
+      <div className="h3">{L('Marcadores más probables', 'Most likely scorelines')}<Info>{L('% de las rejugadas que acabaron con cada marcador. Recuadro continuo: marcador real · punteado: el más probable.', '% of replays that ended with each scoreline. Solid box: actual score · dashed: most likely.')}</Info></div>
       <svg viewBox={`0 0 ${X0 + GL + 2} ${Y0 + GL + 2}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={L(`Probabilidad de cada marcador: filas goles de ${club}, columnas goles de ${rival}`, `Probability of each scoreline: rows ${club} goals, columns ${rival} goals`)}>
         <Axis team={rival} />
         <Axis team={club} rot />
@@ -164,14 +163,13 @@ function SimScoreGrid({ r, media }: { r: Any; media?: Any }) {
           )
         }))}
       </svg>
-      <div className="note">{L('% de las rejugadas que acabaron con cada marcador. Recuadro continuo: marcador real · punteado: el más probable.', '% of replays that ended with each scoreline. Solid box: actual score · dashed: most likely.')}</div>
       {tip.el}
     </div>
   )
 }
 
 function CumPts({ rows }: { rows: { a: number; e: number }[] }) {
-  const W = 900, H = 170, P = { l: 36, r: 60, t: 10, b: 20 }
+  const W = 900, H = 170, P = { l: 36, r: 92, t: 10, b: 20 }
   const max = Math.max(...rows.map(r => Math.max(r.a, r.e)), 1)
   const x = (i: number) => P.l + i / Math.max(rows.length - 1, 1) * (W - P.l - P.r)
   const y = (v: number) => P.t + (1 - v / max) * (H - P.t - P.b)

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { clubColor, fmt, type Any } from '../lib'
 import Corners3D, { type Side } from '../Corners3D'
 import { L } from '../settings'
+import Info from '../Info'
 import '../styles/bp.css'
 
 /* Indicadores de balón parado: el lado elegido (a favor / en contra, el mismo del 3D) contra la liga.
@@ -56,7 +57,12 @@ export function BalonParado({ art, media }: { art: Any; media?: Any }) {
       <Corners3D art={art} media={media} side={side} onSide={setSide} />
       <section className="bp-ind">
         <div className="bp-ind-head">
-          <div className="h3">{side === 'favor' ? L('Todo su balón parado a favor', 'All his attacking set pieces') : L('Todo el balón parado que recibe', 'All the set pieces he concedes')} · {L('contra la liga', 'vs. the league')}</div>
+          <div className="h3">{side === 'favor' ? L('Todo su balón parado a favor', 'All his attacking set pieces') : L('Todo el balón parado que recibe', 'All the set pieces he concedes')} · {L('contra la liga', 'vs. the league')}
+            <Info wide>
+              <p>{L('Flecha ', '')}<span className="bp-arrow up">{L('verde', 'Green')}</span>{L(': mejor que la liga para su equipo. ', ' arrow: better than the league for his team. ')}<span className="bp-arrow down">{L('Roja', 'Red')}</span>{L(': peor. Gris: cuestión de estilo o casi igual a la liga.', ': worse. Grey: a matter of style, or close to the league.')}</p>
+              <p>{L('Jugadores en el área: promedio en los fotogramas 360.', 'Players in the box: average across 360 freeze frames.')}</p>
+            </Info>
+          </div>
           <div className="seg sm" role="group" aria-label={L('Indicadores a favor o en contra', 'Attacking or defending indicators')}>
             <button aria-pressed={side === 'favor'} onClick={() => setSide('favor')}>{L('A favor', 'Attacking')}</button>
             <button aria-pressed={side === 'contra'} onClick={() => setSide('contra')}>{L('En contra', 'Defending')}</button>
@@ -65,10 +71,7 @@ export function BalonParado({ art, media }: { art: Any; media?: Any }) {
         <div className="bp-grid">
           {ROWS.map(r => <Card key={r.k} r={r} side={side} v={S[r.k] ?? null} l={l[r.k] ?? null} color={color} />)}
         </div>
-        <div className="note">
-          {L('Flecha ', '')}<span className="bp-arrow up">{L('verde', 'Green')}</span>{L(': mejor que la liga para su equipo. ', ' arrow: better than the league for his team. ')}<span className="bp-arrow down">{L('Roja', 'Red')}</span>{L(': peor. Gris: cuestión de estilo o casi igual a la liga.', ': worse. Grey: a matter of style, or close to the league.')}
-          {' '}{L('Jugadores en el área: promedio en los fotogramas 360. Goles de balón parado a favor / en contra: ', 'Players in the box: average across 360 freeze frames. Set-piece goals scored / conceded: ')}{o.goles ?? 0} / {d.goles ?? 0}.
-        </div>
+        <div className="note">{L('Goles de balón parado a favor / en contra: ', 'Set-piece goals scored / conceded: ')}{o.goles ?? 0} / {d.goles ?? 0}</div>
       </section>
     </div>
   )

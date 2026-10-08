@@ -6,6 +6,7 @@ import { MODES, type TabKey } from '../modes'
 import { type P } from './common'
 import { LANG, L, LOCALE } from '../settings'
 import { KpiBell, RankStrip, alphaPos, kName } from './resumenKit'
+import Info from '../Info'
 import '../styles/resumen.css'
 
 /* ================================================================ RESUMEN */
@@ -38,12 +39,11 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
     <div className="rs">
 
       <p className="eyebrow">{L('Su ADN en pocas palabras', 'His DNA in a nutshell')}</p>
-      <h3 className="h2 rs-title">{N.titular.split(': ').slice(1).join(': ') || N.titular}</h3>
-      {LANG === 'en'
-        ? <p className="lede">What he does with any squad. Each idea shows his numbers, the league's, and where he ranks among the {nDT} coaches.
-          <b> His imprint</b> is what his teams would do with average players, an average club and average opponents.</p>
-        : <p className="lede">Lo que hace con cualquier plantilla. En cada idea ves sus números, los de la liga y dónde queda entre los {nDT} técnicos.
-          <b> Su sello</b> es lo que harían sus equipos con jugadores, club y rivales promedio.</p>}
+      <h3 className="h2 rs-title">{N.titular.split(': ').slice(1).join(': ') || N.titular} <Info wide>{LANG === 'en'
+        ? <>What he does with any squad. Each idea shows his numbers, the league's, and where he ranks among the {nDT} coaches.
+          <b> His imprint</b> is what his teams would do with average players, an average club and average opponents.</>
+        : <>Lo que hace con cualquier plantilla. En cada idea ves sus números, los de la liga y dónde queda entre los {nDT} técnicos.
+          <b> Su sello</b> es lo que harían sus equipos con jugadores, club y rivales promedio.</>}</Info></h3>
       {art.partidos_total < 10 && <p className="rs-empty rs-warn">{L(`Con solo ${art.partidos_total} partidos estas ideas son preliminares: el modelo acerca su estilo al promedio hasta tener más datos.`,
         `With only ${art.partidos_total} matches these ideas are preliminary: the model pulls his style toward the average until there is more data.`)}</p>}
 
@@ -67,12 +67,12 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
         </div>
       ) : <p className="rs-empty">{L('Ningún rasgo suyo destaca con claridad: con los datos que hay, su estilo se confunde con el de sus jugadores.', "None of his traits stands out clearly: with the data available, his style blends into his players'.")}</p>}
 
-      <h3 className="h2 rs-h">{L(`La historia en ${secs.length} claves`, `The story in ${secs.length} keys`)}</h3>
-      <p className="lede">{L('Toca un dato con flechita para ver dónde queda entre todos los DTs.', 'Tap a stat with an arrow to see where he ranks among all coaches.')}</p>
+      <h3 className="h2 rs-h">{L(`La historia en ${secs.length} claves`, `The story in ${secs.length} keys`)} <Info>{L('Toca un dato con flechita para ver dónde queda entre todos los DTs.', 'Tap a stat with an arrow to see where he ranks among all coaches.')}</Info></h3>
       <div className="rs-chapters">
         {secs.map(sec => <Chapter key={sec.id} sec={sec} art={art} glob={glob} media={media} dd={dd} open={open} />)}
       </div>
-      <h3 className="h2 rs-h">{L('Sus números', 'His numbers')}</h3>
+      <h3 className="h2 rs-h">{L('Sus números', 'His numbers')} <Info>{L(`Todos los números salen de ${glob.muestra.partidos.toLocaleString(LOCALE)} partidos de Liga MX y un solo modelo.`,
+        `Every number comes from ${glob.muestra.partidos.toLocaleString(LOCALE)} Liga MX matches and a single model.`)}</Info></h3>
       <div className="facts rs-facts">
         <div><span className="note">{L('Partidos analizados', 'Matches analyzed')}</span><b>{art.partidos_total}</b></div>
         <div><span className="note">{L('Se separa de su plantilla', 'Separation from his squad')}</span><b>{fmt(art.identificabilidad.indice, 0)}<small>/100</small></b></div>
@@ -80,9 +80,7 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
         <div><span className="note">{L('Se le reconoce en un partido', 'Recognizable from one match')}</span><b>{art.identidad?.lift ? <>{fmt(art.identidad.lift)}×<small>{L(' más que al azar', ' better than chance')}</small></> : '—'}</b></div>
         <div><span className="note">{L('Puntos sumados', 'Points earned')}</span><b>{S.puntos}<small>{L(` por su juego, ${fmt(S.xpts, 0)}`, ` · his play deserved ${fmt(S.xpts, 0)}`)}</small></b></div>
       </div>
-      <p className="note rs-foot">{L(`Todos los números salen de ${glob.muestra.partidos.toLocaleString(LOCALE)} partidos de Liga MX y un solo modelo.`,
-        `Every number comes from ${glob.muestra.partidos.toLocaleString(LOCALE)} Liga MX matches and a single model.`)}
-        {L(' Para ver de dónde sale cada rasgo, abre', ' To see where each trait comes from, open')} <button className="rs-link" style={{ ['--acc' as string]: '#e0662f' }} onClick={() => open('dt')}>{tabLabel('dt')} →</button></p>
+      <p className="note rs-foot">{L('Para ver de dónde sale cada rasgo, abre', 'To see where each trait comes from, open')} <button className="rs-link" style={{ ['--acc' as string]: '#e0662f' }} onClick={() => open('dt')}>{tabLabel('dt')} →</button></p>
     </div>
   )
 }

@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, pct, type Any } from './lib'
 import { L } from './settings'
+import Info from './Info'
 import './styles/bp.css'
 
 /* Córners en 3D (datos: pipeline/corners.py, todos los córners normalizados como si se cobraran
@@ -372,7 +373,13 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
         </div>
         <aside className="c3d-side">
           <div>
-            <div className="h3">{side === 'favor' ? L('Sus córners', 'His corners') : L('Córners del rival contra su equipo', 'Opponent corners against his team')}</div>
+            <div className="h3">{side === 'favor' ? L('Sus córners', 'His corners') : L('Córners del rival contra su equipo', 'Opponent corners against his team')}
+              <Info wide>
+                <p>{L('Pasa el cursor (o toca) sobre un jugador de su equipo para ver quién suele ocupar esa zona.', 'Hover over (or tap) one of his players to see who usually fills that zone.')}</p>
+                <p>{grid.tot} {L('envíos al área (sin contar cortos). Jugadores: posición típica al momento del envío en', 'deliveries into the box (short corners excluded). Players: typical position at the moment of delivery across')} {V.n360} {L('córners con fotograma 360.', 'corners with a 360 freeze frame.')}
+                {lado === 'ambos' ? L(' Todos se muestran como cobrados desde la izquierda.', ' All shown as if taken from the left.') : ''}</p>
+              </Info>
+            </div>
             <div className="note">{ladoTxt ? L(`Sólo los cobrados ${ladoTxt}`, `Only those taken ${ladoTxt}`) : L('Izquierda y derecha juntos', 'Left and right combined')} · {L('comparado con la liga', 'compared with the league')}</div>
           </div>
           <div className="c3d-kpis">
@@ -397,11 +404,6 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
               ))}
             </div>
           )}
-          <div className="note c3d-hover-hint">{L('Pasa el cursor (o toca) sobre un jugador de su equipo para ver quién suele ocupar esa zona.', 'Hover over (or tap) one of his players to see who usually fills that zone.')}</div>
-          <div className="note c3d-foot">
-            {grid.tot} {L('envíos al área (sin contar cortos). Jugadores: posición típica al momento del envío en', 'deliveries into the box (short corners excluded). Players: typical position at the moment of delivery across')} {V.n360} {L('córners con fotograma 360.', 'corners with a 360 freeze frame.')}
-            {lado === 'ambos' ? L(' Todos se muestran como cobrados desde la izquierda.', ' All shown as if taken from the left.') : ''}
-          </div>
         </aside>
       </div>
     </div>

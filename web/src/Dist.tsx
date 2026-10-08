@@ -93,7 +93,9 @@ export default function Dist({ values, marks, refV = 0, refLabel = L('liga', 'le
       {refV != null && (
         <g>
           <line x1={geo.X(refV)} x2={geo.X(refV)} y1={top - 6} y2={top + height + 4} stroke="var(--ink-2)" strokeDasharray="3 3" />
-          <text x={geo.X(refV)} y={top + height + 16} fontSize={11.5} textAnchor="middle" fill="var(--ink-3)">{refLabel}</text>
+          {/* la etiqueta de referencia se oculta si choca con la etiqueta inferior de un DT resaltado */}
+          {!marks.some((m, i) => i % 2 === 1 && Math.abs((geo.dots.find(o => o.id === String(m.id))?.x ?? -999) - geo.X(refV)) < 90) &&
+            <text x={geo.X(refV)} y={top + height + 16} fontSize={11.5} textAnchor="middle" fill="var(--ink-3)">{refLabel}</text>}
         </g>
       )}
       {!compact && <>

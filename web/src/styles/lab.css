@@ -70,3 +70,7 @@
 .sim-shot:hover circle:first-child { stroke-width: .8; }
 .sim-tip b { display: block; }
 .sim-tip .note { margin: 0; }
+/* la leyenda de la rejugada pone inline-flex a todos sus <span>: el globo del "i" vuelve a ser un bloque normal */
+.msim-legend .info { display: inline-flex; gap: 0; }
+.msim-legend .info-i { display: grid; }
+.msim-legend .info-pop { display: block; }

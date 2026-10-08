@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { dataUrl, fmt, getJSON, jugadorCorto, matchColors, type Any } from './lib'
 import { ClubName } from './charts'
 import { L } from './settings'
+import Info from './Info'
 import { archLabel } from './i18n/data'
 
 /* «Simular uno»: UNA realización animada del mismo modelo que las 50,000 rejugadas.
@@ -449,7 +450,10 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
         <span><svg width="26" height="10" aria-hidden><line x1="1" y1="5" x2="25" y2="5" stroke="currentColor" strokeWidth="3.5" /></svg>{L('Tiro (con su xG)', 'Shot (with its xG)')}</span>
         <span><svg width="14" height="14" aria-hidden><path d="M2 2 L12 12 M12 2 L2 12" stroke="#ff4d4d" strokeWidth="2.5" /></svg>{L('Robo', 'Turnover')}</span>
         <span><i className="sw" style={{ background: teamCols[0] }} />{partido.club}</span><span><i className="sw" style={{ background: teamCols[1] }} />{partido.rival}</span>
-        <span className="note">{L('Borde blanco = quien lleva el balón · once inicial real del partido', 'White outline = player on the ball · actual starting XI')}</span>
+        <Info wide label={L('Cómo leer la rejugada', 'How to read the replay')}>
+          <p>{L('Borde blanco = quien lleva el balón · once inicial real del partido', 'White outline = player on the ball · actual starting XI')}</p>
+          <p>{L('Una sola rejugada del partido, contada como un resumen de jugadas. Los tiros, su minuto y su xG son los reales; si cada uno entra se sortea con esa probabilidad, igual que en las 50,000 rejugadas. Las jugadas sin tiro siguen las jugadas tipo del DT. Juegan los onces iniciales reales: cada jugador del DT se coloca donde solía estar con él en ataque, en defensa y en las transiciones; el rival, según su puesto en la alineación.', "One single replay of the match, told as a highlights reel. The shots, their minute and their xG are real; whether each one goes in is drawn with that probability, just like in the 50,000 replays. Moves without a shot follow the coach's signature moves. The actual starting XIs play: each of the coach's players lines up where he usually stood under him in attack, defence and transitions; the opponent, by his position in the lineup.")}</p>
+        </Info>
       </div>
       <div className="msim-ctrl">
         <button className="btn" onClick={() => { if (doneT) setTau(0); setPlaying(p => (doneT ? true : !p)) }}>{doneT ? L('↺ Ver de nuevo', '↺ Watch again') : playing ? L('❚❚ Pausa', '❚❚ Pause') : L('▶ Seguir', '▶ Resume')}</button>
@@ -462,7 +466,6 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
         <button className="btn ghost" onClick={() => { setTau(total); setPlaying(false) }} disabled={doneT}>{L('Ir al final', 'Skip to end')}</button>
         <button className="btn ghost" onClick={() => { pos.current = null; setSeed(s => s + 1) }}>{L('↻ Otro partido', '↻ Another match')}</button>
       </div>
-      <p className="note">{L('Una sola rejugada del partido, contada como un resumen de jugadas. Los tiros, su minuto y su xG son los reales; si cada uno entra se sortea con esa probabilidad, igual que en las 50,000 rejugadas. Las jugadas sin tiro siguen las jugadas tipo del DT. Juegan los onces iniciales reales: cada jugador del DT se coloca donde solía estar con él en ataque, en defensa y en las transiciones; el rival, según su puesto en la alineación.', "One single replay of the match, told as a highlights reel. The shots, their minute and their xG are real; whether each one goes in is drawn with that probability, just like in the 50,000 replays. Moves without a shot follow the coach's signature moves. The actual starting XIs play: each of the coach's players lines up where he usually stood under him in attack, defence and transitions; the opponent, by his position in the lineup.")}</p>
     </div>
   )
 }

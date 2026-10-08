@@ -1,0 +1,466 @@
+/* Figuras de la pestaña Método. Todas se dibujan con los tokens de color de index.css y, salvo los
+   esquemas (marcados como tales), con datos reales de boot.json. */
+import { useMemo, type ReactNode } from 'react'
+import { useTip } from '../charts'
+import { fmt, type Any } from '../lib'
+import { L, LOCALE } from '../settings'
+import { kpiLabel } from '../i18n/data'
+
+export const C = {
+  coach: 'var(--c-dt)', player: 'var(--c-plantilla)', club: 'var(--c-club)', opp: 'var(--c-rival)', ctx: 'var(--c-ctx)', residual: 'var(--c-resid)',
+}
+export const BLOCKS = ['coach', 'player', 'club', 'opp', 'ctx'] as const
+export const blockName = (b: string) => ({
+  coach: L('Entrenador', 'Coach'), player: L('Jugadores', 'Players'), club: 'Club', opp: L('Rival', 'Opponent'),
+  ctx: L('Contexto', 'Context'), residual: L('Sin explicar', 'Unexplained'),
+} as Record<string, string>)[b] ?? b
+
+const tint = (c: string, p = 16) => `color-mix(in oklab, ${c} ${p}%, var(--surface))`
+
+/** Marco de figura de artículo: «Figura N.» + pie. */
+export function Fig({ n, title, children, note, className = '' }: { n: number; title: ReactNode; children: ReactNode; note?: ReactNode; className?: string }) {
+  return (
+    <figure className={`mt-fig ${className}`}>
+      <div className="mt-fig-body">{children}</div>
+      <figcaption><b>{L('Figura', 'Figure')} {n}.</b> {title}{note && <span className="mt-fig-note"> {note}</span>}</figcaption>
+    </figure>
+  )
+}
+
+/* ------------------------------------------------------------ 1. confusión (esquema) */
+function Node({ x, y, w = 150, h = 46, color, label, sub }: { x: number; y: number; w?: number; h?: number; color: string; label: string; sub?: string }) {
+  return (
+    <g>
+      <rect x={x - w / 2} y={y - h / 2} width={w} height={h} rx={10} fill={tint(color, 20)} stroke={color} strokeWidth={2} />
+      <text x={x} y={sub ? y - 3 : y + 5} textAnchor="middle" fontSize={15} fontWeight={700} fill="var(--ink)">{label}</text>
+      {sub && <text x={x} y={y + 14} textAnchor="middle" fontSize={11} fill="var(--ink-2)">{sub}</text>}
+    </g>
+  )
+}
+export function ConfoundFig() {
+  const ah = (id: string, c: string) => (
+    <marker id={id} viewBox="0 0 10 10" refX={9} refY={5} markerWidth={7} markerHeight={7} orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill={c} />
+    </marker>
+  )
+  return (
+    <svg viewBox="0 0 720 320" className="mt-svg" role="img" aria-label={L('Diagrama de causas del estilo observado', 'Diagram of the causes of observed style')}>
+      <defs>{ah('mt-a-ink', 'var(--ink-3)')}{ah('mt-a-dt', 'var(--c-dt)')}</defs>
+      {/* flechas al estilo */}
+      {[[245, 70, 465, 140], [245, 160, 465, 160], [245, 250, 465, 180]].map(([x1, y1, x2, y2], i) => (
+        <path key={i} d={`M${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`} fill="none" stroke="var(--ink-3)" strokeWidth={2} markerEnd="url(#mt-a-ink)" />
+      ))}
+      <path d="M570 62 L570 122" stroke="var(--ink-3)" strokeWidth={2} markerEnd="url(#mt-a-ink)" />
+      <path d="M570 258 L570 198" stroke="var(--ink-3)" strokeWidth={2} markerEnd="url(#mt-a-ink)" />
+      {/* la confusión: DT y plantilla se mueven juntos */}
+      <path d="M95 92 C 40 105, 40 125, 95 138" fill="none" stroke="var(--c-dt)" strokeWidth={2.4} strokeDasharray="5 4" markerEnd="url(#mt-a-dt)" markerStart="url(#mt-a-dt)" />
+      <text x={28} y={112} fontSize={11.5} fill="var(--ink-2)" textAnchor="middle" transform="rotate(-90 28 116)">{L('siempre juntos', 'always together')}</text>
+      <path d="M95 228 C 55 215, 55 195, 95 182" fill="none" stroke="var(--ink-3)" strokeWidth={1.6} strokeDasharray="3 4" markerEnd="url(#mt-a-ink)" />
+      <Node x={170} y={70} color="var(--c-dt)" label={L('Entrenador', 'Coach')} sub={L('ideas, entrenamiento', 'ideas, training')} />
+      <Node x={170} y={160} color="var(--c-plantilla)" label={L('Plantilla', 'Squad')} sub={L('quién está en cancha', 'who is on the pitch')} />
+      <Node x={170} y={250} color="var(--c-club)" label="Club" sub={L('estadio, altura, directiva', 'stadium, altitude, board')} />
+      <Node x={570} y={38} color="var(--c-rival)" label={L('Rival', 'Opponent')} w={130} h={40} />
+      <Node x={570} y={282} color="var(--c-ctx)" label={L('Contexto', 'Context')} sub={L('marcador, minuto, localía', 'score, minute, venue')} w={190} />
+      <rect x={470} y={125} width={200} height={70} rx={12} fill="var(--ink)" />
+      <text x={570} y={155} textAnchor="middle" fontSize={16} fontWeight={800} fill="var(--bg)">{L('Estilo observado', 'Observed style')}</text>
+      <text x={570} y={176} textAnchor="middle" fontSize={11.5} fill="var(--bg)" opacity={0.8}>{L('PPDA, posesión, verticalidad…', 'PPDA, possession, directness…')}</text>
+      <text x={300} y={112} fontSize={11.5} fill="var(--ink-3)" textAnchor="middle">{L('¿cuánto de cada uno?', 'how much of each?')}</text>
+    </svg>
+  )
+}
+
+/* ------------------------------------------------------------ 2. tres fuentes de identificación (esquema) */
+function Dot({ x, y, c, r = 7, label }: { x: number; y: number; c: string; r?: number; label?: string }) {
+  return <g><circle cx={x} cy={y} r={r} fill={c} />{label && <text x={x} y={y + 3.6} textAnchor="middle" fontSize={9.5} fontWeight={800} fill="var(--bg)">{label}</text>}</g>
+}
+export function IdentPanels() {
+  const box = (x: number, label: string) => (
+    <g>
+      <rect x={x} y={26} width={120} height={84} rx={9} fill={tint('var(--c-club)', 12)} stroke="var(--c-club)" strokeWidth={1.5} />
+      <text x={x + 60} y={18} textAnchor="middle" fontSize={11.5} fill="var(--ink-2)">{label}</text>
+    </g>
+  )
+  const arrow = <path d="M136 68 L154 68" stroke="var(--ink-3)" strokeWidth={2} markerEnd="url(#mt-a-ink2)" />
+  const defs = <defs><marker id="mt-a-ink2" viewBox="0 0 10 10" refX={9} refY={5} markerWidth={6} markerHeight={6} orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--ink-3)" /></marker></defs>
+  const sq = (x: number, y: number, k: number) => [0, 1, 2, 3].map(i => <rect key={i} x={x + i * 18} y={y} width={12} height={12} rx={2} fill="var(--c-plantilla)" opacity={k ? 0.55 : 1} />)
+  const panels: { t: string; d: string; svg: ReactNode }[] = [
+    {
+      t: L('El entrenador cambia de club', 'The coach changes clubs'),
+      d: L('Mismo entrenador, otro club y otros jugadores. Lo que se repite en los dos equipos viaja con él.', 'Same coach, a different club and different players. Whatever repeats at both teams travels with him.'),
+      svg: <svg viewBox="0 0 290 120" className="mt-svg">{defs}{box(8, L('Club 1', 'Club 1'))}{box(162, L('Club 2', 'Club 2'))}{arrow}
+        <Dot x={68} y={50} c="var(--c-dt)" r={11} label="A" /><Dot x={222} y={50} c="var(--c-dt)" r={11} label="A" />{sq(36, 78, 0)}{sq(190, 78, 1)}</svg>,
+    },
+    {
+      t: L('El jugador cambia de entrenador', 'The player changes coach'),
+      d: L('Mismo jugador con dos entrenadores. Lo que cambia en el equipo mientras él sigue en cancha no puede ser suyo.', 'The same player under two coaches. Whatever changes in the team while he stays on the pitch cannot be his.'),
+      svg: <svg viewBox="0 0 290 120" className="mt-svg">{defs}{box(8, L('Temporada 1', 'Season 1'))}{box(162, L('Temporada 2', 'Season 2'))}{arrow}
+        <Dot x={68} y={50} c="var(--c-dt)" r={11} label="A" /><Dot x={222} y={50} c="var(--c-dt)" r={11} label="B" />
+        <rect x={56} y={76} width={24} height={16} rx={3} fill="var(--c-plantilla)" /><rect x={210} y={76} width={24} height={16} rx={3} fill="var(--c-plantilla)" />
+        <text x={68} y={88} textAnchor="middle" fontSize={10} fontWeight={800} fill="var(--bg)">9</text><text x={222} y={88} textAnchor="middle" fontSize={10} fontWeight={800} fill="var(--bg)">9</text></svg>,
+    },
+    {
+      t: L('Rotación y cambios', 'Rotation and substitutions'),
+      d: L('Mismo entrenador y mismo partido, otro once. Cada sustitución abre un tramo nuevo con otros jugadores.', 'Same coach, same match, a different XI. Every substitution opens a new segment with different players.'),
+      svg: <svg viewBox="0 0 290 120" className="mt-svg">
+        <rect x={10} y={46} width={270} height={26} rx={6} fill="var(--surface-2)" />
+        {[[10, 120, 1], [120, 190, 0.7], [190, 280, 0.45]].map(([a, b, o], i) => <rect key={i} x={a + 1.5} y={48} width={b - a - 3} height={22} rx={5} fill="var(--c-plantilla)" opacity={o} />)}
+        {[120, 190].map(x => <g key={x}><line x1={x} y1={36} x2={x} y2={82} stroke="var(--ink)" strokeWidth={2} /><text x={x} y={30} textAnchor="middle" fontSize={11} fill="var(--ink-2)">⇄</text></g>)}
+        <text x={10} y={100} fontSize={11} fill="var(--ink-3)">0'</text><text x={280} y={100} fontSize={11} fill="var(--ink-3)" textAnchor="end">90'</text>
+        <text x={145} y={112} fontSize={11} fill="var(--ink-3)" textAnchor="middle">{L('3 tramos, 3 alineaciones', '3 segments, 3 line-ups')}</text>
+        <Dot x={22} y={22} c="var(--c-dt)" r={11} label="A" /></svg>,
+    },
+  ]
+  return (
+    <div className="mt-ident">
+      {panels.map((p, i) => (
+        <div key={i} className="mt-ident-p">
+          <div className="mt-ident-k">{String.fromCharCode(97 + i)}</div>
+          {p.svg}
+          <div className="mt-ident-t">{p.t}</div>
+          <p>{p.d}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------ 2b. red de movilidad (datos reales) */
+export function MobilityNet({ dts }: { dts: Any[] }) {
+  const tip = useTip()
+  const g = useMemo(() => {
+    const W = 640, cx = W / 2, cy = W / 2, R = 248
+    const clubM: Record<string, number> = {}
+    dts.forEach(d => d.clubes.forEach((c: Any) => { clubM[c.club] = (clubM[c.club] || 0) + c.partidos }))
+    // orden de clubes: el que reduce cruces sería ideal; alfabético es estable y legible
+    const clubs = Object.keys(clubM).sort((a, b) => a.localeCompare(b))
+    const pos: Record<string, [number, number, number]> = {}
+    clubs.forEach((c, i) => { const a = -Math.PI / 2 + (2 * Math.PI * i) / clubs.length; pos[c] = [cx + R * Math.cos(a), cy + R * Math.sin(a), a] })
+    const movers: Any[] = [], stayers: Any[] = []
+    const perClub: Record<string, number> = {}
+    dts.forEach((d, i) => {
+      const cl = d.clubes as Any[]
+      if (cl.length > 1) {
+        const tot = cl.reduce((s, c) => s + c.partidos, 0)
+        let x = 0, y = 0
+        cl.forEach(c => { x += pos[c.club][0] * c.partidos / tot; y += pos[c.club][1] * c.partidos / tot })
+        // tirar un poco hacia el centro para despejar el anillo y separar puntos solapados
+        const j = (i * 137.5) % 360 * Math.PI / 180
+        x = cx + (x - cx) * 0.78 + 9 * Math.cos(j); y = cy + (y - cy) * 0.78 + 9 * Math.sin(j)
+        movers.push({ ...d, x, y })
+      } else {
+        const c = cl[0].club, k = perClub[c] = (perClub[c] || 0) + 1
+        const [, , a] = pos[c]
+        const r = R - 22 - Math.floor((k - 1) / 3) * 11, da = ((k - 1) % 3 - 1) * 0.045
+        stayers.push({ ...d, x: cx + r * Math.cos(a + da), y: cy + r * Math.sin(a + da) })
+      }
+    })
+    return { W, clubs, pos, movers, stayers, cx, cy, R }
+  }, [dts])
+  const { W, clubs, pos, movers, stayers, cx, R } = g
+  return (
+    <div className="mt-net">
+      <svg viewBox={`-90 -30 ${W + 180} ${W + 60}`} className="mt-svg" role="img" aria-label={L('Red de entrenadores y clubes', 'Network of coaches and clubs')}>
+        <circle cx={cx} cy={g.cy} r={R} fill="none" stroke="var(--rule)" strokeDasharray="2 5" />
+        {movers.map(m => m.clubes.map((c: Any) => (
+          <line key={m.id + c.club} x1={m.x} y1={m.y} x2={pos[c.club][0]} y2={pos[c.club][1]} stroke="var(--c-dt)" strokeOpacity={0.35} strokeWidth={1 + Math.min(3, c.partidos / 40)} />
+        )))}
+        {stayers.map(s => <circle key={s.id} cx={s.x} cy={s.y} r={4} fill="var(--ink-3)" opacity={0.75}
+          onMouseMove={e => tip.show(e, <>{s.nombre}<br />{s.clubes[0].club} · {s.partidos} {L('partidos', 'matches')}</>)} onMouseLeave={tip.hide} />)}
+        {movers.map(m => <circle key={m.id} cx={m.x} cy={m.y} r={6} fill="var(--c-dt)" stroke="var(--surface)" strokeWidth={1.5}
+          onMouseMove={e => tip.show(e, <>{m.nombre}<br />{m.clubes.map((c: Any) => `${c.club} (${c.partidos})`).join(' · ')}</>)} onMouseLeave={tip.hide} />)}
+        {clubs.map(c => {
+          const [x, y, a] = pos[c]
+          const lx = cx + (R + 16) * Math.cos(a), ly = g.cy + (R + 16) * Math.sin(a)
+          const anchor = Math.abs(Math.cos(a)) < 0.25 ? 'middle' : Math.cos(a) > 0 ? 'start' : 'end'
+          return (
+            <g key={c}>
+              <rect x={x - 8} y={y - 8} width={16} height={16} rx={4} fill="var(--c-club)" stroke="var(--surface)" strokeWidth={1.5} />
+              <text x={lx} y={ly + (Math.sin(a) > 0.9 ? 12 : Math.sin(a) < -0.9 ? -4 : 4)} fontSize={14} textAnchor={anchor} fill="var(--ink-2)">{c}</text>
+            </g>
+          )
+        })}
+      </svg>
+      <div className="mt-net-legend">
+        <span><i style={{ background: 'var(--c-club)', borderRadius: 3 }} />Club</span>
+        <span><i style={{ background: 'var(--c-dt)' }} />{L('Entrenador con 2 o más clubes', 'Coach with 2+ clubs')} ({movers.length})</span>
+        <span><i style={{ background: 'var(--ink-3)' }} />{L('Un solo club', 'One club only')} ({stayers.length})</span>
+      </div>
+      {tip.el}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------ 3. esquema de la suma (sin datos) */
+export function SumSketch() {
+  const steps = [
+    { k: 'base', v: 0, c: 'var(--ink-3)', l: L('Media de la liga', 'League average') },
+    { k: 'coach', v: 1.0, c: C.coach, l: L('Entrenador', 'Coach') },
+    { k: 'player', v: 1.5, c: C.player, l: L('Jugadores', 'Players') },
+    { k: 'club', v: -0.5, c: C.club, l: 'Club' },
+    { k: 'opp', v: -0.8, c: C.opp, l: L('Rival', 'Opponent') },
+    { k: 'ctx', v: 0.6, c: C.ctx, l: L('Contexto', 'Context') },
+    { k: 'eps', v: 0.35, c: C.residual, l: L('Ruido', 'Noise') },
+  ]
+  const W = 700, H = 230, y0 = 170, u = 40, bw = 64, gap = 22
+  let acc = 0
+  const bars = steps.map((s, i) => {
+    const from = acc; acc += s.v
+    return { ...s, x: 20 + i * (bw + gap), from, to: acc }
+  })
+  const total = acc
+  const xT = 20 + steps.length * (bw + gap)
+  const Y = (v: number) => y0 - v * u
+  return (
+    <svg viewBox={`0 0 ${W + 70} ${H}`} className="mt-svg" role="img" aria-label={L('Esquema: el valor observado como suma de aportes', 'Sketch: the observed value as a sum of contributions')}>
+      <line x1={10} x2={W + 60} y1={y0} y2={y0} stroke="var(--rule)" strokeWidth={1.5} />
+      {bars.map((b, i) => (
+        <g key={b.k}>
+          {b.k === 'base'
+            ? <line x1={b.x} x2={b.x + bw} y1={y0} y2={y0} stroke="var(--ink-2)" strokeWidth={4} />
+            : <rect x={b.x} y={Math.min(Y(b.from), Y(b.to))} width={bw} height={Math.abs(b.v) * u} rx={4} fill={b.c} />}
+          {i < bars.length - 1 && <line x1={b.x + bw} x2={bars[i + 1].x} y1={Y(b.to)} y2={Y(b.to)} stroke="var(--ink-3)" strokeDasharray="3 3" />}
+          <text x={b.x + bw / 2} y={y0 + 22} textAnchor="middle" fontSize={12.5} fill="var(--ink-2)">{b.l}</text>
+          {b.k !== 'base' && <text x={b.x + bw / 2} y={b.v > 0 ? Y(b.to) - 7 : Y(b.to) + 15} textAnchor="middle" fontSize={15} fontWeight={700} fill={b.c}>{b.v > 0 ? '+' : '−'}</text>}
+        </g>
+      ))}
+      <line x1={bars[bars.length - 1].x + bw} x2={xT} y1={Y(total)} y2={Y(total)} stroke="var(--ink-3)" strokeDasharray="3 3" />
+      <rect x={xT} y={Y(total)} width={bw} height={total * u} rx={4} fill="var(--ink)" />
+      <text x={xT + bw / 2} y={y0 + 22} textAnchor="middle" fontSize={12.5} fontWeight={700} fill="var(--ink)">{L('Observado', 'Observed')}</text>
+      <text x={xT + bw / 2} y={Y(total) - 7} textAnchor="middle" fontSize={15} fontWeight={700} fill="var(--ink)">=</text>
+    </svg>
+  )
+}
+
+/* ------------------------------------------------------------ penalización por bloque */
+export function LambdaBars({ lam }: { lam: Record<string, number> }) {
+  const max = Math.log10(Math.max(...Object.values(lam)) * 1.6)
+  return (
+    <div className="mt-lam">
+      {BLOCKS.map(b => (
+        <div key={b} className="mt-lam-row">
+          <span>{blockName(b)}</span>
+          <span className="mt-lam-track"><span style={{ width: `${Math.max(3, (Math.log10(lam[b] + 1) / max) * 100)}%`, background: C[b] }} /></span>
+          <b className="mono">λ = {fmt(lam[b], 0)}</b>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------ 4. geometría de la cancha (umbrales reales) */
+export function PitchGeometry({ F }: { F: Any }) {
+  const p = F.pitch
+  const lines = [
+    { x: p.own_third_max_x, l: L('tercio propio', 'own third'), c: 'var(--c-club)' },
+    { x: F.pase_progresivo.min_end_x, l: L('fin mín. progresiva · zona PPDA', 'min. progressive end · PPDA zone'), c: 'var(--c-dt)' },
+    { x: p.opp_half_min_x, l: L('campo rival · robo alto', "opp. half · high regain"), c: 'var(--c-rival)' },
+    { x: p.final_third_min_x, l: L('último tercio · presión alta', 'final third · high press'), c: 'var(--c-plantilla)' },
+  ]
+  return (
+    <svg viewBox="-2 -16 124 100" className="mt-svg mt-pitch" role="img" aria-label={L('Umbrales del marco sobre la cancha', 'Framework thresholds on the pitch')}>
+      <rect x={0} y={0} width={120} height={80} fill="var(--pitch)" rx={1} />
+      <rect x={p.final_third_min_x} y={0} width={120 - p.final_third_min_x} height={80} fill="var(--c-plantilla)" opacity={0.1} />
+      <rect x={0} y={p.wide_lane.y_low} width={120} height={p.wide_lane.y_high - p.wide_lane.y_low} fill="var(--ink)" opacity={0.04} />
+      <g fill="none" stroke="var(--pitch-line)" strokeWidth={0.5}>
+        <rect x={0} y={0} width={120} height={80} />
+        <line x1={60} y1={0} x2={60} y2={80} /><circle cx={60} cy={40} r={10} />
+        <rect x={0} y={18} width={18} height={44} /><rect x={102} y={18} width={18} height={44} />
+      </g>
+      <rect x={p.box.x_min} y={p.box.y_min} width={120 - p.box.x_min} height={p.box.y_max - p.box.y_min} fill="var(--c-ctx)" opacity={0.18} />
+      {lines.map((ln, i) => (
+        <g key={i}>
+          <line x1={ln.x} x2={ln.x} y1={-2} y2={80} stroke={ln.c} strokeWidth={0.7} strokeDasharray={i % 2 ? '1.6 1' : undefined} />
+          <text x={ln.x} y={i % 2 ? -8.5 : -3.5} fontSize={2.7} textAnchor="middle" fill="var(--ink-2)">x={ln.x} · {ln.l}</text>
+        </g>
+      ))}
+      {/* ejemplo de acción progresiva: acerca ≥25% y termina en x ≥ 48 */}
+      <defs><marker id="mt-a-p" viewBox="0 0 10 10" refX={8} refY={5} markerWidth={4} markerHeight={4} orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--c-dt)" /></marker></defs>
+      <path d="M30 60 Q 45 50, 62 44" fill="none" stroke="var(--c-dt)" strokeWidth={0.9} markerEnd="url(#mt-a-p)" />
+      <circle cx={30} cy={60} r={1.1} fill="var(--c-dt)" />
+      <text x={32} y={66} fontSize={2.6} fill="var(--ink-2)">{L(`progresiva: ≥ ${100 * F.pase_progresivo.min_gain_ratio}% más cerca del arco`, `progressive: ≥ ${100 * F.pase_progresivo.min_gain_ratio}% closer to goal`)}</text>
+      <text x={111} y={16} fontSize={2.6} textAnchor="middle" fill="var(--ink-2)">{L('área', 'box')}</text>
+      <text x={2} y={p.wide_lane.y_low - 1.2} fontSize={2.4} fill="var(--ink-3)">{L(`carril central (y ${p.wide_lane.y_low}–${p.wide_lane.y_high}); fuera = banda`, `central lane (y ${p.wide_lane.y_low}–${p.wide_lane.y_high}); outside = wide`)}</text>
+      <text x={118} y={78} fontSize={2.6} textAnchor="end" fill="var(--ink-3)">{L('ataque →', 'attack →')}</text>
+    </svg>
+  )
+}
+
+/* ------------------------------------------------------------ 5a. reparto de varianza por indicador */
+const ORDER = ['coach', 'player', 'club', 'opp', 'ctx', 'residual'] as const
+const NEG = 0.2  // espacio a la izquierda del cero para partes negativas
+function ShareBar({ v }: { v: Any }) {
+  let pos = 0, neg = 0
+  const segs: { k: string; a: number; b: number }[] = []
+  ORDER.forEach(k => {
+    const x = v[k] ?? 0
+    if (x >= 0) { segs.push({ k, a: pos, b: pos + x }); pos += x } else { segs.push({ k, a: neg + x, b: neg }); neg += x }
+  })
+  const sx = (t: number) => ((t + NEG) / (1 + NEG)) * 100
+  return (
+    <span className="mt-sb">
+      {segs.map(s => s.b - s.a > 0.0005 && (
+        <span key={s.k} style={{ left: `${sx(s.a)}%`, width: `${sx(s.b) - sx(s.a)}%`, background: C[s.k as keyof typeof C] }} />
+      ))}
+      <i style={{ left: `${sx(0)}%` }} />
+    </span>
+  )
+}
+export function VarianceChart({ glob }: { glob: Any }) {
+  const tip = useTip()
+  const rows = Object.entries(glob.varianza as Record<string, Any>).sort((a, b) => b[1].coach - a[1].coach)
+  const label = (k: string) => kpiLabel(k, glob.kpis[k]?.etiqueta ?? k)
+  const tipOf = (name: string, v: Any) => <>{name}<br />{ORDER.map(k => <span key={k} style={{ display: 'block' }}>{blockName(k)}: <b>{fmt(100 * v[k], 0)}%</b></span>)}</>
+  const mean = glob.varianza_media
+  return (
+    <div className="mt-var">
+      <div className="mt-var-head">
+        <span />
+        <span className="mt-var-axis">{[-0.2, 0, 0.25, 0.5, 0.75, 1].map(t => <em key={t} style={{ left: `${((t + NEG) / (1 + NEG)) * 100}%` }}>{fmt(100 * t, 0)}%</em>)}</span>
+        <span className="mt-var-c">{L('Entr.', 'Coach')}</span>
+      </div>
+      <div className="mt-var-row mt-var-mean" onMouseMove={e => tip.show(e, tipOf(L('Promedio de los indicadores', 'Average across indicators'), mean))} onMouseLeave={tip.hide}>
+        <span>{L('Promedio', 'Average')}</span><ShareBar v={mean} /><b className="mono">{fmt(100 * mean.coach, 0)}%</b>
+      </div>
+      <div className="mt-var-list">
+        {rows.map(([k, v]) => (
+          <div key={k} className="mt-var-row" onMouseMove={e => tip.show(e, tipOf(label(k), v))} onMouseLeave={tip.hide}>
+            <span title={label(k)}>{label(k)}</span><ShareBar v={v} /><b className="mono">{fmt(100 * v.coach, 0)}%</b>
+          </div>
+        ))}
+      </div>
+      {tip.el}
+    </div>
+  )
+}
+export function ShareLegend() {
+  return (
+    <div className="mt-legend">
+      {ORDER.map(k => <span key={k}><i style={{ background: C[k] }} />{blockName(k)}</span>)}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------ 5b. tramo vs equipo-temporada */
+export function LevelCompare({ glob }: { glob: Any }) {
+  const seg = glob.varianza_segmento as Record<string, Any>
+  const ks = Object.keys(seg)
+  const segMean: Any = {}
+  ORDER.forEach(c => { segMean[c] = ks.reduce((s, k) => s + seg[k][c], 0) / ks.length })
+  const rows = [
+    { l: L('Un tramo de ≥ 5 min', 'One segment (≥ 5 min)'), v: segMean },
+    { l: L('Un equipo en una temporada', 'One team over a season'), v: glob.varianza_media },
+  ]
+  return (
+    <div className="mt-lvl">
+      {rows.map(r => (
+        <div key={r.l} className="mt-lvl-row">
+          <div className="mt-lvl-l">{r.l}</div>
+          <div className="mt-lvl-bar">
+            {ORDER.filter(k => r.v[k] > 0.004).map(k => (
+              <span key={k} style={{ flexGrow: r.v[k], background: C[k] }} title={`${blockName(k)} ${fmt(100 * r.v[k], 0)}%`}>
+                {r.v[k] > 0.08 && <em>{fmt(100 * r.v[k], 0)}%</em>}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------ 5c. prueba de transferencia */
+export function TransferHist({ tr, res }: { tr: Any[]; res: Any }) {
+  const K = tr[0]?.n_clases ?? 70, bw = 5, nb = Math.ceil(K / bw)
+  const cnt = (key: string) => { const h = Array(nb).fill(0); tr.forEach(t => { h[Math.min(nb - 1, Math.floor((t[key] - 1) / bw))]++ }); return h }
+  const adj = cnt('rank_ajustado'), raw = cnt('rank_crudo')
+  const chance = (tr.length * bw) / K
+  const W = 640, H = 250, x0 = 40, y0 = 205, ymax = Math.max(...adj, ...raw) + 2
+  const sx = (i: number) => x0 + (i * (W - x0 - 10)) / nb, bwp = (W - x0 - 10) / nb
+  const sy = (v: number) => y0 - (v / ymax) * (y0 - 16)
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="mt-svg" role="img" aria-label={L('Histograma del puesto del entrenador verdadero', 'Histogram of the true coach’s rank')}>
+      {[0, 5, 10, 15].filter(v => v <= ymax).map(v => <g key={v}><line x1={x0} x2={W - 10} y1={sy(v)} y2={sy(v)} stroke="var(--rule)" /><text x={x0 - 6} y={sy(v) + 4} fontSize={11} textAnchor="end" fill="var(--ink-3)">{v}</text></g>)}
+      <rect x={sx(0)} y={16} width={sx(nb / 2) - sx(0)} height={y0 - 16} fill="var(--c-dt)" opacity={0.06} />
+      {adj.map((v, i) => <rect key={i} x={sx(i) + 3} y={sy(v)} width={bwp - 6} height={y0 - sy(v)} rx={2} fill="var(--c-dt)" />)}
+      <path d={raw.map((v, i) => `${i ? 'L' : 'M'}${sx(i)} ${sy(v)} L${sx(i + 1)} ${sy(v)}`).join(' ')} fill="none" stroke="var(--ink-2)" strokeWidth={1.6} />
+      <line x1={x0} x2={W - 10} y1={sy(chance)} y2={sy(chance)} stroke="var(--c-plantilla)" strokeWidth={2} strokeDasharray="6 4" />
+      <text x={W - 12} y={sy(chance) - 6} fontSize={11.5} textAnchor="end" fill="var(--c-plantilla)" fontWeight={700}>{L('azar', 'chance')} ({fmt(chance, 1)} {L('por barra', 'per bar')})</text>
+      <line x1={x0} x2={W - 10} y1={y0} y2={y0} stroke="var(--ink-3)" />
+      {Array.from({ length: nb }, (_, i) => i % 2 === 0 && <text key={i} x={sx(i) + bwp / 2} y={y0 + 16} fontSize={10.5} textAnchor="middle" fill="var(--ink-3)">{i * bw + 1}–{Math.min(K, (i + 1) * bw)}</text>)}
+      <text x={(x0 + W) / 2} y={y0 + 36} fontSize={12} textAnchor="middle" fill="var(--ink-2)">{L(`Puesto del entrenador verdadero entre ${K} candidatos (1 = el más parecido)`, `Rank of the true coach among ${K} candidates (1 = most similar)`)}</text>
+      <text x={sx(0) + 6} y={30} fontSize={11.5} fill="var(--c-dt)" fontWeight={700}>{L(`mitad superior: ${res.ajustado.mitad_superior} de ${res.etapas}`, `top half: ${res.ajustado.mitad_superior} of ${res.etapas}`)}</text>
+    </svg>
+  )
+}
+
+/* ------------------------------------------------------------ 5d. validación sintética */
+export function SynthBars() {
+  // tests/test_decomposition.py (salida verificada: corr=0.95 rmse_model=0.40 rmse_naive=1.02)
+  const rows = [
+    { l: L('Nuestro modelo', 'Our model'), v: 0.40, c: 'var(--c-dt)' },
+    { l: L('Promedio simple por entrenador', 'Simple per-coach average'), v: 1.02, c: 'var(--ink-3)' },
+  ]
+  return (
+    <div className="mt-syn">
+      {rows.map(r => (
+        <div key={r.l} className="mt-syn-row">
+          <span>{r.l}</span>
+          <span className="mt-syn-track"><span style={{ width: `${(r.v / 1.1) * 100}%`, background: r.c }} /></span>
+          <b className="mono">{r.v.toFixed(2)}</b>
+        </div>
+      ))}
+      <div className="mt-syn-ax">{L('Error típico (RMSE) al recuperar el efecto verdadero del entrenador, en σ. Menos es mejor.', 'Typical error (RMSE) recovering the true coach effect, in σ. Lower is better.')}</div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------ 5e. índice de identificabilidad */
+export function IdentWeights() {
+  const w = [
+    { k: L('Movilidad', 'Mobility'), v: 35, c: 'var(--c-dt)', d: L('clubes dirigidos (tope 3)', 'clubs coached (cap 3)') },
+    { k: L('Conectividad', 'Connectivity'), v: 40, c: 'var(--c-plantilla)', d: L('minutos de jugadores con ≥ 450 min con otro DT', 'minutes by players with ≥ 450 min under another coach') },
+    { k: L('Club compartido', 'Shared club'), v: 25, c: 'var(--c-club)', d: L('tiempo en clubes con otros DTs', 'time at clubs that had other coaches') },
+  ]
+  return (
+    <div className="mt-iw">
+      <div className="mt-iw-bar">{w.map(x => <span key={x.k} style={{ flexGrow: x.v, background: x.c }}>{x.v}%</span>)}</div>
+      <div className="mt-iw-keys">{w.map(x => <div key={x.k}><i style={{ background: x.c }} /><b>{x.k}</b> <span>{x.d}</span></div>)}</div>
+    </div>
+  )
+}
+export function IdentHist({ dts }: { dts: Any[] }) {
+  const vals = dts.map(d => d.identificabilidad).filter((v: Any) => v != null) as number[]
+  const lo = 40, bw = 10, nb = 6
+  const h = Array(nb).fill(0); vals.forEach(v => { h[Math.max(0, Math.min(nb - 1, Math.floor((v - lo) / bw)))]++ })
+  const W = 420, H = 170, x0 = 30, y0 = 135, ym = Math.max(...h) + 2
+  const sx = (i: number) => x0 + (i * (W - x0 - 6)) / nb, b = (W - x0 - 6) / nb
+  const sy = (v: number) => y0 - (v / ym) * (y0 - 12)
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="mt-svg" role="img" aria-label={L('Distribución del índice de identificabilidad', 'Distribution of the identifiability index')}>
+      {h.map((v, i) => <g key={i}><rect x={sx(i) + 3} y={sy(v)} width={b - 6} height={y0 - sy(v)} rx={2} fill={`color-mix(in oklab, var(--c-dt) ${35 + i * 13}%, var(--surface))`} />
+        <text x={sx(i) + b / 2} y={sy(v) - 5} fontSize={11} textAnchor="middle" fill="var(--ink-2)">{v}</text>
+        <text x={sx(i) + b / 2} y={y0 + 15} fontSize={10.5} textAnchor="middle" fill="var(--ink-3)">{lo + i * bw}–{lo + (i + 1) * bw}</text></g>)}
+      <line x1={x0} x2={W - 6} y1={y0} y2={y0} stroke="var(--ink-3)" />
+      <text x={(x0 + W) / 2} y={y0 + 32} fontSize={11.5} textAnchor="middle" fill="var(--ink-2)">{L(`Índice (0–100) de los ${vals.length} entrenadores con perfil`, `Index (0–100) for the ${vals.length} profiled coaches`)}</text>
+    </svg>
+  )
+}
+
+/* ------------------------------------------------------------ 6. jugadas tipo (frecuencias reales) */
+export function ArchBars({ arq, label }: { arq: Record<string, Any>; label: (s: string) => string }) {
+  const rows = Object.values(arq) as Any[]
+  const tot = rows.reduce((s, r) => s + r.n, 0)
+  const max = Math.max(...rows.map(r => r.n))
+  return (
+    <div className="mt-arch">
+      {rows.sort((a, b) => b.n - a.n).map(r => (
+        <div key={r.nombre} className="mt-arch-row">
+          <span>{label(r.nombre)}</span>
+          <span className="mt-arch-track"><span style={{ width: `${(r.n / max) * 100}%` }} /></span>
+          <b className="mono">{fmt((100 * r.n) / tot, 0)}%</b>
+        </div>
+      ))}
+      <div className="mt-syn-ax">{L(`${tot.toLocaleString(LOCALE)} posesiones en juego abierto`, `${tot.toLocaleString(LOCALE)} open-play possessions`)}</div>
+    </div>
+  )
+}

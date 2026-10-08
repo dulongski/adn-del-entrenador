@@ -13,6 +13,7 @@ const ord = (n: number | string) => {
   const v = Math.round(Number(n))
   return `${n}${v % 100 >= 11 && v % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[v % 10] ?? 'th'}`
 }
+import Info from '../Info'
 import '../styles/resumen.css'
 
 export function DtVsPlantilla({ art, glob }: P) {
@@ -25,14 +26,13 @@ export function DtVsPlantilla({ art, glob }: P) {
   const dd = useDistData()
   return (
     <div className="att-page">
-      <h3 className="h2">{L('De dónde sale cada rasgo', 'Where each trait comes from')}</h3>
-      {LANG === 'en'
-        ? <p className="lede">Each row is one trait of how his teams play. The first bar is what shows up in his matches compared with the league.
+      <h3 className="h2">{L('De dónde sale cada rasgo', 'Where each trait comes from')} <Info wide>{LANG === 'en'
+        ? <>Each row is one trait of how his teams play. The first bar is what shows up in his matches compared with the league.
           The rest tell you who drives it: him, his players, the club, the opponents or the context (home/away, scoreline, minute).
-          To the right pushes it up, to the left pushes it down. <b>Tap a row</b> to see where he ranks among all coaches.</p>
-        : <p className="lede">Cada fila es un rasgo de su forma de jugar. La primera barra es lo que se ve en sus partidos comparado con la liga.
+          To the right pushes it up, to the left pushes it down. <b>Tap a row</b> to see where he ranks among all coaches.</>
+        : <>Cada fila es un rasgo de su forma de jugar. La primera barra es lo que se ve en sus partidos comparado con la liga.
           Las demás dicen quién lo empuja: él, sus jugadores, el club, los rivales o el contexto (localía, marcador, minuto).
-          Hacia la derecha lo sube, hacia la izquierda lo baja. <b>Toca una fila</b> para ver dónde queda entre todos los DTs.</p>}
+          Hacia la derecha lo sube, hacia la izquierda lo baja. <b>Toca una fila</b> para ver dónde queda entre todos los DTs.</>}</Info></h3>
       <div className="att-fams" role="group" aria-label={L('Filtrar por familia', 'Filter by family')}>
         {[['todas', L('Todas', 'All')], ...FAM_ORDER.filter(f => byFam.some(([g, rs]) => g === f && rs.length)).map(f => [f, famLabel(f)])].map(([k, l]) => (
           <button key={k} type="button" aria-pressed={fam === k} onClick={() => setFam(k)}>{l}</button>
@@ -63,8 +63,8 @@ export function DtVsPlantilla({ art, glob }: P) {
 
       <h3 className="h2">{L('¿Qué tan bien se le separa de su plantilla?', 'How cleanly can he be separated from his squad?')}</h3>
       <div className="grid3">
-        <div className="card"><div className="note">{L('Nota de separación', 'Separation score')}</div><div className="big">{fmt(id.indice, 0)}<span style={{ fontSize: 24 }}>/100</span></div><div className="note">{L('Sube si dirigió varios clubes y si sus jugadores también jugaron con otros técnicos.', 'Goes up if he coached several clubs and his players also played under other coaches.')}</div></div>
-        <div className="card"><div className="note">{L('Clubes dirigidos', 'Clubs coached')}</div><div className="big">{id.movilidad}</div><div className="note">{L('Verlo con plantillas distintas ayuda a saber qué es suyo.', 'Seeing him with different squads helps tell what is really his.')}</div></div>
+        <div className="card"><div className="note">{L('Nota de separación', 'Separation score')} <Info>{L('Sube si dirigió varios clubes y si sus jugadores también jugaron con otros técnicos.', 'Goes up if he coached several clubs and his players also played under other coaches.')}</Info></div><div className="big">{fmt(id.indice, 0)}<span style={{ fontSize: 24 }}>/100</span></div></div>
+        <div className="card"><div className="note">{L('Clubes dirigidos', 'Clubs coached')} <Info>{L('Verlo con plantillas distintas ayuda a saber qué es suyo.', 'Seeing him with different squads helps tell what is really his.')}</Info></div><div className="big">{id.movilidad}</div></div>
         <div className="card"><div className="note">{L('Jugadores compartidos', 'Shared players')}</div><div className="big">{pct(100 * id.conectividad)}</div><div className="note">{L('de los minutos de sus jugadores son de futbolistas que también jugaron con otro DT (450 min o más).', 'of his players\' minutes come from players who also played under another coach (450+ min).')}</div></div>
       </div>
 
@@ -152,19 +152,18 @@ export function Transferencia({ art, glob, media }: P) {
   const R = glob.transferencia_resumen || {}
   return (
     <div>
-      <h3 className="h2">{L('¿Su estilo viaja con él?', 'Does his style travel with him?')}</h3>
-      <p className="lede">{L('La prueba más directa de que un estilo es del DT y no de sus jugadores: le escondemos al modelo todos sus partidos en un club, lo entrenamos con el resto de la liga y le pedimos que adivine quién dirigía esos partidos. Si lo reconoce aunque los jugadores sean otros, el estilo es suyo.', "The most direct test that a style belongs to the coach and not his players: we hide all his matches at one club from the model, train it on the rest of the league and ask it to guess who was in charge of those matches. If it picks him out even with different players, the style is his.")}</p>
+      <h3 className="h2">{L('¿Su estilo viaja con él?', 'Does his style travel with him?')} <Info wide>{L('La prueba más directa de que un estilo es del DT y no de sus jugadores: le escondemos al modelo todos sus partidos en un club, lo entrenamos con el resto de la liga y le pedimos que adivine quién dirigía esos partidos. Si lo reconoce aunque los jugadores sean otros, el estilo es suyo.', "The most direct test that a style belongs to the coach and not his players: we hide all his matches at one club from the model, train it on the rest of the league and ask it to guess who was in charge of those matches. If it picks him out even with different players, the style is his.")}</Info></h3>
       {mine.length ? (
         <div className="grid2" style={mine.length % 2 ? { gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))' } : undefined}>
           {mine.map((t: Any) => (
             <div key={t.club} className="card">
               <div className="h3 inline-club">{L('Partidos escondidos:', 'Hidden matches:')} <ClubName club={t.club} media={media} size={20} /> ({t.partidos})</div>
               <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', margin: '8px 0 12px' }}>
-                <div><div className="note">{L('En qué lugar lo puso', 'Where it ranked him')}</div><div className="big">{ord(t.rank_ajustado)}<span style={{ fontSize: 22 }}>{L(` de ${t.n_clases}`, ` of ${t.n_clases}`)}</span></div></div>
+                <div><div className="note">{L('En qué lugar lo puso', 'Where it ranked him')} <Info>{L('1º sería adivinarlo a la primera.', '1st means guessing him on the first try.')}</Info></div><div className="big">{ord(t.rank_ajustado)}<span style={{ fontSize: 22 }}>{L(` de ${t.n_clases}`, ` of ${t.n_clases}`)}</span></div></div>
                 <div><div className="note">{L('Sin descontar jugadores', 'Without adjusting for players')}</div><div className="big" style={{ color: 'var(--ink-3)' }}>{ord(t.rank_crudo)}</div></div>
                 <div><div className="note">{L('Al azar', 'By chance')}</div><div className="big" style={{ color: 'var(--ink-3)' }}>{ord(fmt(t.rank_nulo, 0))}</div></div>
               </div>
-              <div className="note">{L('1º sería adivinarlo a la primera. A qué técnicos se parece más esa etapa:', '1st means guessing him on the first try. The coaches that spell looks most like:')}</div>
+              <div className="note">{L('A qué técnicos se parece más esa etapa:', 'The coaches that spell looks most like:')}</div>
               <HBar items={t.top5_ajustado.map(([n, p]: Any) => ({ label: n === art.nombre ? `✓ ${n}` : n, v: Math.max(0, p) }))} max={1} />
             </div>
           ))}
@@ -207,7 +206,8 @@ function RankPlot({ rows, highlight }: { rows: Any[]; highlight: number }) {
   const x = (r: number) => LX + (Math.log(r) / Math.log(K)) * (W - LX - 16)
   return (
     <div className="card tbl-wrap">
-      <Legend items={[{ key: 'a', label: L('Descontando jugadores, club y rival', 'Adjusted for players, club and opponent'), color: 'var(--c-dt)' }, { key: 'c', label: L('Sin descontar', 'Unadjusted'), color: 'var(--c-plantilla)' }, { key: 'n', label: L('Al azar', 'By chance'), color: 'var(--c-resid)' }]} />
+      <Legend items={[{ key: 'a', label: L('Descontando jugadores, club y rival', 'Adjusted for players, club and opponent'), color: 'var(--c-dt)' }, { key: 'c', label: L('Sin descontar', 'Unadjusted'), color: 'var(--c-plantilla)' }, { key: 'n', label: L('Al azar', 'By chance'), color: 'var(--c-resid)' }]}
+        extra={<Info>{L('Más a la izquierda = lo reconoce antes (1º = a la primera). Eje en escala logarítmica.', 'Further left = recognized sooner (1st = first guess). Log-scale axis.')}</Info>} />
       <svg viewBox={`0 0 ${W} ${sorted.length * rowH + 24}`} style={{ width: '100%', minWidth: 520, maxWidth: 820, display: 'block' }}>
         {[1, 2, 5, 10, 20, 40].filter(t => t <= K).map(t => <g key={t}><line x1={x(t)} x2={x(t)} y1={0} y2={sorted.length * rowH} stroke="var(--rule)" /><text x={x(t)} y={sorted.length * rowH + 16} fontSize={11} textAnchor="middle" fill="var(--ink-3)">{t}</text></g>)}
         {sorted.map((r, i) => {
@@ -227,7 +227,6 @@ function RankPlot({ rows, highlight }: { rows: Any[]; highlight: number }) {
           )
         })}
       </svg>
-      <div className="note">{L('Más a la izquierda = lo reconoce antes (1º = a la primera). Eje en escala logarítmica.', 'Further left = recognized sooner (1st = first guess). Log-scale axis.')}</div>
       {tip.el}
     </div>
   )
