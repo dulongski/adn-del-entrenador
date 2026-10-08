@@ -66,9 +66,22 @@ def _h(art, k):
     return next((h for h in art["huella"] if h["kpi"] == k), None)
 
 
+def _cmp(x, ref, sd, mas="más", menos="menos"):
+    """Compara un valor con la liga en palabras, usando la dispersión entre equipos (sd)."""
+    if not (_num(x) and _num(ref)):
+        return None
+    d = (x - ref) / sd if sd else 0
+    if abs(d) < 0.15:
+        return "casi igual que la liga"
+    w = mas if d > 0 else menos
+    return (f"un poco {w}" if abs(d) < 0.6 else w if abs(d) < 1.2 else f"mucho {w}") + " que la liga"
+
+
 def build(art: dict, glob: dict) -> dict:
     H = [h for h in art["huella"] if not h["kpi"].startswith("arq_")]
     n_dts = len(glob["dts"])
+    sd = {k: v.get("sd") for k, v in glob["kpis"].items()}
+
     # señal: α/se cuando hay bootstrap; si no, |α|
     def strength(h):
         return abs(h["alpha"]) / h["se"] if h.get("se") else abs(h["alpha"]) * 3
@@ -80,53 +93,65 @@ def build(art: dict, glob: dict) -> dict:
         if key in PRINCIPIOS and PRINCIPIOS[key][0] not in used and strength(h) >= 1.5:
             t, d = PRINCIPIOS[key]
             used.add(t)
+            txt, u = _corto(h["kpi"], glob)
+            pct_ = h.get("pct")
+            puesto = ""
+            if pct_ is not None:
+                n_mas = round((100 - pct_) / 100 * (n_dts - 1)) if h["alpha"] > 0 else round(pct_ / 100 * (n_dts - 1))
+                puesto = (" Ningún otro DT lo empuja tanto en esa dirección." if n_mas == 0 else
+                          f" Solo 1 de {n_dts} DTs lo empuja más en esa dirección." if n_mas == 1 else
+                          f" Solo {n_mas} de {n_dts} DTs lo empujan más en esa dirección." if n_mas <= n_dts // 4 else "")
             principios.append({
                 "titulo": t, "descripcion": d, "kpi": h["kpi"],
-                "evidencia": f"{h['etiqueta']}: {f1(h['crudo'])} en sus partidos (liga {f1(h['liga'])}). "
-                             f"Efecto propio del DT, descontando plantilla, club, rival y contexto: {sig(h['alpha'])}"
-                             + (f" ± {h['se']:.2f}" if h.get("se") else "")
-                             + (f" — percentil {h['pct']:.0f} entre {n_dts} DTs." if h.get("pct") is not None else "."),
+                "evidencia": f"{txt}: {_val(h['crudo'], u)} en sus partidos, {_cmp(h['crudo'], h['liga'], sd.get(h['kpi']))} ({_val(h['liga'], u)})."
+                             + puesto
+                             + f" Dato técnico: efecto propio {sig(h['alpha'])}" + (f" ± {h['se']:.2f}" if h.get("se") else "") + ".",
             })
         if len(principios) >= 6:
             break
 
     nombre = art["nombre"]
     etapas = art["etapas"]
-    clubes = ", ".join(f"{e['club']} ({e['partidos']} p.)" for e in etapas)
     secciones = []
 
     # ---- identidad
     idn = art.get("identidad", {})
     ident = art["identificabilidad"]
-    p = [f"Analizamos {art['partidos_total']} partidos de {nombre} en Liga MX ({', '.join(art['temporadas'])}) dirigiendo a {clubes}."]
+    temps = art.get("temporadas") or []
+    rango = f"entre {temps[0]} y {temps[-1]}" if len(temps) > 1 else (f"en {temps[0]}" if temps else "")
+    clubes = ", ".join(f"{e['club']} ({e['partidos']})" for e in etapas)
+    p = [f"{art['partidos_total']} partidos de Liga MX {rango}. " + (f"Clubes (partidos): {clubes}." if len(etapas) > 1 else f"Todos con {etapas[0]['club']}." if etapas else "")]
     if principios:
-        p.append("Sus ideas más marcadas, medidas como efecto propio del entrenador y no de su plantilla, son: "
-                 + "; ".join(x["titulo"].lower() for x in principios[:4]) + ".")
+        p.append("Lo que más lo distingue, incluso con otros jugadores: " + _lista([x["titulo"].lower() for x in principios[:3]]) + ".")
     if ident:
-        p.append(f"Índice de identificabilidad {f1(ident.get('indice'), 0)}/100: dirigió {int(ident.get('movilidad', 1))} club(es); "
-                 f"el {f1(100 * ident.get('conectividad', 0), 0)}% de sus minutos-jugador fueron de futbolistas que también jugaron ≥450 min con otro DT. "
-                 + ("Esto permite separar con confianza su estilo del de sus jugadores." if ident.get("indice", 0) >= 40
-                    else "La separación DT–plantilla descansa sobre todo en rotaciones y cambios; interpretar con cautela."))
-    secciones.append({"id": "identidad", "titulo": "Identidad", "parrafos": p})
+        conn = f1(100 * ident.get("conectividad", 0), 0)
+        if ident.get("indice", 0) >= 40:
+            p.append(f"El {conn}% de los minutos de sus jugadores son de futbolistas que también jugaron con otros técnicos. "
+                     "Por eso se puede separar bien lo que pone él de lo que ponen ellos.")
+        else:
+            p.append(f"Solo el {conn}% de los minutos de sus jugadores son de futbolistas que también jugaron con otros técnicos. "
+                     "Separar su estilo del de su plantilla es difícil: toma estas conclusiones con cautela.")
+    secciones.append({"id": "identidad", "titulo": "Quién es", "parrafos": p})
 
-    # ---- fases
-    def fam_par(fam, intro):
-        hs = sorted([h for h in H if h["familia"] == fam], key=strength, reverse=True)[:3]
-        if not hs:
-            return None
-        parts = []
-        for h in hs:
-            tend = "por encima" if h["alpha"] > 0 else "por debajo"
-            parts.append(f"{h['etiqueta'].lower()} {f1(h['crudo'])} (liga {f1(h['liga'])}; efecto DT {sig(h['alpha'])}, {tend} de lo esperable por su plantilla)")
-        return intro + " " + "; ".join(parts) + "."
-    con = [x for x in [fam_par("Construcción", "En construcción:"), fam_par("Progresión", "Para progresar:"), fam_par("Ocasiones", "En generación de ocasiones:")] if x]
+    # ---- fases: una frase por rasgo, en palabras y con la cifra de la liga al lado
+    def linea(h):
+        txt, u = _corto(h["kpi"], glob)
+        frase = f"{txt}: {_val(h['crudo'], u)} en sus partidos, {_cmp(h['crudo'], h['liga'], sd.get(h['kpi']))} ({_val(h['liga'], u)})."
+        f = FRASES.get((h["kpi"], 1 if h["alpha"] > 0 else -1))
+        if f and strength(h) >= UMBRAL_IDEA:
+            frase += f" Quitando a sus jugadores, {f}."
+        return frase
+
+    def fase_par(familias):
+        hs = sorted([h for h in H if h["familia"] in familias], key=strength, reverse=True)[:3]
+        return [linea(h) for h in hs]
+    con = fase_par({"Construcción", "Progresión", "Ocasiones"})
     arqs = sorted([a for a in art.get("arquetipos", []) if a.get("dt_pct") is not None], key=lambda a: -(a["dt_pct"] - a["liga_pct"]))
     if arqs:
         a = arqs[0]
-        con.append(f"Su jugada tipo más sobrerrepresentada es «{a['nombre']}»: {f1(a['dt_pct'])}% de sus posesiones en juego (liga {f1(a['liga_pct'])}%).")
-    secciones.append({"id": "ofensiva", "titulo": "Fase ofensiva", "parrafos": con})
-    de = [x for x in [fam_par("Presión", "Presión:"), fam_par("Organización defensiva", "Organización defensiva:"), fam_par("Transiciones", "Transiciones:")] if x]
-    secciones.append({"id": "defensiva", "titulo": "Fase defensiva y transiciones", "parrafos": de})
+        con.append(f"La jugada que más repite comparado con la liga: «{a['nombre']}» ({f1(a['dt_pct'], 0)}% de sus ataques; liga {f1(a['liga_pct'], 0)}%).")
+    secciones.append({"id": "ofensiva", "titulo": "Con balón", "parrafos": con})
+    secciones.append({"id": "defensiva", "titulo": "Sin balón y transiciones", "parrafos": fase_par({"Presión", "Organización defensiva", "Transiciones"})})
 
     # ---- DT vs plantilla
     att = {a["kpi"]: a for a in art["atribucion"] if not a["kpi"].startswith("arq_")}
@@ -136,27 +161,24 @@ def build(art: dict, glob: dict) -> dict:
             continue
         c, s = a["coach"], a["player"] + a["club"]
         (dom_coach if abs(c) > abs(s) else dom_squad).append((k, a))
-    lbl = {k: v["etiqueta"] for k, v in glob["kpis"].items()}
     p = []
     if dom_coach:
-        p.append("Rasgos que explica sobre todo el entrenador: " + ", ".join(
-            f"{lbl[k].lower()} (observado {sig(a['observado'])}, del DT {sig(a['coach'])})" for k, a in sorted(dom_coach, key=lambda t: -abs(t[1]['coach']))[:4]) + ".")
+        p.append("Lo que más se nota y pone él: " + _lista([_min(_corto(k, glob)[0]) for k, a in sorted(dom_coach, key=lambda t: -abs(t[1]['coach']))[:4]]) + ".")
     if dom_squad:
-        p.append("Rasgos que explican más la plantilla y el club que el DT: " + ", ".join(
-            f"{lbl[k].lower()} (observado {sig(a['observado'])}, plantilla+club {sig(a['player'] + a['club'])})" for k, a in sorted(dom_squad, key=lambda t: -abs(t[1]['player'] + t[1]['club']))[:4]) + ".")
+        p.append("Lo que más se nota pero viene de sus jugadores o del club: " + _lista([_min(_corto(k, glob)[0]) for k, a in sorted(dom_squad, key=lambda t: -abs(t[1]['player'] + t[1]['club']))[:4]]) + ".")
     for t in art.get("transferencia", []):
-        p.append(f"Prueba de transferencia en {t['club']}: sin ver esos {t['partidos']} partidos, el perfil ajustado de esa etapa se parece más a "
-                 f"su propio perfil en otros clubes que al de {t['n_clases'] - t['rank_ajustado']} de los otros {t['n_clases'] - 1} DTs (puesto {t['rank_ajustado']}; crudo: {t['rank_crudo']}; azar ≈ {f1(t['rank_nulo'], 0)}).")
-    secciones.append({"id": "dt_vs_plantilla", "titulo": "¿Estilo del DT o de la plantilla?", "parrafos": p})
+        p.append(f"Prueba en {t['club']}: escondimos sus {t['partidos']} partidos ahí y le pedimos al modelo que adivinara quién dirigía. "
+                 f"Lo puso {t['rank_ajustado']}º entre {t['n_clases']} técnicos (al azar saldría cerca del {f1(t['rank_nulo'], 0)}º).")
+    secciones.append({"id": "dt_vs_plantilla", "titulo": "¿Suyo o de la plantilla?", "parrafos": p})
 
     # ---- consistencia y contexto
     p = []
     if idn.get("lift"):
-        p.append(f"Consistencia: en un solo partido, el modelo asigna al DT correcto una probabilidad {f1(idn['lift'])} veces mayor que el azar "
-                 f"(acierto top-1 {f1(100 * idn.get('acierto', 0), 0)}% entre {idn.get('k')} DTs).")
+        p.append(f"Viendo un solo partido, el modelo adivina que es él {f1(idn['lift'])} veces más seguido que al azar.")
     if idn.get("dispersion_pct") is not None:
-        p.append(f"Su variabilidad partido a partido es mayor que la del {f1(idn['dispersion_pct'], 0)}% de los DTs "
-                 + ("(identidad estable)." if idn["dispersion_pct"] < 40 else "(estilo cambiante según el partido)." if idn["dispersion_pct"] > 60 else "(variabilidad típica)."))
+        dp = idn["dispersion_pct"]
+        p.append(f"Su estilo cambia de un partido a otro más que el de {f1(dp, 0)} de cada 100 DTs"
+                 + (": es de los más estables." if dp < 40 else ": se adapta mucho al rival y al partido." if dp > 60 else ", algo normal."))
     curves = art.get("contexto", {}).get("curvas", {})
     best = []
     for dim, kk in curves.items():
@@ -166,15 +188,14 @@ def build(art: dict, glob: dict) -> dict:
                 spread = max(v for _, v in vals) - min(v for _, v in vals)
                 hi = max(vals, key=lambda t: t[1]); lo = min(vals, key=lambda t: t[1])
                 best.append((spread, dim, k, hi, lo))
-    for spread, dim, k, hi, lo in sorted(best, reverse=True)[:3]:
-        p.append(f"Según {DIM_ES[dim]}, su {lbl[k].lower()} cambia más que en la liga: relativo al promedio, {sig(hi[1])} cuando «{hi[0]}» y {sig(lo[1])} cuando «{lo[0]}».")
+    for spread, dim, k, hi, lo in sorted(best, reverse=True)[:2]:
+        p.append(f"{_corto(k, glob)[0]}: comparado con la liga, sube {NIVEL_ES.get(hi[0], hi[0])} y baja {NIVEL_ES.get(lo[0], lo[0])}.")
     mot = art.get("contexto", {}).get("motores", {})
-    for k in ["posesion", "ppda", "verticalidad"]:
-        if k in mot and mot[k]:
-            top = mot[k][0]
-            direc = "aumenta" if top["direccion"] > 0 else "disminuye"
-            p.append(f"Lo que más mueve su {lbl[k].lower()} de un partido a otro es {VAR_ES.get(top['variable'], top['variable'])} (SHAP): cuando crece, el indicador {direc}.")
-    secciones.append({"id": "contexto", "titulo": "Consistencia y ajustes por contexto", "parrafos": p})
+    if mot.get("posesion"):
+        top = mot["posesion"][0]
+        p.append(f"Lo que más mueve su posesión de un partido a otro es {VAR_ES.get(top['variable'], top['variable'])}: "
+                 + ("cuando pasa, tiene más el balón." if top["direccion"] > 0 else "cuando pasa, tiene menos el balón."))
+    secciones.append({"id": "contexto", "titulo": "Según el partido", "parrafos": p})
 
     # ---- jugadores
     J = art.get("jugadores", {})
@@ -182,24 +203,23 @@ def build(art: dict, glob: dict) -> dict:
     if J.get("formaciones"):
         fs = sorted(J["formaciones"].items(), key=lambda t: -t[1])
         tot = sum(v for _, v in fs)
-        p.append("Dibujos iniciales: " + ", ".join(f"{'-'.join(k)} ({100 * v / tot:.0f}%)" for k, v in fs[:3]) + f". Cambios tácticos por partido: {f1(J.get('cambios_tacticos_por_partido'))}.")
+        p.append("Dibujos con los que arranca: " + ", ".join(f"{'-'.join(k)} ({100 * v / tot:.0f}%)" for k, v in fs[:3]) + ".")
     if J.get("estabilidad_xi") is not None:
-        p.append(f"Rotación: cambia en promedio {f1(J['estabilidad_xi'])} titulares entre partidos consecutivos.")
+        p.append(f"De un partido al siguiente cambia {f1(J['estabilidad_xi'])} titulares en promedio.")
     mc, ml = J.get("minuto_cambios", {}), J.get("minuto_cambios_liga", {})
-    if mc:
-        p.append("Minuto mediano de sus cambios: " + ", ".join(f"{k}º {f1(v, 0)}' (liga {f1(ml.get(k), 0)}')" for k, v in list(mc.items())[:3]) + ".")
-    cpe = J.get("cambios_por_estado", {})
-    per = cpe.get("Perdiendo", {})
+    if mc.get("1") is not None:
+        p.append(f"Su primer cambio llega en el minuto {f1(mc['1'], 0)} (liga: {f1(ml.get('1'), 0)}).")
+    per = J.get("cambios_por_estado", {}).get("Perdiendo", {})
     if per and sum(per.values()) > 0:
-        p.append(f"Perdiendo, el {100 * per.get('Más ofensivo', 0) / sum(per.values()):.0f}% de sus cambios son más ofensivos (delantero por defensor/medio).")
+        p.append(f"Cuando va perdiendo, {100 * per.get('Más ofensivo', 0) / sum(per.values()):.0f}% de sus cambios son para atacar más (un delantero por un defensa o medio).")
     imp = art.get("impacto_cambios", [])
     if imp:
         m = max(imp, key=lambda r: abs(r["neto"]))
-        p.append(f"Tras sus sustituciones, el indicador que más se mueve respecto a la liga es {lbl[m['kpi']].lower()} ({sig(m['neto'])} neto, {m['n']} cambios).")
+        p.append(f"Después de sus cambios, el dato que más se mueve es «{_min(_corto(m['kpi'], glob)[0])}»: {'sube' if m['neto'] > 0 else 'baja'} respecto a lo normal en la liga.")
     top = J.get("jugadores", [])[:5]
     if top:
-        p.append("Columna vertebral por minutos: " + ", ".join(f"{j['nombre']} ({j['posicion']}, {f1(j['minutos'], 0)}')" for j in top) + ".")
-    secciones.append({"id": "jugadores", "titulo": "Uso de jugadores", "parrafos": p})
+        p.append("Los que más minutos juegan con él: " + _lista([f"{j['nombre']} ({j['posicion'].lower()})" for j in top]) + ".")
+    secciones.append({"id": "jugadores", "titulo": "Sus jugadores", "parrafos": p})
 
     # ---- balón parado
     B = art.get("balon_parado", {})
@@ -207,44 +227,46 @@ def build(art: dict, glob: dict) -> dict:
     p = []
     if o:
         z = max(o.get("corner_zonas", {}).items(), key=lambda t: t[1], default=(None, 0))
-        p.append(f"Ofensivo: {f1(o.get('corners_por_partido'))} córners por partido; {f1(o.get('corner_corto_pct'), 0)}% en corto (liga {f1(l.get('corner_corto_pct'), 0)}%); "
-                 f"zona de envío preferida: {z[0]} ({f1(z[1], 0)}%). Remata el {f1(o.get('corner_remate_pct'), 0)}% de sus córners (liga {f1(l.get('corner_remate_pct'), 0)}%), "
-                 f"xG por córner {f1(o.get('corner_xg'), 3)} (liga {f1(l.get('corner_xg'), 3)}).")
-        if o.get("atacantes_area_360"):
-            p.append(f"Con 360: {f1(o['atacantes_area_360'])} atacantes en el área en el envío (liga {f1(l.get('atacantes_area_360'))}).")
+        p.append(f"A favor: {f1(o.get('corners_por_partido'))} córners por partido y {f1(o.get('corner_corto_pct'), 0)}% en corto (liga {f1(l.get('corner_corto_pct'), 0)}%). "
+                 + (f"Los manda sobre todo al {z[0].lower()} ({f1(z[1], 0)}%). " if z[0] else "")
+                 + f"Remata {f1(o.get('corner_remate_pct'), 0)}% de sus córners (liga {f1(l.get('corner_remate_pct'), 0)}%).")
     if d:
-        p.append(f"Defensivo: concede {f1(d.get('corner_xg'), 3)} xG por córner rival (liga {f1(l.get('corner_xg'), 3)}), gana el primer contacto en el "
-                 f"{f1(100 - (d.get('corner_primer_contacto_pct') or 0), 0)}% de los córners en contra y defiende con {f1(d.get('defensores_area_360'))} jugadores en el área.")
+        p.append(f"En contra: cada 10 córners del rival le generan {f1(10 * (d.get('corner_xg') or 0), 2)} xG (liga {f1(10 * (l.get('corner_xg') or 0), 2)}). "
+                 f"Gana el primer contacto en {f1(100 - (d.get('corner_primer_contacto_pct') or 0), 0)}% de ellos.")
     secciones.append({"id": "balon_parado", "titulo": "Balón parado", "parrafos": p})
 
     # ---- simulación
     S = art.get("simulacion", {})
     if S.get("partidos"):
         diff = S["puntos"] - S["xpts"]
-        p = [f"Rejugando cada partido 5,000 veces con el xG de cada posesión: sumó {S['puntos']} puntos frente a {f1(S['xpts'])} esperados "
-             f"({'por encima' if diff > 0 else 'por debajo'} en {f1(abs(diff))}). Dominio medio (cuota de xG): {f1(S.get('dominio_medio'), 0)}%.",
-             "La simulación no predice: explica si los resultados reflejan lo que el equipo generó y concedió."]
-        secciones.append({"id": "simulacion", "titulo": "Simulación: ¿resultados merecidos?", "parrafos": p})
+        p = [f"Sumó {S['puntos']} puntos. Por las ocasiones que generó y concedió, lo normal habría sido {f1(S['xpts'])}"
+             + (": sacó justo lo que mereció." if abs(diff) < 1 else f" ({f1(abs(diff))} {'más' if diff > 0 else 'menos'} de lo esperado)."),
+             "Para saberlo, rejugamos cada partido 5,000 veces con la calidad (xG) de cada ocasión."]
+        secciones.append({"id": "simulacion", "titulo": "¿Merecía esos puntos?", "parrafos": p})
 
-    # ---- resumen escaneable por sección (idea + puntos); `parrafos` queda intacto para el informe Markdown
+    # ---- resumen escaneable por sección (idea + puntos); `parrafos` queda para el texto completo y el informe Markdown
     res = _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best)
     for s in secciones:
         idea, puntos = res.get(s["id"], (SIN_RASGOS, []))
         s["idea"] = idea
         s["puntos"] = puntos
 
-    tit = principios[0]["titulo"] if principios else "Estilo"
     titular = f"{nombre}: " + (" + ".join(x["titulo"] for x in principios[:3]) if principios else "perfil en construcción")
     return {"titular": titular, "principios": principios, "secciones": secciones}
+
+
+def _lista(xs):
+    xs = [x for x in xs if x]
+    return xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + " y " + xs[-1] if xs else ""
 
 
 # =====================================================================================
 # Resumen escaneable por sección: {"idea": str, "puntos": [{texto, dato, liga, efecto, nota}]}
 # =====================================================================================
-SIN_RASGOS = "Sin rasgos propios marcados: se parece al promedio de la liga."
-NOTA_DT = "idea propia del DT"
-NOTA_PLANTILLA = "lo explica la plantilla"
-NOTA_AMBOS = "la plantilla lo potencia"
+SIN_RASGOS = "Nada lo aleja mucho del promedio de la liga."
+NOTA_DT = "lo pone él"
+NOTA_PLANTILLA = "viene de la plantilla"
+NOTA_AMBOS = "él y su plantilla"
 
 # Etiqueta corta (≤ 8 palabras) y unidad con la que se formatea el valor observado.
 CORTO = {
@@ -266,7 +288,7 @@ CORTO = {
     "llegada_area": ("Posesiones que pisan el área", "%"),
     "centros": ("Centros", " por 100 llegadas"),
     "obv_90": ("Valor generado con balón (OBV)", " por 90"),
-    "ppda": ("PPDA (pases rivales por robo)", ""),
+    "ppda": ("Pases rivales por cada robo (PPDA)", ""),
     "altura_presion": ("Altura de la presión", ""),
     "presion_alta": ("Presiones en tercio rival", "%"),
     "intensidad_presion": ("Presiones por minuto sin balón", ""),
@@ -346,8 +368,8 @@ def _r(x, d=2):
     return round(float(x), d) if _num(x) else None
 
 
-def _pt(texto, dato=None, liga=None, efecto=None, nota=None):
-    return {"texto": texto, "dato": dato, "liga": liga, "efecto": _r(efecto), "nota": nota}
+def _pt(texto, dato=None, liga=None, efecto=None, nota=None, kpi=None):
+    return {"texto": texto, "dato": dato, "liga": liga, "efecto": _r(efecto), "nota": nota, "kpi": kpi}
 
 
 def _corto(k, glob):
@@ -429,30 +451,26 @@ def _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best):
     # ---- identidad
     idn = art.get("identidad") or {}
     ident = art.get("identificabilidad") or {}
-    # los títulos mezclan sustantivos y verbos («Progresión en conducción», «Roba en campo rival»);
-    # para que la idea sea una oración natural se usa la frase verbal del mismo rasgo si existe
-    partes, grupos = [], set()
-    for p in principios:
-        g = GRUPO.get(p["kpi"], p["kpi"])
-        if g in grupos:
-            continue
-        partes.append(FRASES.get((p["kpi"], 1 if hmap[p["kpi"]]["alpha"] > 0 else -1), p["titulo"].lower()))
-        grupos.add(g)
-        if len(partes) == 2:
-            break
-    idea = _frase(partes) or SIN_RASGOS
+    etapas_ = art.get("etapas") or []
+    n_cl = len({e["club"] for e in etapas_})
+    idea = (f"{art.get('partidos_total')} partidos en {n_cl} clubes." if n_cl > 1 else
+            f"{art.get('partidos_total')} partidos, todos con {etapas_[0]['club']}." if etapas_ else "")
+    if _num(ident.get("indice")):
+        idea += (" Su estilo se distingue bien del de sus jugadores." if ident["indice"] >= 40
+                 else " Cuesta separar su estilo del de sus jugadores.")
+    idea = idea.strip() or SIN_RASGOS
     temps = art.get("temporadas") or []
-    pts = [_pt("Partidos analizados", str(art.get("partidos_total", "—")),
+    pts = [_pt("Partidos", str(art.get("partidos_total", "—")),
                nota=(f"{temps[0]} a {temps[-1]}" if len(temps) > 1 else (temps[0] if temps else None)))]
     etapas = art.get("etapas") or []
     if etapas:
         pts.append(_pt("Clubes" if len(etapas) > 1 else "Club", " → ".join(e["club"] for e in etapas)))
     if _num(ident.get("indice")):
-        pts.append(_pt("Identificabilidad", f"{f1(ident['indice'], 0)}/100",
-                       nota="estilo separable de la plantilla" if ident["indice"] >= 40 else "separar DT y plantilla es difícil"))
+        pts.append(_pt("Qué tan bien se separa de su plantilla", f"{f1(ident['indice'], 0)}/100",
+                       nota="se separa bien" if ident["indice"] >= 40 else "cuesta separarlos"))
     if _num(idn.get("lift")):
         l = idn["lift"]
-        pts.append(_pt("Estilo reconocible", f"{f1(l)}× el azar",
+        pts.append(_pt("Se le reconoce viendo un partido", f"{f1(l)}×", "vs. adivinar al azar",
                        nota="muy marcado" if l >= 5 else "marcado" if l >= 2 else "poco distintivo"))
     R["identidad"] = (idea, pts)
 
@@ -463,7 +481,7 @@ def _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best):
         pts = []
         for h in hs:
             txt, u = _corto(h["kpi"], glob)
-            pts.append(_pt(txt, _val(h.get("crudo"), u), _liga(h.get("liga"), u), h.get("alpha"), _nota_atrib(att.get(h["kpi"]))))
+            pts.append(_pt(txt, _val(h.get("crudo"), u), _liga(h.get("liga"), u), h.get("alpha"), _nota_atrib(att.get(h["kpi"])), h["kpi"]))
         return _idea_rasgos(hs, strength), pts
     R["ofensiva"] = fase({"Construcción", "Progresión", "Ocasiones"})
     R["defensiva"] = fase({"Presión", "Organización defensiva", "Transiciones"})
@@ -477,17 +495,17 @@ def _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best):
     for k, a in dc[:3]:
         txt, u = _corto(k, glob)
         h = hmap.get(k, {})
-        pts.append(_pt(txt, _val(h.get("crudo"), u), _liga(h.get("liga"), u), a["coach"], NOTA_DT))
+        pts.append(_pt(txt, _val(h.get("crudo"), u), _liga(h.get("liga"), u), a["coach"], NOTA_DT, k))
     for k, a in ds[:max(0, min(2, 5 - len(pts) - n_tr))]:
         txt, u = _corto(k, glob)
         h = hmap.get(k, {})
-        pts.append(_pt(txt, _val(h.get("crudo"), u), _liga(h.get("liga"), u), a["player"] + a["club"], NOTA_PLANTILLA))
+        pts.append(_pt(txt, _val(h.get("crudo"), u), _liga(h.get("liga"), u), a["player"] + a["club"], NOTA_PLANTILLA, k))
     if trs:
         orden = {e["club"]: i for i, e in enumerate(art.get("etapas") or [])}
         t = max(trs, key=lambda t: orden.get(t["club"], -1))  # la etapa más reciente
         ok = t["rank_ajustado"] <= max(3, t["n_clases"] // 10)
-        pts.append(_pt("Prueba de transferencia", f"{t['rank_ajustado']}º de {t['n_clases']} en {t['club']}",
-                       f"azar ≈ {f1(t.get('rank_nulo'), 0)}º", nota="se le reconoce en otro club" if ok else "cuesta reconocerlo en otro club"))
+        pts.append(_pt(f"¿Lo reconocen en {t['club']}?", f"{t['rank_ajustado']}º de {t['n_clases']}",
+                       f"al azar ≈ {f1(t.get('rank_nulo'), 0)}º", nota="sí, su estilo viaja" if ok else "le cuesta" if t["rank_ajustado"] > t.get("rank_nulo", 0) * 0.7 else "a medias"))
 
     def fam_top(lst, val):
         acc = {}
@@ -503,7 +521,7 @@ def _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best):
     elif fc:
         idea = f"Su huella se nota sobre todo en {FAM_ES[fc[0]]}."
     elif fs:
-        idea = f"Su estilo lo explica más la plantilla, sobre todo en {FAM_ES[fs[0]]}."
+        idea = f"Lo que se ve viene más de sus jugadores, sobre todo en {FAM_ES[fs[0]]}."
     else:
         idea = SIN_RASGOS
     R["dt_vs_plantilla"] = (idea, pts)
@@ -511,12 +529,12 @@ def _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best):
     # ---- contexto
     pts = []
     if _num(idn.get("acierto")) and idn.get("k"):
-        pts.append(_pt("Se le identifica en un solo partido", f"{f1(100 * idn['acierto'], 0)}% de acierto",
-                       f"azar {f1(100 / idn['k'])}%"))
+        pts.append(_pt("Adivinan que es él viendo un partido", f"{f1(100 * idn['acierto'], 0)}%",
+                       f"al azar {f1(100 / idn['k'])}%"))
     dp = idn.get("dispersion_pct")
     if _num(dp):
-        pts.append(_pt("Variabilidad entre partidos", f"percentil {f1(dp, 0)}",
-                       nota="estable" if dp < 40 else "cambiante" if dp > 60 else "normal"))
+        pts.append(_pt("Cuánto cambia entre partidos", "poco" if dp < 40 else "mucho" if dp > 60 else "lo normal",
+                       nota=f"más que {f1(dp, 0)}% de los DTs"))
     seen = set()
     top_dim = None
     for spread, dim, k, hi, lo in sorted(best, key=lambda t: -t[0]):
@@ -528,16 +546,16 @@ def _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best):
         ds_ = [r["dt"] - r["liga"] for r in rows if r["dt"] is not None and r["liga"] is not None and r["n_dt"] >= 15]
         mu = sum(ds_) / len(ds_) if ds_ else 0
         nivel, d = max((hi, lo), key=lambda t: abs(t[1] - mu))
-        pts.append(_pt(f"{_corto(k, glob)[0]} {NIVEL_ES.get(nivel, nivel)}", efecto=d,
-                       nota="más que la liga" if d > 0 else "menos que la liga"))
+        pts.append(_pt(f"{_corto(k, glob)[0]} {NIVEL_ES.get(nivel, nivel)}",
+                       ("mucho " if abs(d) >= 1 else "") + ("más" if d > 0 else "menos"), "que la liga", efecto=d))
         seen.add(k)
         if len(seen) == 2:
             break
     mot = (art.get("contexto") or {}).get("motores", {}).get("posesion") or []
     if mot:
         m = mot[0]
-        pts.append(_pt("Lo que más mueve su posesión", VAR_ES.get(m["variable"], m["variable"]),
-                       nota="la aumenta" if m["direccion"] > 0 else "la reduce"))
+        pts.append(_pt("Lo que más cambia su posesión", VAR_ES.get(m["variable"], m["variable"]),
+                       nota="tiene más el balón" if m["direccion"] > 0 else "tiene menos el balón"))
     if not _num(dp):
         idea = "Sin datos suficientes para medir su consistencia."
     elif dp < 40:
@@ -555,11 +573,11 @@ def _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best):
     if fs_:
         tot = sum(v for _, v in fs_)
         dib, share = "-".join(fs_[0][0]), fs_[0][1] / tot
-        pts.append(_pt("Dibujo principal", f"{dib} · {100 * share:.0f}%"))
+        pts.append(_pt("Dibujo más usado", dib, nota=f"{100 * share:.0f}% de los partidos"))
     est = J.get("estabilidad_xi")
     if _num(est):
-        pts.append(_pt("Rotación del once", f"{f1(est)} cambios por partido",
-                       nota="baja" if est < 2.0 else "alta" if est > 2.8 else "normal"))
+        pts.append(_pt("Titulares que cambia por partido", f1(est),
+                       nota="rota poco" if est < 2.0 else "rota mucho" if est > 2.8 else "lo normal"))
         # umbrales ≈ percentiles 25 y 75 de los DTs de la muestra (mediana ≈ 2.4)
         partes.append("rota poco el once" if est < 2.0 else "rota mucho el once" if est > 2.8 else None)
     if fs_:
@@ -569,18 +587,18 @@ def _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best):
     m1, l1 = mc.get("1"), ml.get("1")
     if _num(m1):
         dif = m1 - l1 if _num(l1) else 0
-        pts.append(_pt("Minuto del primer cambio", f"{f1(m1, 0)}'", f"liga {f1(l1, 0)}'" if _num(l1) else None,
+        pts.append(_pt("Su primer cambio", f"min {f1(m1, 0)}", f"liga {f1(l1, 0)}" if _num(l1) else None,
                        nota="más tarde que la liga" if dif >= 3 else "antes que la liga" if dif <= -3 else None))
         partes.append("cambia tarde" if dif >= 3 else "cambia pronto" if dif <= -3 else None)
     per = (J.get("cambios_por_estado") or {}).get("Perdiendo") or {}
     if per and sum(per.values()) > 0:
-        pts.append(_pt("Cambios ofensivos cuando pierde", f"{100 * per.get('Más ofensivo', 0) / sum(per.values()):.0f}%"))
+        pts.append(_pt("Cambios para atacar cuando pierde", f"{100 * per.get('Más ofensivo', 0) / sum(per.values()):.0f}%"))
     imp = art.get("impacto_cambios") or []
     if imp:
         m = max(imp, key=lambda r: abs(r["neto"]))
         incierto = _num(m.get("se")) and abs(m["neto"]) < m["se"]
-        pts.append(_pt(f"Tras sus cambios: {_min(_corto(m['kpi'], glob)[0])}", efecto=m["neto"],
-                       nota="efecto incierto" if incierto else ("sube vs. liga" if m["neto"] > 0 else "baja vs. liga")))
+        pts.append(_pt(f"Tras sus cambios: {_min(_corto(m['kpi'], glob)[0])}", "sube" if m["neto"] > 0 else "baja", efecto=m["neto"],
+                       nota="no es seguro" if incierto else None))
     R["jugadores"] = (_frase(partes) or "Sin datos suficientes sobre el uso de la plantilla.", pts[:5])
 
     # ---- balón parado
@@ -592,13 +610,13 @@ def _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best):
         pts.append(_pt("Córners en corto", _val(o.get("corner_corto_pct"), "%"), _liga(l.get("corner_corto_pct"), "%")))
         z = max((o.get("corner_zonas") or {}).items(), key=lambda t: t[1], default=None)
         if z:
-            pts.append(_pt("Zona preferida del envío", f"{z[0]} · {z[1]:.0f}%"))
+            pts.append(_pt("A dónde los manda", z[0], nota=f"{z[1]:.0f}% de sus córners"))
     # xG por córner es un número muy pequeño: se expresa cada 10 córners para leerlo con 2 decimales
     x10 = lambda v: 10 * v if _num(v) else None
     if o:
-        pts.append(_pt("xG cada 10 córners a favor", _val(x10(o.get("corner_xg")), ""), _liga(x10(l.get("corner_xg")), "")))
+        pts.append(_pt("Peligro cada 10 córners a favor (xG)", _val(x10(o.get("corner_xg")), ""), _liga(x10(l.get("corner_xg")), "")))
     if d:
-        pts.append(_pt("xG concedido cada 10 córners", _val(x10(d.get("corner_xg")), ""), _liga(x10(l.get("corner_xg")), "")))
+        pts.append(_pt("Peligro cada 10 córners en contra (xG)", _val(x10(d.get("corner_xg")), ""), _liga(x10(l.get("corner_xg")), "")))
 
     def ratio(v):
         return v / l["corner_xg"] if _num(v) and _num(l.get("corner_xg")) and l["corner_xg"] > 0 else None
@@ -620,9 +638,9 @@ def _resumenes(art, glob, H, strength, principios, dom_coach, dom_squad, best):
         n = len(S["partidos"]) if isinstance(S["partidos"], list) else int(S["partidos"])
         diff = S["puntos"] - S["xpts"]
         pts = [_pt("Puntos sumados", str(S["puntos"]), nota=f"{n} partidos"),
-               _pt("Puntos esperados por su juego", f1(S["xpts"]), nota=f"{f1(abs(diff))} {'más' if diff >= 0 else 'menos'} de lo esperado")]
+               _pt("Puntos que merecía por su juego", f1(S["xpts"]), nota="lo justo" if abs(diff) < 1 else f"sumó {f1(abs(diff))} {'más' if diff >= 0 else 'menos'}")]
         if _num(S.get("dominio_medio")):
-            pts.append(_pt("Cuota media de xG", f"{f1(S['dominio_medio'], 0)}%", "liga 50%"))
+            pts.append(_pt("Su parte del xG del partido", f"{f1(S['dominio_medio'], 0)}%", "liga 50%"))
         # diferencia «real» si supera ~0.08 puntos por partido (y al menos 3 en total)
         umbral = max(3.0, 0.08 * n)
         idea = ("Sumó más de lo que generó." if diff > umbral else

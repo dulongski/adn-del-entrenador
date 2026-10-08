@@ -74,15 +74,25 @@ function formationLayout(ids: number[], posOf: (id: number) => string | undefine
   ids.forEach(id => { const { line, lat } = slotOf(posOf(id), hayMP); if (!byLine.has(line)) byLine.set(line, []); byLine.get(line)!.push({ id, lat }) })
   const out: { id: number; x: number; y: number }[] = []
   byLine.forEach((ps, line) => {
-    ps.sort((a, b) => a.lat - b.lat)
-    const base = ps.map(p => 50 + p.lat * 13)
-    const xs = [...base]
-    for (let i = 1; i < xs.length; i++) xs[i] = Math.max(xs[i], xs[i - 1] + 17)   // separa a los que comparten carril
-    const shift = base.reduce((a, b) => a + b, 0) / base.length - xs.reduce((a, b) => a + b, 0) / xs.length
-    let adj = xs.map(x => x + shift)
-    const lo = Math.min(...adj), hi = Math.max(...adj)
-    if (lo < 9 || hi > 91) { const c = (lo + hi) / 2, k = Math.min(1, 41 / Math.max(1e-6, (hi - lo) / 2)); adj = adj.map(x => 50 + (x - c) * k) }
-    ps.forEach((p, i) => out.push({ id: p.id, x: adj[i], y: LINE_Y[line] }))
+    // los de banda (|carril| = 3) se quedan abiertos si hay alguien por dentro o si hay bandas de los dos lados;
+    // el resto se reparte simétrico alrededor del centro, sea cual sea el número de jugadores
+    const wide = ps.filter(p => Math.abs(p.lat) >= 3)
+    const inner = ps.filter(p => Math.abs(p.lat) < 3)
+    const bothSides = wide.some(p => p.lat < 0) && wide.some(p => p.lat > 0)
+    const keepWide = inner.length > 0 || bothSides
+    const center = keepWide ? inner : ps
+    center.sort((a, b) => a.lat - b.lat)
+    const m = center.length
+    const avail = keepWide && wide.length ? 50 : 72
+    const gap = m > 1 ? Math.min(22, avail / (m - 1)) : 0
+    center.forEach((p, i) => out.push({ id: p.id, x: 50 + (i - (m - 1) / 2) * gap, y: LINE_Y[line] }))
+    if (keepWide) {
+      ;[-1, 1].forEach(side => {
+        const w = wide.filter(p => Math.sign(p.lat) === side)
+        // dos del mismo costado: uno pegado a la banda y otro un poco más adentro
+        w.forEach((p, i) => out.push({ id: p.id, x: 50 + side * (39 - i * 14), y: LINE_Y[line] }))
+      })
+    }
   })
   const n = [1, 2, 3, 4, 5].map(l => byLine.get(l)?.length ?? 0)
   // pivotes + interiores se leen como una sola línea de medios (4-3-3, 3-5-2, 4-3-1-2) salvo el 4-1-4-1
@@ -90,6 +100,9 @@ function formationLayout(ids: number[], posOf: (id: number) => string | undefine
   const lines = merge ? [n[0], n[1] + n[2], n[3], n[4]] : n
   return { pts: out, formacion: lines.filter(Boolean).join('-'), porteros: byLine.get(0)?.length ?? 0 }
 }
+
+/** Un torneo de Liga MX (Apertura o Clausura) son 17 jornadas. */
+const TORNEO = 17
 
 type Scenario = { key: string; title: string; sub: string; z: number[]; raw: number[] }
 
@@ -114,8 +127,14 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [data, dtInfo])
 
-  const coached = new Set<string>((art.etapas ?? []).map((e: Any) => e.club))
-  const defaultClub = clubs.find(c => !coached.has(c) && data.squads[c]?.temporada === latest) ?? clubs.find(c => !coached.has(c)) ?? clubs[0]
+  // por defecto, su club actual (media.dts); si no está en el modelo, el de su etapa más reciente
+  const defaultClub = useMemo(() => {
+    const ok = (c?: string) => !!c && !!data.squads[c] && clubs.includes(c)
+    const actual = media?.dts?.[art.id]?.club as string | undefined
+    if (ok(actual)) return actual!
+    const et = [...(art.etapas ?? [])].reverse().map((e: Any) => e.club as string).find(ok)
+    return et ?? clubs.find(c => data.squads[c]?.temporada === latest) ?? clubs[0]
+  }, [art, media, data, clubs, latest])
 
   const [coach, setCoach] = useState<number>(data.coaches[art.id] ? art.id : coachIds[0])
   const [club, setClubState] = useState<string>(defaultClub)
@@ -240,8 +259,8 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
 
   return (
     <div className="wi">
-      <h3 className="h2">¿Y si…?</h3>
-      <p className="lede">Combina el estilo propio de este DT con la plantilla y el club que elijas. El modelo suma sus efectos; no captura química ni lesiones.</p>
+      <h3 className="h2">Llévalo a otro club</h3>
+      <p className="lede">Elige un club y arma el once: te decimos cómo jugaría ese equipo con este DT en el banquillo. Arranca con su club actual; cambia de club o de jugadores para comparar. Es una estimación: no sabe de química, lesiones ni vestidor.</p>
 
       <div className="wi-controls card">
         <div className="wi-pickers">
@@ -254,7 +273,7 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
           <label className="wi-field">
             <span>Club</span>
             <select value={club} onChange={e => setClub(e.target.value)}>
-              {clubs.map(c => <option key={c} value={c}>{c}{coachedBy.has(c) ? ' (ya lo dirigió)' : ''}</option>)}
+              {clubs.map(c => <option key={c} value={c}>{c}{c === media?.dts?.[coach]?.club && media?.dts?.[coach]?.vigente ? ' (su club actual)' : coachedBy.has(c) ? ' (ya lo dirigió)' : ''}</option>)}
             </select>
           </label>
         </div>
@@ -434,9 +453,9 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
                 <tr key={key}><td>{lab}</td><td className="num">{f(pHoy)}</td><td className="num wi-sim">{f(pSim)}</td></tr>
               ))}
               <tr className="wi-total">
-                <td>Proyección de temporada (34 partidos)</td>
-                <td className="num">{fmt(pHoy.xpts * 34, 0)} pts</td>
-                <td className="num wi-sim">{fmt(pSim.xpts * 34, 0)} pts <span className="note">({signed((pSim.xpts - pHoy.xpts) * 34, 0)})</span></td>
+                <td>Proyección de un torneo ({TORNEO} partidos)</td>
+                <td className="num">{fmt(pHoy.xpts * TORNEO, 0)} pts</td>
+                <td className="num wi-sim">{fmt(pSim.xpts * TORNEO, 0)} pts <span className="note">({signed((pSim.xpts - pHoy.xpts) * TORNEO, 0)})</span></td>
               </tr>
             </tbody>
           </table>

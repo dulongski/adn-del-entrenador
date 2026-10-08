@@ -7,7 +7,19 @@ Las coordenadas quedan en el marco de ataque del cobrador (hacia x=120).
 
 Salida:
   web/public/data/corners_<coach_id>.json  {"favor": {...}, "contra": {...}}
-  web/public/data/corners_liga.json        {"favor": {...}}  (todos los córners)
+      favor/contra: n, partidos, entregas [[end_x, end_y, fc, xg, goal, short, lado(0 izq, 1 der)]],
+      lados: {ambos|izq|der: {n, n360, atacantes, defensores, portero, quien}},
+      quien_club (club usado para los nombres o null = toda la carrera)
+      quien: nombres de SU equipo por figura (proxy, ver _names): att/def = lista alineada con
+      atacantes/defensores (o null), cob = cobradores, gk = porteros;
+      cada uno {n: acciones, top: [[player_id, nombre, %], ...]}.
+  web/public/data/corners_liga.json        {"favor": {"n", "kpis": {ambos|izq|der: {...}}}}
+
+Identidades: el 360 de StatsBomb no trae quién es cada punto. Como aproximación honesta,
+cada jugador de su equipo que interviene en los primeros segundos del córner (despeje, duelo
+aéreo, remate, recepción, presión...) se asigna al grupo k-means más cercano a la ubicación de
+su primera acción. Así «quién suele estar en esa zona» = reparto de esas apariciones.
+Cobrador y portero sí son identidades exactas (evento del córner / alineación).
 
 Uso: .venv/bin/python -m pipeline.corners
 """
@@ -33,8 +45,13 @@ BOX_X = 96.0       # para contar jugadores "en el área" (define k)
 WINDOW_S = 15.0    # ventana de desenlace
 FC_MAX_S = 10.0    # primer contacto debe ocurrir dentro de esta ventana
 MAX_ENT_DT = 1500
-MAX_ENT_LIGA = 3000
 SKIP_FC = ("Ball Receipt", "Pressure")
+WHO_S = 8.0        # ventana para "quién aparece" tras el córner
+WHO_MAXD = 9.0     # distancia máx. (yardas) de la acción al centro del grupo
+WHO_MIN_CORNERS = 12  # córners mínimos en el club actual para usarlo (si no, carrera)
+NO_WHO = {"Substitution", "Starting XI", "Tactical Shift", "Injury Stoppage", "Player Off",
+          "Player On", "Referee Ball-Drop", "Half Start", "Half End", "Camera On", "Camera off",
+          "Foul Won", "Bad Behaviour", "Own Goal For"}
 
 
 def _load(kind: str, mid: int):
@@ -74,6 +91,9 @@ def extract_match(mid: int) -> list[dict]:
     per = ev.period.values
     corner_pos = set(ci.tolist())
     n = len(ev)
+    pids = ev.player_id.values
+    ys = ev.y.values
+    poscol = ev.position.values
     for i in ci:
         r = ev.loc[i]
         team = int(r.team_id)
@@ -112,8 +132,30 @@ def extract_match(mid: int) -> list[dict]:
                 if outc[j] == "Goal":
                     goal = 1
 
+        # quién aparece: primera acción de cada jugador en los primeros WHO_S segundos
+        who, seen = [], set()
+        for j in range(i + 1, n):
+            if j in corner_pos or per[j] != r.period or tt[j] - r.t > WHO_S:
+                break
+            pj = pids[j]
+            if pj is None or (isinstance(pj, float) and np.isnan(pj)) or np.isnan(xs[j]) or types[j] in NO_WHO:
+                continue
+            pj = int(pj)
+            if pj in seen:
+                continue
+            seen.add(pj)
+            own = int(tid[j]) == team
+            x, y = (xs[j], ys[j]) if own else (120.0 - xs[j], 80.0 - ys[j])
+            if mirror:
+                y = 80.0 - y
+            if x < BOX_X - 6:
+                continue
+            gk = 1 if poscol[j] == "Goalkeeper" else 0
+            who.append([pj, int(own), _r1(x), _r1(y), gk])
+
         rec = {"match_id": int(mid), "event_id": r.id, "team_id": team, "rival_id": rival,
-               "side": side, "end_x": None if np.isnan(ex) else _r1(ex),
+               "taker": None if r.player_id is None or (isinstance(r.player_id, float) and np.isnan(r.player_id)) else int(r.player_id),
+               "who": who, "side": side, "end_x": None if np.isnan(ex) else _r1(ex),
                "end_y": None if np.isnan(ey) else _r1(ey),
                "short": short, "fc": fc, "xg": round(sxg, 3), "goal": goal, "shots": nsh,
                "has360": False, "att": [], "def": [], "gk": None}
@@ -151,11 +193,7 @@ def _kmeans(points: list, per_corner_counts: list[int], lo: int, hi: int) -> lis
     return sorted(cs, key=lambda c: -c[2])
 
 
-def summarize(recs: list[dict], cap: int, att_rng=(3, 8), def_rng=(4, 10)) -> dict:
-    ent = [[r["end_x"], r["end_y"], r["fc"], r["xg"], r["goal"], r["short"]]
-           for r in recs if r["end_x"] is not None and r["end_y"] is not None]
-    if len(ent) > cap:
-        ent = random.Random(0).sample(ent, cap)
+def _clusters(recs: list[dict], att_rng=(3, 8), def_rng=(4, 10)) -> dict:
     w360 = [r for r in recs if r["has360"]]
     att_pts = [p for r in w360 for p in r["att"]]
     def_pts = [p for r in w360 for p in r["def"] if not (r["gk"] and p == r["gk"])]
@@ -164,13 +202,82 @@ def summarize(recs: list[dict], cap: int, att_rng=(3, 8), def_rng=(4, 10)) -> di
     gks = [r["gk"] for r in w360 if r["gk"]]
     return {
         "n": len(recs),
-        "partidos": len({r["match_id"] for r in recs}),
-        "entregas": ent,
+        "n360": len(w360),
         "atacantes": _kmeans(att_pts, att_n, *att_rng),
         "defensores": _kmeans(def_pts, def_n, *def_rng),
         "portero": [_r1(np.mean([g[0] for g in gks])), _r1(np.mean([g[1] for g in gks]))] if gks else None,
-        "n360": len(w360),
     }
+
+
+def _top(counter: dict, names: dict, k: int = 3):
+    tot = sum(counter.values())
+    if not tot:
+        return None
+    top = sorted(counter.items(), key=lambda kv: -kv[1])[:k]
+    return {"n": int(tot), "top": [[int(pid), names.get(pid, str(pid)), round(100.0 * c / tot)] for pid, c in top]}
+
+
+def _names(view: dict, recs: list[dict], favor: bool, names: dict) -> dict:
+    """Nombres de SU equipo por figura (ver docstring del módulo).
+    favor: su equipo cobra -> atacantes + cobrador; contra: su equipo defiende -> defensores + portero."""
+    own_flag = 1 if favor else 0
+    centers = view["atacantes"] if favor else view["defensores"]
+    C = np.asarray([c[:2] for c in centers], dtype=float) if centers else np.zeros((0, 2))
+    per = [dict() for _ in centers]
+    gk, cob = {}, {}
+    for r in recs:
+        if favor and r["taker"] is not None:
+            cob[r["taker"]] = cob.get(r["taker"], 0) + 1
+        for pid, own, x, y, isgk in r["who"]:
+            if own != own_flag or (favor and pid == r["taker"]):
+                continue
+            if isgk:
+                if not favor:
+                    gk[pid] = gk.get(pid, 0) + 1
+                continue
+            if not len(C):
+                continue
+            d = np.hypot(C[:, 0] - x, C[:, 1] - y)
+            k = int(np.argmin(d))
+            if d[k] <= WHO_MAXD:
+                per[k][pid] = per[k].get(pid, 0) + 1
+    out = {"att" if favor else "def": [_top(c, names) for c in per]}
+    if favor:
+        out["cob"] = _top(cob, names)
+    else:
+        out["gk"] = _top(gk, names, 2)
+    return out
+
+
+SIDE_I = {"izq": 0, "der": 1}
+
+
+def summarize(recs: list[dict], cap: int, favor: bool, names: dict, name_recs: list[dict]) -> dict:
+    ent = [[r["end_x"], r["end_y"], r["fc"], r["xg"], r["goal"], r["short"], SIDE_I[r["side"]]]
+           for r in recs if r["end_x"] is not None and r["end_y"] is not None]
+    if len(ent) > cap:
+        ent = random.Random(0).sample(ent, cap)
+    lados = {}
+    for lado in ("ambos", "izq", "der"):
+        sub = recs if lado == "ambos" else [r for r in recs if r["side"] == lado]
+        nsub = name_recs if lado == "ambos" else [r for r in name_recs if r["side"] == lado]
+        v = _clusters(sub)
+        v["quien"] = _names(v, nsub, favor, names)
+        lados[lado] = v
+    return {"n": len(recs), "partidos": len({r["match_id"] for r in recs}), "entregas": ent, "lados": lados}
+
+
+def _kpis(recs: list[dict]) -> dict:
+    out = {}
+    for lado in ("ambos", "izq", "der"):
+        sub = recs if lado == "ambos" else [r for r in recs if r["side"] == lado]
+        fc = [r["fc"] for r in sub if r["fc"] >= 0]
+        n = max(1, len(sub))
+        out[lado] = {"n": len(sub), "xg": round(sum(r["xg"] for r in sub) / n, 4),
+                     "remate": round(sum(1 for r in sub if r["xg"] > 0) / n, 4),
+                     "fc": round(float(np.mean(fc)), 4) if fc else None,
+                     "corto": round(sum(r["short"] for r in sub) / n, 4)}
+    return out
 
 
 def main(workers: int = 8):
@@ -197,19 +304,41 @@ def main(workers: int = 8):
     j["favor"] = j.team_id == j.coach_team
 
     dts = json.load(open(ROOT / "artifacts" / "global.json"))["dts"]
+    pl = pd.read_parquet(DATA / "processed" / "players.parquet").dropna(subset=["player_id"])
+    names = {int(a): b for a, b in zip(pl.player_id, pl.player)}  # nombre completo; la web aplica apodos
+    try:
+        media = json.load(open(ROOT / "web" / "src" / "boot.json"))["media"]["dts"]
+    except (FileNotFoundError, KeyError):
+        media = {}
+    dates = dict(zip(m.match_id.astype(int), m.date.astype(str)))
+    club_name = {}
+    for _, row in m.iterrows():
+        club_name[int(row.home_id)] = row.home
+        club_name[int(row.away_id)] = row.away
     OUT.mkdir(parents=True, exist_ok=True)
     for d in dts:
         cid = int(d["id"])
         s = j[j.coach_id == cid]
         fav = [allrecs[i] for i in s[s.favor].i]
         con = [allrecs[i] for i in s[~s.favor].i]
-        res = {"favor": summarize(fav, MAX_ENT_DT), "contra": summarize(con, MAX_ENT_DT)}
+        # club actual (media) o el de su partido más reciente
+        cur = (media.get(str(cid)) or {}).get("club_id")
+        if cur is None and len(s):
+            last = max(s.match_id, key=lambda x: dates.get(int(x), ""))
+            cur = int(s[s.match_id == last].coach_team.iloc[0])
+        res = {}
+        for key, recs, is_fav in (("favor", fav, True), ("contra", con, False)):
+            # su equipo: cobrador en favor (team_id), rival del cobrador en contra
+            own = [r for r in recs if (r["team_id"] if is_fav else r["rival_id"]) == cur] if cur is not None else []
+            use_club = len(own) >= WHO_MIN_CORNERS
+            res[key] = summarize(recs, MAX_ENT_DT, is_fav, names, own if use_club else recs)
+            res[key]["quien_club"] = club_name.get(int(cur)) if use_club else None
         # partidos = partidos dirigidos con datos, no sólo con córner
         npart = int(coach_side[(coach_side.coach_id == cid) & coach_side.match_id.isin(mids)].match_id.nunique())
         res["favor"]["partidos"] = res["contra"]["partidos"] = npart
         with open(OUT / f"corners_{cid}.json", "w") as fh:
             json.dump(res, fh, separators=(",", ":"))
-    liga = {"favor": summarize(allrecs, MAX_ENT_LIGA)}
+    liga = {"favor": {"n": len(allrecs), "kpis": _kpis(allrecs)}}
     with open(OUT / "corners_liga.json", "w") as fh:
         json.dump(liga, fh, separators=(",", ":"))
     print(f"escritos {len(dts)} DTs + liga en {OUT}")

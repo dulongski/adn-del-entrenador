@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 import { asset, fmt, shortName, type Any } from './lib'
-import { MODES, type Mode, type TabKey } from './modes'
+import { MODES, modeTitle, type Mode, type TabKey } from './modes'
 import { similares } from './Compare'
 import './hub.css'
 
@@ -122,7 +122,7 @@ function ArtVs({ art, media, mapa }: { art: Any; media: Any; mapa: Any }) {
     <div className="hub-vsart">
       {a && <img src={a} alt="" className="hub-vs-a" />}
       {b && <img src={b} alt="" className="hub-vs-b" />}
-      <span className="hub-vs-slash" />
+      <svg className="hub-vs-seam" viewBox="0 0 100 100" preserveAspectRatio="none"><line x1={56} y1={-2} x2={44} y2={102} vectorEffect="non-scaling-stroke" /></svg>
     </div>
   )
 }
@@ -177,7 +177,7 @@ export default function Hub({ art, media, mapa, go }: { art: Any; media: Any; ma
           <span className="hub-shade" aria-hidden />
           <span className="hub-body">
             <span className="hub-q">{m.q}</span>
-            <span className="hub-title">{m.title}</span>
+            <span className="hub-title">{modeTitle(m, art)}</span>
             <span className="hub-desc">{m.desc}</span>
             <span className="hub-hook">{hook(m, art, mapa)}</span>
             {m.subs.length > 1 && <span className="hub-subs">{m.subs.map(([, l]) => l).join(' · ')}</span>}

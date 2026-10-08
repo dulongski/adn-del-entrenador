@@ -1,17 +1,25 @@
+/* ================================================================ CÓRNERS 3D */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { clubColor, dataUrl, fmt, getJSON, pct, type Any } from './lib'
+import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, pct, type Any } from './lib'
+import './styles/bp.css'
 
 /* Córners en 3D (datos: pipeline/corners.py, todos los córners normalizados como si se cobraran
-   desde la misma esquina, atacando hacia x=120):
+   desde la esquina y≈0, atacando hacia x=120; los de la derecha se vuelven a reflejar al dibujar):
    - Barras sobre el último tercio: ALTURA = volumen de envíos que caen en esa zona,
      COLOR = xG medio que generan los córners enviados ahí.
    - Jugadores: posiciones típicas (k-means sobre los fotogramas 360) de atacantes y defensores.
-   - Simulador: re-juega uno de sus córners reales (muestreo con reemplazo): el balón vuela en
+     Al pasar el cursor sobre uno de SU equipo: quién suele aparecer en esa zona (proxy por eventos).
+   - Simulador: re-juega uno de sus córners reales: el balón sale de los pies del cobrador en
      arco a la zona de envío; si su equipo toca primero y hubo remate, es gol con probabilidad xG. */
 
 type V3 = [number, number, number]
-type Side = 'favor' | 'contra'
+export type Side = 'favor' | 'contra'
+type Lado = 'ambos' | 'izq' | 'der'
+type Kind = 'att' | 'def' | 'cob' | 'gk'
+type Fig = { x: number; y: number; bx: number; by: number; r: number; kind: Kind; i: number }
+type Hover = { kind: Kind; i: number; x: number; y: number }
 const X0 = 94, X1 = 120, CELL = 2
+const BALL: V3 = [119.3, 0.75, 0.22], TAKER: [number, number] = [119.0, -0.9]
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
 
 /** Escala secuencial de xG (amarillo pálido → rojo oscuro), legible en ambos temas. */
@@ -21,30 +29,51 @@ function xgColor(t: number, shade = 1) {
   const c = s[i].map((v, k) => v + (s[i + 1][k] - v) * f).map(v => Math.round(v * shade))
   return `rgb(${c[0]},${c[1]},${c[2]})`
 }
+const cssVar = (n: string, d: string) => { try { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || d } catch { return d } }
+/** clubColor puede devolver var(--x): el canvas necesita el color real. */
+const solid = (c: string) => { const m = /^var\((--[\w-]+)\)$/.exec(c); return m ? cssVar(m[1], '#3987e5') : c }
+function luminance(c: string) {
+  const h = /^#([0-9a-f]{6})$/i.exec(c)
+  if (!h) return 0.4
+  const n = parseInt(h[1], 16)
+  return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255
+}
 
 type Sim = { e: number[]; t0: number; goal: boolean; txt: string }
 
-export default function Corners3D({ art, media }: { art: Any; media: Any }) {
+export default function Corners3D({ art, media, side, onSide }: { art: Any; media: Any; side: Side; onSide: (s: Side) => void }) {
   const [data, setData] = useState<Any>(null)
   const [liga, setLiga] = useState<Any>(null)
-  const [side, setSide] = useState<Side>('favor')
+  const [lado, setLado] = useState<Lado>('ambos')
   const [showPlayers, setShowPlayers] = useState(true)
   const [rot, setRot] = useState({ yaw: 1.25, pitch: 0.82 })
   const [sim, setSim] = useState<Sim | null>(null)
-  const [batch, setBatch] = useState<Any>(null)
+  const [hover, setHover] = useState<Hover | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
+  const figs = useRef<Fig[]>([])
   const [, force] = useState(0)
-  const drag = useRef<{ x: number; y: number } | null>(null)
+  const drag = useRef<{ x: number; y: number; moved: number } | null>(null)
   const club = media?.dts?.[art.id]?.club ?? art.etapas?.at(-1)?.club
-  const tc = clubColor(club, media)
+  const tc = solid(clubColor(club, media))
+  const rivalC = luminance(tc) > 0.8 ? '#e0605a' : '#f2f2f2'
+  const gkRival = '#9aa39e'
 
   useEffect(() => {
     setData(null); setErr(null)
     getJSON(dataUrl(`corners_${art.id}.json`)).then(setData).catch(() => setErr('Aún no hay datos de córners 3D para este DT.'))
     getJSON(dataUrl('corners_liga.json')).then(setLiga).catch(() => {})
   }, [art.id])
+  useEffect(() => { setSim(null); setHover(null) }, [side, lado, art.id])
   const D = data?.[side]
+  const V = D?.lados?.[lado]
+  // con la cámara por defecto el córner y≈0 cae a la derecha de la imagen: se refleja para que
+  // «izquierda» (y ambos, normalizados a la izquierda) se vean desde la izquierda del atacante
+  const mirror = lado !== 'der'
+  const E: number[][] = useMemo(() => {
+    if (!D) return []
+    return lado === 'ambos' ? D.entregas : D.entregas.filter((e: number[]) => e[6] === (lado === 'izq' ? 0 : 1))
+  }, [D, lado])
 
   // rejilla de zonas: conteo de envíos suavizado (kernel gaussiano, σ≈1 celda) y xG medio con
   // encogimiento hacia su media global (k=4 envíos), para que una celda con 1 envío no se pinte roja por azar
@@ -54,7 +83,7 @@ export default function Corners3D({ art, media }: { art: Any; media: Any }) {
     const z = () => Array.from({ length: nx }, () => new Array(ny).fill(0))
     const cnt0 = z(), xg0 = z(), cnt = z(), xgs = z()
     let tot = 0, totX = 0
-    for (const [ex, ey, , g, , sh] of D.entregas as number[][]) {
+    for (const [ex, ey, , g, , sh] of E) {
       if (sh || ex < X0) continue
       const i = clamp(Math.floor((ex - X0) / CELL), 0, nx - 1), j = clamp(Math.floor(ey / CELL), 0, ny - 1)
       cnt0[i][j]++; xg0[i][j] += g; tot++; totX += g
@@ -80,26 +109,14 @@ export default function Corners3D({ art, media }: { art: Any; media: Any }) {
       else maxX = Math.max(maxX, xg[i][j])
     }
     return { nx, ny, cnt, xg, maxC, maxX: Math.min(Math.max(maxX, 0.06), 0.2), tot }
-  }, [D])
+  }, [D, E])
 
-  // estadísticas de 1,000 córners re-jugados (muestreo con reemplazo de sus córners reales)
-  const runBatch = () => {
-    if (!D) return
-    const E: number[][] = D.entregas
-    let goles = 0, remates = 0, xg = 0, primero = 0, cortos = 0
-    for (let k = 0; k < 1000; k++) {
-      const e = E[Math.floor(Math.random() * E.length)]
-      xg += e[3]; if (e[3] > 0) remates++; if (e[2] === 1) primero++; if (e[5] === 1) cortos++
-      if (Math.random() < e[3]) goles++
-    }
-    setBatch({ goles, remates, xg, primero, cortos })
-  }
   const runOne = () => {
-    if (!D) return
-    const E: number[][] = D.entregas
+    if (!E.length) return
     const e = E[Math.floor(Math.random() * E.length)]
     const goal = e[3] > 0 && Math.random() < e[3]
     const txt = e[5] ? 'Córner en corto' : e[3] > 0 ? (goal ? '¡GOL!' : `Remate sin gol · xG ${fmt(e[3], 2)}`) : e[2] === 1 ? 'Primer contacto propio, sin remate' : 'Despeja el rival'
+    setHover(null)
     setSim({ e, t0: performance.now(), goal, txt })
   }
 
@@ -112,17 +129,33 @@ export default function Corners3D({ art, media }: { art: Any; media: Any }) {
     return () => cancelAnimationFrame(raf)
   }, [sim])
 
+  // redibujar al cambiar el tamaño del lienzo o el tema (claro/oscuro)
+  useEffect(() => {
+    const c = canvas.current
+    if (!c) return
+    const redraw = () => force(v => v + 1)
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(redraw) : null
+    ro?.observe(c)
+    const mo = new MutationObserver(redraw)
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] })
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
+    mq?.addEventListener?.('change', redraw)
+    return () => { ro?.disconnect(); mo.disconnect(); mq?.removeEventListener?.('change', redraw) }
+  }, [D])
+
   // ------------------------------------------------------------ dibujo
   useEffect(() => {
     const c = canvas.current
-    if (!c || !grid || !D) return
+    if (!c || !grid || !V) return
     const W = c.clientWidth, H = c.clientHeight, dpr = window.devicePixelRatio || 1
-    if (c.width !== Math.round(W * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr) }
+    if (!W || !H) return
+    if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr) }
     const g = c.getContext('2d')!
     g.setTransform(dpr, 0, 0, dpr, 0, 0)
-    const css = (n: string, d: string) => { try { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || d } catch { return d } }
-    g.fillStyle = css('--surface', '#18211c'); g.fillRect(0, 0, W, H)
-    // cámara: centro de la escena en el área; yaw alrededor del eje vertical, pitch = inclinación
+    g.fillStyle = cssVar('--surface', '#18211c'); g.fillRect(0, 0, W, H)
+    // cámara: centro de la escena en el área; yaw alrededor del eje vertical, pitch = inclinación.
+    // Reflejo horizontal de la imagen (equivale a reflejar cancha y cámara): la bandera queda en el
+    // lado correcto y izquierda/derecha se ven como espejo una de otra.
     const C: V3 = [107, 40, 0]
     const cy = Math.cos(rot.yaw), sy = Math.sin(rot.yaw), cp = Math.cos(rot.pitch), sp = Math.sin(rot.pitch)
     const R = ([x, y, z]: V3) => {
@@ -130,27 +163,33 @@ export default function Corners3D({ art, media }: { art: Any; media: Any }) {
       const rx = dx * cy - dy * sy, ry = dx * sy + dy * cy       // giro horizontal
       const vy = ry * cp - dz * sp, depth = ry * sp + dz * cp    // inclinación
       const f = 90 / (90 + vy)
-      return { x: rx * f, y: -depth * f, d: vy }
+      return { x: (mirror ? -rx : rx) * f, y: -depth * f, d: vy }
     }
-    // encuadre automático: la escena (último cuarto de cancha + portería) siempre cabe en el lienzo
-    const box: V3[] = [[X0 + 4, 0, 0], [121, 0, 0], [121, 70, 0], [X0 + 4, 70, 0], [120, 36, 2.7], [120, 44, 2.7], [112, 40, 13]]
+    // encuadre automático: la escena (último cuarto de cancha + portería + bandera) siempre cabe en el lienzo
+    // en pantallas angostas se encuadra más cerca (área + esquina) para que se lea mejor
+    const narrow = W < 520, yFar = narrow ? 64 : 70, xNear = narrow ? 100 : X0 + 1
+    const box: V3[] = [[xNear, 0, 0], [121, -1, 0], [121, yFar, 0], [xNear + 3, yFar, 0], [120, 36, 2.7], [120, 44, 2.7], [112, 40, 13], [120, 0, 3.6], [118.5, -2, 4.4], [121.5, -1.5, 0]]
     const bb = box.map(R), mx = Math.min(...bb.map(p => p.x)), Mx = Math.max(...bb.map(p => p.x)), my = Math.min(...bb.map(p => p.y)), My = Math.max(...bb.map(p => p.y))
-    const S = Math.min((W - 24) / (Mx - mx), (H - 36) / (My - my)), ox = W / 2 - S * (mx + Mx) / 2, oy = H / 2 - S * (my + My) / 2 + 6
+    const S = Math.min((W - 40) / (Mx - mx), (H - 40) / (My - my)), ox = W / 2 - S * (mx + Mx) / 2, oy = H / 2 - S * (my + My) / 2 + 6
     const P = (v: V3) => { const r = R(v); return { x: ox + r.x * S, y: oy + r.y * S, d: r.d } }
     const line = (a: V3, b: V3, col: string, w = 1) => { const A = P(a), B = P(b); g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(A.x, A.y); g.lineTo(B.x, B.y); g.stroke() }
     const poly = (pts: V3[], fill: string, stroke?: string) => { const q = pts.map(P); g.beginPath(); q.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); g.fillStyle = fill; g.fill(); if (stroke) { g.strokeStyle = stroke; g.lineWidth = 0.6; g.stroke() } }
     // piso y líneas
-    const pitch = css('--pitch', '#1d2922'), pl = css('--pitch-line', '#3b4b42')
+    const pitch = cssVar('--pitch', '#1d2922'), pl = cssVar('--pitch-line', '#3b4b42')
     poly([[X0, 0, 0], [120, 0, 0], [120, 80, 0], [X0, 80, 0]], pitch)
     ;[[[102, 18], [120, 18]], [[102, 18], [102, 62]], [[102, 62], [120, 62]], [[114, 30], [120, 30]], [[114, 30], [114, 50]], [[114, 50], [120, 50]], [[120, 0], [120, 80]], [[X0, 0], [120, 0]], [[X0, 80], [120, 80]]]
       .forEach(([a, b]) => line([a[0], a[1], 0], [b[0], b[1], 0], pl, 1.2))
+    // arco de esquina
+    g.strokeStyle = pl; g.lineWidth = 1.2; g.beginPath()
+    for (let k = 0; k <= 12; k++) { const a = (k / 12) * Math.PI / 2, q = P([120 - Math.cos(a) * 1.1, Math.sin(a) * 1.1, 0]); if (k) g.lineTo(q.x, q.y); else g.moveTo(q.x, q.y) }
+    g.stroke()
     // barras (ordenadas de atrás hacia adelante)
     const hmax = 13
     const bars: { i: number; j: number; d: number }[] = []
     for (let i = 0; i < grid.nx; i++) for (let j = 0; j < grid.ny; j++) if (grid.cnt[i][j]) bars.push({ i, j, d: P([X0 + (i + 0.5) * CELL, (j + 0.5) * CELL, 0]).d })
     bars.sort((a, b) => b.d - a.d)
     for (const { i, j } of bars) {
-      const c = grid.cnt[i][j], h = (c / grid.maxC) * hmax, t = grid.xg[i][j] / grid.maxX
+      const cn = grid.cnt[i][j], h = (cn / grid.maxC) * hmax, t = grid.xg[i][j] / grid.maxX
       const x0 = X0 + i * CELL + 0.12, x1 = x0 + CELL - 0.24, y0 = j * CELL + 0.12, y1 = y0 + CELL - 0.24
       const top: V3[] = [[x0, y0, h], [x1, y0, h], [x1, y1, h], [x0, y1, h]]
       const sides: V3[][] = [
@@ -164,97 +203,203 @@ export default function Corners3D({ art, media }: { art: Any; media: Any }) {
     const gl = '#f2f2f2'
     line([120, 36, 0], [120, 36, 2.67], gl, 2.2); line([120, 44, 0], [120, 44, 2.67], gl, 2.2); line([120, 36, 2.67], [120, 44, 2.67], gl, 2.2)
     line([120, 36, 2.67], [122.5, 36, 0], 'rgba(255,255,255,.35)', 1); line([120, 44, 2.67], [122.5, 44, 0], 'rgba(255,255,255,.35)', 1)
-    // jugadores: posiciones típicas (360)
-    if (showPlayers) {
-      const attC = side === 'favor' ? tc : '#f2f2f2', defC = side === 'favor' ? '#f2f2f2' : tc
-      const man = (x: number, y: number, col: string, w: number) => {
-        const base = P([x, y, 0]), head = P([x, y, 2.6 + 1.2 * w])
-        g.strokeStyle = col; g.lineWidth = Math.max(2.5, S * 0.28); g.lineCap = 'round'; g.beginPath(); g.moveTo(base.x, base.y); g.lineTo(head.x, head.y); g.stroke()
-        g.beginPath(); g.arc(head.x, head.y, S * (0.6 + 0.6 * w), 0, Math.PI * 2); g.fillStyle = col; g.fill(); g.lineWidth = 1.2; g.strokeStyle = 'rgba(0,0,0,.55)'; g.stroke()
-      }
-      const ppl = [...(D.defensores || []).map((p: number[]) => ({ p, col: defC })), ...(D.atacantes || []).map((p: number[]) => ({ p, col: attC }))]
-        .sort((a: Any, b: Any) => P([b.p[0], b.p[1], 0]).d - P([a.p[0], a.p[1], 0]).d)
-      ppl.filter(({ p }: Any) => p[0] >= X0 - 1).forEach(({ p, col }: Any) => man(p[0], p[1], col, p[2] ?? 0.3))
-      if (D.portero) man(D.portero[0], D.portero[1], side === 'favor' ? '#9aa39e' : tc, 0.5)
-      man(120.5, 0.5, attC, 0.4) // cobrador
+    // bandera de córner
+    line([120, 0, 0], [120, 0, 3.3], '#e9e9e9', 1.6)
+    poly([[120, 0, 3.3], [120, 0, 2.45], [118.7, -0.25, 2.95]], '#f2b51b', 'rgba(0,0,0,.35)')
+
+    // jugadores: posiciones típicas (360) + cobrador junto al balón
+    const ownKind: Kind = side === 'favor' ? 'att' : 'def'
+    const out: Fig[] = []
+    const man = (x: number, y: number, col: string, w: number, kind?: Kind, i = 0) => {
+      const base = P([x, y, 0]), head = P([x, y, 2.6 + 1.2 * w]), r = S * (0.6 + 0.6 * w)
+      const hov = hover && kind && hover.kind === kind && hover.i === i
+      g.strokeStyle = col; g.lineWidth = Math.max(2.5, S * 0.28); g.lineCap = 'round'; g.beginPath(); g.moveTo(base.x, base.y); g.lineTo(head.x, head.y); g.stroke()
+      g.beginPath(); g.arc(head.x, head.y, r, 0, Math.PI * 2); g.fillStyle = col; g.fill(); g.lineWidth = 1.2; g.strokeStyle = 'rgba(0,0,0,.55)'; g.stroke()
+      if (hov) { g.beginPath(); g.arc(head.x, head.y, r + 4, 0, Math.PI * 2); g.lineWidth = 2; g.strokeStyle = cssVar('--ink', '#eef3ef'); g.stroke() }
+      if (kind) out.push({ x: head.x, y: head.y, bx: base.x, by: base.y, r, kind, i })
     }
-    // córner simulado: arco del balón y remate
+    if (showPlayers) {
+      const attC = side === 'favor' ? tc : rivalC, defC = side === 'favor' ? rivalC : tc
+      const ppl = [
+        ...(V.defensores || []).map((p: number[], i: number) => ({ p, col: defC, kind: ownKind === 'def' ? 'def' : undefined, i })),
+        ...(V.atacantes || []).map((p: number[], i: number) => ({ p, col: attC, kind: ownKind === 'att' ? 'att' : undefined, i })),
+      ]
+      if (V.portero) ppl.push({ p: [V.portero[0], V.portero[1], 0.5], col: side === 'favor' ? gkRival : tc, kind: side === 'contra' ? 'gk' : undefined, i: 0 })
+      ppl.push({ p: [TAKER[0], TAKER[1], 0.4], col: attC, kind: side === 'favor' ? 'cob' : undefined, i: 0 })
+      ppl.filter(({ p }: Any) => p[0] >= X0 - 1)
+        .sort((a: Any, b: Any) => P([b.p[0], b.p[1], 0]).d - P([a.p[0], a.p[1], 0]).d)
+        .forEach(({ p, col, kind, i }: Any) => man(p[0], p[1], col, p[2] ?? 0.3, kind, i))
+    }
+    figs.current = out
+
+    // balón: en los pies del cobrador; en la simulación vuela en arco a la zona de envío y remata
+    let ball: V3 = BALL
     if (sim) {
       const tt = (performance.now() - sim.t0) / 1000
       const [ex, ey, fc, xg, , short] = sim.e
-      const start: V3 = [120, 0.8, 0], land: V3 = [ex, ey, 0]
+      const land: V3 = [ex, ey, 0]
       const peak = short ? 0.6 : 6.5
-      const fly = clamp(tt / 1.1, 0, 1)
-      const arc = (u: number): V3 => [start[0] + (land[0] - start[0]) * u, start[1] + (land[1] - start[1]) * u, 4 * peak * u * (1 - u) + (short ? 0 : 0.3)]
-      g.setLineDash([4, 4]); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1.5; g.beginPath()
-      for (let k = 0; k <= 30; k++) { const q = P(arc((k / 30) * fly)); if (k) g.lineTo(q.x, q.y); else g.moveTo(q.x, q.y) }
-      g.stroke(); g.setLineDash([])
-      let ball = arc(fly)
+      const wait = 0.35, fly = clamp((tt - wait) / 1.1, 0, 1)
+      const arc = (u: number): V3 => [BALL[0] + (land[0] - BALL[0]) * u, BALL[1] + (land[1] - BALL[1]) * u, BALL[2] + 4 * peak * u * (1 - u) + (short ? 0 : 0.3 * u)]
+      if (fly > 0) {
+        g.setLineDash([4, 4]); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1.5; g.beginPath()
+        for (let k = 0; k <= 30; k++) { const q = P(arc((k / 30) * fly)); if (k) g.lineTo(q.x, q.y); else g.moveTo(q.x, q.y) }
+        g.stroke(); g.setLineDash([])
+      }
+      ball = arc(fly)
       if (fly >= 1 && xg > 0 && fc === 1 && !short) {
-        const u = clamp((tt - 1.25) / 0.35, 0, 1)
+        const u = clamp((tt - wait - 1.25) / 0.35, 0, 1)
         const goalPt: V3 = sim.goal ? [120, 40 + ((sim.e[1] * 7) % 6) - 3, 1.2] : [120, 40 + (ey < 40 ? -7 : 7), 3.2]
         if (u > 0) { ball = [land[0] + (goalPt[0] - land[0]) * u, land[1] + (goalPt[1] - land[1]) * u, 1.4 + (goalPt[2] - 1.4) * u]; line([land[0], land[1], 1.4], ball, '#ffffff', 2.5) }
       }
-      const sh = P([ball[0], ball[1], 0]), b = P(ball)
-      g.beginPath(); g.ellipse(sh.x, sh.y, 4, 2, 0, 0, Math.PI * 2); g.fillStyle = 'rgba(0,0,0,.35)'; g.fill()
-      g.beginPath(); g.arc(b.x, b.y, 5, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.strokeStyle = '#111'; g.lineWidth = 1; g.stroke()
     }
+    const sh = P([ball[0], ball[1], 0]), b = P(ball), br = clamp(S * 0.42, 3, 6)
+    g.beginPath(); g.ellipse(sh.x, sh.y, br * 0.9, br * 0.45, 0, 0, Math.PI * 2); g.fillStyle = 'rgba(0,0,0,.35)'; g.fill()
+    g.beginPath(); g.arc(b.x, b.y, br, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.strokeStyle = '#111'; g.lineWidth = 1; g.stroke()
   })
 
-  const onDown = (e: React.PointerEvent) => { drag.current = { x: e.clientX, y: e.clientY }; (e.target as Element).setPointerCapture?.(e.pointerId) }
-  const onMove = (e: React.PointerEvent) => {
-    if (!drag.current) return
-    const dx = e.clientX - drag.current.x, dy = e.clientY - drag.current.y
-    drag.current = { x: e.clientX, y: e.clientY }
-    setRot(r => ({ yaw: r.yaw + dx * 0.008, pitch: clamp(r.pitch - dy * 0.006, 0.35, 1.45) }))
+  // hit-test de figuras de su equipo (cabeza o cuerpo)
+  const pick = (e: React.PointerEvent): Hover | null => {
+    const c = canvas.current
+    if (!c) return null
+    const rc = c.getBoundingClientRect(), px = e.clientX - rc.left, py = e.clientY - rc.top
+    let best: Fig | null = null, bd = Infinity
+    for (const f of figs.current) {
+      const vx = f.x - f.bx, vy = f.y - f.by, L2 = vx * vx + vy * vy || 1
+      const u = clamp(((px - f.bx) * vx + (py - f.by) * vy) / L2, 0, 1)
+      const d = Math.hypot(px - (f.bx + u * vx), py - (f.by + u * vy))
+      if (d < Math.max(10, f.r + 5) && d < bd) { bd = d; best = f }
+    }
+    return best ? { kind: best.kind, i: best.i, x: best.x, y: best.y } : null
   }
-  const onUp = () => { drag.current = null }
+  const sameHover = (a: Hover | null, b: Hover | null) => (a?.kind === b?.kind && a?.i === b?.i)
+  const onDown = (e: React.PointerEvent) => { drag.current = { x: e.clientX, y: e.clientY, moved: 0 }; (e.target as Element).setPointerCapture?.(e.pointerId) }
+  const onMove = (e: React.PointerEvent) => {
+    if (!drag.current) {
+      if (e.pointerType === 'mouse') { const h = pick(e); setHover(o => (sameHover(o, h) ? o : h)) }
+      return
+    }
+    const dx = e.clientX - drag.current.x, dy = e.clientY - drag.current.y
+    drag.current = { x: e.clientX, y: e.clientY, moved: drag.current.moved + Math.abs(dx) + Math.abs(dy) }
+    if (drag.current.moved > 4) setHover(null)
+    setRot(r => ({ yaw: r.yaw + (mirror ? -dx : dx) * 0.008, pitch: clamp(r.pitch - dy * 0.006, 0.35, 1.45) }))
+  }
+  const onUp = (e: React.PointerEvent) => {
+    const moved = drag.current?.moved ?? 99
+    drag.current = null
+    if (moved < 5) { const h = pick(e); setHover(o => (sameHover(o, h) && e.pointerType !== 'mouse' ? null : h)) }
+  }
 
   if (err) return <div className="card note">{err}</div>
-  if (!D || !grid) return <div className="card note">Cargando córners…</div>
-  const L = liga?.favor
-  const avg = (E: number[][], k: number, f = (v: number) => v) => E.length ? E.reduce((s, e) => s + f(e[k]), 0) / E.length : 0
-  const xgPer = avg(D.entregas, 3), fcOwn = avg(D.entregas.filter((e: number[]) => e[2] >= 0), 2), rem = avg(D.entregas, 3, v => (v > 0 ? 1 : 0))
-  const simDone = sim && performance.now() - sim.t0 > 1500
+  if (!D || !grid || !V) return <div className="card note">Cargando córners…</div>
+  const LK = liga?.favor?.kpis?.[lado]
+  const avg = (A: number[][], k: number, f = (v: number) => v) => A.length ? A.reduce((s, e) => s + f(e[k]), 0) / A.length : NaN
+  const xgPer = avg(E, 3), fcOwn = avg(E.filter(e => e[2] >= 0), 2), rem = avg(E, 3, v => (v > 0 ? 1 : 0))
+  const simDone = sim && performance.now() - sim.t0 > 1850
+  const Q = V.quien || {}
+  const quienClub: string | null = D.quien_club ?? null
+  const donde = quienClub ? `en ${quienClub}` : 'en toda su carrera'
+  const good = side === 'favor' ? 1 : -1
+  const nCorners = lado === 'ambos' ? D.n : V.n
+  const ladoTxt = lado === 'izq' ? 'desde la izquierda' : lado === 'der' ? 'desde la derecha' : ''
+
+  // tooltip
+  let tip: { title: string; info: Any; foot: string } | null = null
+  if (hover) {
+    if (hover.kind === 'cob') tip = { title: 'Cobrador', info: Q.cob, foot: `Quién cobra sus córners ${ladoTxt ? ladoTxt + ' ' : ''}${donde}.` }
+    else if (hover.kind === 'gk') tip = { title: 'Su portero', info: Q.gk, foot: `Porteros que intervienen en córners rivales ${donde}.` }
+    else tip = {
+      title: hover.kind === 'att' ? 'Atacante de su equipo' : 'Defensor de su equipo',
+      info: Q[hover.kind]?.[hover.i],
+      foot: `Quién suele aparecer en esta zona: primera acción de cada jugador tras el córner, ${donde}.`,
+    }
+  }
+  const stageW = canvas.current?.clientWidth ?? 600
+  const tipLeft = hover ? clamp(hover.x + 14, 8, Math.max(8, stageW - 258)) : 0
+  const tipTop = hover ? Math.max(8, hover.y - 20) : 0
+  const DIF = (v: number, l: number | undefined | null, dir: number) => {
+    if (l == null || !Number.isFinite(v)) return null
+    const rel = l ? (v - l) / Math.abs(l) : 0
+    if (Math.abs(rel) < 0.03) return <span className="bp-arrow eq" title="Como la liga">≈</span>
+    const up = v > l, ok = dir === 0 ? null : (up ? dir > 0 : dir < 0)
+    return <span className={`bp-arrow ${ok == null ? 'eq' : ok ? 'up' : 'down'}`} title={up ? 'Más que la liga' : 'Menos que la liga'}>{up ? '▲' : '▼'}</span>
+  }
+
   return (
     <div className="c3d">
       <div className="c3d-ctrl">
         <div className="seg sm" role="group" aria-label="Córners a favor o en contra">
-          <button aria-pressed={side === 'favor'} onClick={() => { setSide('favor'); setSim(null); setBatch(null) }}>A favor</button>
-          <button aria-pressed={side === 'contra'} onClick={() => { setSide('contra'); setSim(null); setBatch(null) }}>En contra</button>
+          <button aria-pressed={side === 'favor'} onClick={() => onSide('favor')}>A favor</button>
+          <button aria-pressed={side === 'contra'} onClick={() => onSide('contra')}>En contra</button>
+        </div>
+        <div className="seg sm" role="group" aria-label="Lado desde el que se cobra el córner">
+          <button aria-pressed={lado === 'ambos'} onClick={() => setLado('ambos')}>Ambos</button>
+          <button aria-pressed={lado === 'izq'} onClick={() => setLado('izq')}>Desde la izquierda</button>
+          <button aria-pressed={lado === 'der'} onClick={() => setLado('der')}>Desde la derecha</button>
         </div>
         <label className="smap-activos" htmlFor="c3d-players"><input id="c3d-players" type="checkbox" checked={showPlayers} onChange={e => setShowPlayers(e.target.checked)} /> Jugadores (360)</label>
-        <button className="btn" onClick={runOne}>▶ Simular un córner</button>
-        <button className="btn ghost" onClick={runBatch}>Simular 1,000</button>
+        <button className="btn c3d-play" onClick={runOne}>▶ Simular un córner</button>
       </div>
       <div className="c3d-main">
         <div className="c3d-stage">
-          <canvas ref={canvas} className="c3d-canvas" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-            aria-label={`Córners ${side === 'favor' ? 'a favor' : 'en contra'} en 3D: altura = volumen de envíos, color = xG`} />
-          {simDone && <div key={sim!.t0} className={`c3d-result${sim!.goal ? ' gol' : ''}`}>{sim!.txt}</div>}
-          <div className="c3d-hint note">Arrastra para girar</div>
-        </div>
-        <aside className="c3d-side">
-          <div className="h3">{side === 'favor' ? 'Sus córners' : 'Córners del rival contra su equipo'}</div>
-          <div className="c3d-kpis">
-            <div><span className="note">Córners</span><b>{D.n}</b><span className="note">{fmt(D.n / Math.max(1, D.partidos), 1)} por partido</span></div>
-            <div><span className="note">xG por córner</span><b>{fmt(xgPer, 3)}</b><span className="note">liga {fmt(L ? avg(L.entregas, 3) : NaN, 3)}</span></div>
-            <div><span className="note">Terminan en remate</span><b>{pct(100 * rem)}</b><span className="note">liga {pct(L ? 100 * avg(L.entregas, 3, v => (v > 0 ? 1 : 0)) : NaN)}</span></div>
-            <div><span className="note">{side === 'favor' ? 'Primer contacto propio' : 'Primer contacto del rival'}</span><b>{pct(100 * fcOwn)}</b></div>
+          <div className="c3d-sizer" />
+          <canvas ref={canvas} className={`c3d-canvas${hover ? ' hot' : ''}`} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
+            onPointerCancel={() => { drag.current = null }} onPointerLeave={e => { if (e.pointerType === 'mouse' && !drag.current) setHover(null) }}
+            aria-label={`Córners ${side === 'favor' ? 'a favor' : 'en contra'} ${ladoTxt} en 3D: altura = volumen de envíos, color = xG`} />
+          <div className="c3d-key" aria-hidden="true">
+            <div className="c3d-key-row"><span className="c3d-key-bars"><i style={{ height: 6 }} /><i style={{ height: 11 }} /><i style={{ height: 16 }} /></span>Altura: cuántos envíos caen ahí</div>
+            <div className="c3d-key-row c3d-key-scale"><span>xG</span><i style={{ background: `linear-gradient(90deg, ${xgColor(0)}, ${xgColor(0.33)}, ${xgColor(0.66)}, ${xgColor(1)})` }} /><span>{fmt(grid.maxX, 2)}+</span></div>
+            {showPlayers && <div className="c3d-key-row c3d-key-dots">
+              <span><i style={{ background: tc }} />Su equipo</span>
+              <span><i style={{ background: rivalC }} />Rival</span>
+              {side === 'favor' && <span><i style={{ background: gkRival }} />Portero rival</span>}
+            </div>}
           </div>
-          {batch && (
-            <div className="c3d-batch">
-              <div className="h3">1,000 córners re-jugados</div>
-              <div><b>{batch.goles}</b> goles · <b>{batch.remates}</b> remates · xG total <b>{fmt(batch.xg, 1)}</b></div>
-              <div className="note">Uno de cada {batch.goles ? Math.round(1000 / batch.goles) : '—'} córners termina en gol · {batch.cortos} en corto</div>
+          {tip && (
+            <div className="c3d-tip" style={{ left: tipLeft, top: tipTop }} role="status">
+              <div className="c3d-tip-h">{tip.title}</div>
+              {tip.info?.top?.length ? (
+                <ul>{tip.info.top.map(([id, nom, p]: [number, string, number]) => (
+                  <li key={id}><span className="c3d-tip-n">{jugadorCorto(id, nom)}</span><span className="c3d-tip-bar"><i style={{ width: `${p}%`, background: tc }} /></span><b>{p}%</b></li>
+                ))}</ul>
+              ) : <div className="c3d-tip-empty">Sin acciones registradas en esta zona.</div>}
+              <div className="c3d-tip-f">{tip.foot}{tip.info?.n ? ` ${tip.info.n} ${tip.info.n === 1 ? 'acción' : hover?.kind === 'cob' ? 'córners' : 'acciones'}.` : ''}{tip.info?.n != null && tip.info.n < 5 && hover?.kind !== 'cob' ? ' Pocos datos.' : ''}</div>
             </div>
           )}
-          <div className="c3d-legend">
-            <div className="note">Color = xG medio de los córners enviados a esa zona</div>
-            <div className="c3d-scale"><span>0</span><i style={{ background: `linear-gradient(90deg, ${xgColor(0)}, ${xgColor(0.33)}, ${xgColor(0.66)}, ${xgColor(1)})` }} /><span>{fmt(grid.maxX, 2)}+</span></div>
-            <div className="note">Altura = volumen de envíos que caen ahí ({grid.tot} envíos al área, sin contar cortos)</div>
-            {showPlayers && <div className="c3d-dots"><span><i style={{ background: side === 'favor' ? tc : '#f2f2f2' }} />Atacan</span><span><i style={{ background: side === 'favor' ? '#f2f2f2' : tc }} />Defienden</span></div>}
-            <div className="note">Posiciones típicas en el momento del envío (fotogramas 360, {D.n360} córners). Todos los córners se muestran como cobrados desde la misma esquina.</div>
+          {simDone && <div key={sim!.t0} className={`c3d-result${sim!.goal ? ' gol' : ''}`}>{sim!.txt}</div>}
+          <div className="c3d-hint note">Arrastra para girar · pasa el cursor sobre su equipo</div>
+        </div>
+        <aside className="c3d-side">
+          <div>
+            <div className="h3">{side === 'favor' ? 'Sus córners' : 'Córners del rival contra su equipo'}</div>
+            <div className="note">{ladoTxt ? `Sólo los cobrados ${ladoTxt}` : 'Izquierda y derecha juntos'} · comparado con la liga</div>
+          </div>
+          <div className="c3d-kpis">
+            <div><span className="note">Córners</span><b>{nCorners}</b><span className="note">{fmt(nCorners / Math.max(1, D.partidos), 1)} por partido</span></div>
+            <div><span className="note">xG por córner</span><b>{fmt(xgPer, 3)} {DIF(xgPer, LK?.xg, good)}</b><span className="note">liga {fmt(LK?.xg ?? NaN, 3)}</span></div>
+            <div><span className="note">Terminan en remate</span><b>{pct(100 * rem)} {DIF(rem, LK?.remate, good)}</b><span className="note">liga {pct(LK ? 100 * LK.remate : null)}</span></div>
+            <div><span className="note">{side === 'favor' ? 'Primer contacto propio' : 'Primer contacto del rival'}</span><b>{pct(100 * fcOwn)} {DIF(fcOwn, LK?.fc, good)}</b><span className="note">liga {pct(LK?.fc != null ? 100 * LK.fc : null)}</span></div>
+          </div>
+          {side === 'favor' && Q.cob?.top?.length > 0 && (
+            <div className="c3d-who">
+              <div className="note">Quién los cobra {donde}</div>
+              {Q.cob.top.map(([id, nom, p]: [number, string, number]) => (
+                <div key={id} className="c3d-who-row"><span>{jugadorCorto(id, nom)}</span><span className="c3d-tip-bar"><i style={{ width: `${p}%`, background: tc }} /></span><b>{p}%</b></div>
+              ))}
+            </div>
+          )}
+          {side === 'contra' && Q.gk?.top?.length > 0 && (
+            <div className="c3d-who">
+              <div className="note">Su portero en estos córners {donde}</div>
+              {Q.gk.top.map(([id, nom, p]: [number, string, number]) => (
+                <div key={id} className="c3d-who-row"><span>{jugadorCorto(id, nom)}</span><span className="c3d-tip-bar"><i style={{ width: `${p}%`, background: tc }} /></span><b>{p}%</b></div>
+              ))}
+            </div>
+          )}
+          <div className="note c3d-hover-hint">Pasa el cursor (o toca) sobre un jugador de su equipo para ver quién suele ocupar esa zona.</div>
+          <div className="note c3d-foot">
+            {grid.tot} envíos al área (sin contar cortos). Jugadores: posición típica al momento del envío en {V.n360} córners con fotograma 360.
+            {lado === 'ambos' ? ' Todos se muestran como cobrados desde la izquierda.' : ''}
           </div>
         </aside>
       </div>

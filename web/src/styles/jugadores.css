@@ -1,0 +1,80 @@
+/* Pestaña «Jugadores» (src/tabs/Jugadores.tsx, JugOnce.tsx, JugCambios.tsx) */
+.jg .h2 { margin-top: 32px; }
+.jg > .h2:first-child { margin-top: 0; }
+.jg-gap { margin: 6px 0 10px; }
+.jg-warn { margin: -4px 0 12px; }
+.jg-txt { font-size: 14px; color: var(--ink-2); margin: 6px 0 4px; line-height: 1.35; }
+
+/* selector de club */
+.jg-switch { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.jg-switch button { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px 6px 9px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--surface); color: var(--ink); font: 600 14px/1.1 var(--body); }
+.jg-switch button small { font-weight: 400; color: var(--ink-3); font-size: 12px; }
+.jg-switch button:hover { border-color: var(--ink-3); }
+.jg-switch button[aria-pressed='true'] { border-color: var(--cc, var(--ink)); box-shadow: inset 0 0 0 1px var(--cc, var(--ink)); background: color-mix(in oklab, var(--cc, var(--ink)) 14%, var(--surface)); }
+.jg-switch-again { margin-top: -4px; }
+
+/* once + recuadros */
+.jg-top { display: grid; grid-template-columns: minmax(280px, 400px) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.jg-pitch-card { padding: 12px; display: flex; }
+.jg-pitch { width: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+.jg-pitch svg { border-radius: 6px; }
+.jg-pitch-cap { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-2); }
+.jg-pitch-cap b { color: var(--ink); }
+.jg-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.jg-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.jg-forms { display: flex; flex-direction: column; gap: 7px; margin-top: 4px; }
+.jg-form-row { display: grid; grid-template-columns: 74px minmax(0, 1fr) 96px; gap: 10px; align-items: center; }
+.jg-form-name { font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: .02em; color: var(--ink-2); }
+.jg-form-name.top { color: var(--ink); }
+.jg-form-bar { height: 12px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.jg-form-bar i { display: block; height: 100%; border-radius: 3px; }
+.jg-form-val { font-family: var(--mono); font-size: 13px; text-align: right; white-space: nowrap; }
+.jg-form-val small { color: var(--ink-3); font-size: 11.5px; }
+
+@media (max-width: 860px) {
+  .jg-top { grid-template-columns: 1fr; }
+  .jg-pitch-card { justify-content: center; }
+  .jg-pitch { max-width: 420px; margin: 0 auto; }
+}
+@media (max-width: 520px) {
+  .jg-pair { grid-template-columns: 1fr; }
+  .jg-form-row { grid-template-columns: 64px minmax(0, 1fr) 88px; }
+}
+
+/* cambios */
+.jg-tipo td small { color: var(--ink-3); font-size: 11.5px; }
+.jg-tipo td.jg-max { font-weight: 700; }
+.jg .h3.jg-sub { font-size: 18px; margin: 26px 0 4px; }
+.jg-bells { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.jg-bell { display: flex; flex-direction: column; }
+.jg-bell-t { font-family: var(--display); font-weight: 700; text-transform: uppercase; font-size: 17px; letter-spacing: .02em; }
+.jg-bell-s { font-size: 14.5px; line-height: 1.35; margin: 2px 0 4px; flex: 1; }
+.jg-bell-ax { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+@media (max-width: 760px) { .jg-bells { grid-template-columns: 1fr; } }
+.jg-more { margin: 12px 0 0; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 14px; font: 600 13.5px var(--body); cursor: pointer; }
+.jg-more:hover { border-color: var(--ink-3); }
+
+/* tabla de roles */
+.jg-chip { white-space: nowrap; }
+.jg-chip { color: var(--ink-2); }
+.jg-chip.up::first-letter, .jg-chip.down::first-letter { color: var(--ink); }
+@media (max-width: 600px) { .jg-roles th:nth-child(3), .jg-roles td:nth-child(3) { display: none; } }
+.jg-side > .card.jg-xi-card { flex: 1; }
+.jg-xi { display: grid; grid-auto-flow: column; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 22px; margin-top: 8px; }
+.jg-xi-row { display: grid; grid-template-columns: 46px minmax(0, 1fr) 70px 52px; gap: 8px; align-items: center; font-size: 14px; }
+.jg-xi-row .pos { min-width: 0; width: 46px; font-size: 13px; padding: 1px 0; }
+.jg-xi-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1100px) { .jg-xi { grid-template-columns: 1fr; grid-auto-flow: row; grid-template-rows: none !important; } }
+.jg-mob { display: none; }
+@media (max-width: 600px) {
+  .jg-hbar > div > div { grid-template-columns: 72px minmax(0, 1fr) 46px !important; }
+  .jg-tipo td small { display: block; }
+  .jg-roles thead { display: none; }
+  .jg-roles, .jg-roles tbody { display: block; }
+  .jg-roles tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .t.jg-roles td { display: block; padding: 0; border: 0; }
+  .jg-roles td:nth-child(3), .jg-roles td:nth-child(4), .jg-roles td:nth-child(5), .jg-roles .pos-cell .note, .jg-roles .jg-full { display: none; }
+  .jg-roles td:nth-child(6) { grid-column: 1 / -1; }
+  .jg-roles .jg-mob { display: block; }
+}

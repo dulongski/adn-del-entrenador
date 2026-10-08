@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { asset, initials, shortName, sig, type Any } from './lib'
+import MapSearch, { searchCoaches } from './MapSearch'
 
 /* Paleta categórica validada (orden fijo), aplicada a las familias de estilo con opacidad baja. */
 const HUES = ['var(--c-dt)', 'var(--c-plantilla)', 'var(--c-club)', 'var(--c-rival)', 'var(--c-ctx)', '#008300']
@@ -59,10 +60,14 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
 
   // solo activos: se ocultan los DTs sin club actual; los demás conservan su lugar
   const hidden = useMemo(() => new Set<number>(activos ? mapa.puntos.filter((p: Any) => !media.dts?.[p.id]?.vigente).map((p: Any) => p.id) : []), [activos, mapa, media])
-  const common = { mapa, media, coords, axes, focus, setHover, onPick, groupLabels: mode === 'pca', hidden }
+  const [q, setQ] = useState('')
+  const [pulse, setPulse] = useState<number | null>(null)
+  const match = useMemo(() => { const r = searchCoaches(mapa, media, q); return r ? new Set<number>(r.map(o => o.p.id)) : null }, [mapa, media, q])
+  const common = { mapa, media, coords, axes, focus, setHover, onPick, groupLabels: mode === 'pca', hidden, match, pulse }
   return (
     <div className="smap-wrap">
       {dim === '2d' ? <Map2D {...common} /> : <Map3D {...common} />}
+      <MapSearch mapa={mapa} media={media} onPick={onPick} q={q} setQ={setQ} setPulse={setPulse} hueOf={g => HUES[g % HUES.length]} />
 
       <div className="smap-ctrl" onPointerDown={e => e.stopPropagation()}>
         <div className="seg sm" role="group" aria-label="Dimensiones">
@@ -143,7 +148,7 @@ function Bubble({ d, media, r, style, dim, cls, showName, nameSize, onPick, setH
   )
 }
 
-type MapProps = { mapa: Any; media: Any; coords: [number, number, number][]; axes: { x: Axis; y: Axis; z: Axis }; focus: number | null; setHover: (h: Hover) => void; onPick: (id: number) => void; groupLabels?: boolean; hidden: Set<number> }
+type MapProps = { mapa: Any; media: Any; coords: [number, number, number][]; axes: { x: Axis; y: Axis; z: Axis }; focus: number | null; setHover: (h: Hover) => void; onPick: (id: number) => void; groupLabels?: boolean; hidden: Set<number>; match: Set<number> | null; pulse: number | null }
 
 /* Gestos comunes: pellizco / rueda = zoom; arrastre = mover (2D) o girar (3D). */
 function useGestures(ref: React.RefObject<HTMLDivElement | null>, onZoom: (f: number, x: number, y: number) => void, onDrag: (dx: number, dy: number) => void) {
@@ -210,7 +215,7 @@ function useSize(ref: React.RefObject<HTMLDivElement | null>) {
 }
 
 /* ================================================================ 2D */
-function Map2D({ mapa, media, coords, axes, focus, setHover, onPick, groupLabels, hidden }: MapProps) {
+function Map2D({ mapa, media, coords, axes, focus, setHover, onPick, groupLabels, hidden, match, pulse }: MapProps) {
   const ref = useRef<HTMLDivElement>(null)
   const { W, H } = useSize(ref)
   const [view, setView] = useState({ k: 1, x: 0, y: 0 })
@@ -263,8 +268,8 @@ function Map2D({ mapa, media, coords, axes, focus, setHover, onPick, groupLabels
         {groupLabels && blobs.map((b: Any) => <div key={`l${b.id}`} className="smap-glabel" style={{ left: b.mx, top: Math.max(W < 600 ? 205 : 165, b.my - b.rad * 0.72), color: HUES[b.id % HUES.length], opacity: focus !== null && focus !== b.id ? 0.25 : 1 }}>{b.nombre}</div>)}
         {nodes.filter(n => !hidden.has(n.d.id)).map(n => {
           const float = reduce ? {} : { '--dx': `${(hash(n.d.id) - 0.5) * 10}px`, '--dy': `${(hash(n.d.id + 7) - 0.5) * 10}px`, '--dur': `${6 + hash(n.d.id + 3) * 6}s`, '--delay': `${-hash(n.d.id + 11) * 8}s` }
-          return <Bubble key={n.d.id} d={n.d} media={media} r={n.r} dim={focus !== null && focus !== n.d.grupo} onPick={onPick} setHover={setHover} dragged={dragged}
-            showName={view.k >= 1.7} nameSize={Math.max(5, 11 / view.k * 1.3)}
+          return <Bubble key={n.d.id} d={n.d} media={media} r={n.r} dim={(focus !== null && focus !== n.d.grupo) || (match !== null && !match.has(n.d.id))} cls={pulse === n.d.id ? 'pulse' : match?.has(n.d.id) ? 'hit' : undefined} onPick={onPick} setHover={setHover} dragged={dragged}
+            showName={view.k >= 1.7 || pulse === n.d.id || (match !== null && match.size <= 6 && match.has(n.d.id))} nameSize={Math.max(5, 11 / view.k * 1.3)}
             style={{ left: n.px - n.r, top: n.py - n.r, width: n.r * 2, height: n.r * 2, ...float } as CSSProperties} />
         })}
       </div>
@@ -285,7 +290,7 @@ function Map2D({ mapa, media, coords, axes, focus, setHover, onPick, groupLabels
 const CUBE: [number, number, number][] = [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]]
 const EDGES = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
 
-function Map3D({ mapa, media, coords, axes, focus, setHover, onPick, hidden }: MapProps) {
+function Map3D({ mapa, media, coords, axes, focus, setHover, onPick, hidden, match, pulse }: MapProps) {
   const ref = useRef<HTMLDivElement>(null)
   const { W, H } = useSize(ref)
   const [rot, setRot] = useState({ yaw: -0.6, pitch: 0.35 })
@@ -359,8 +364,8 @@ function Map3D({ mapa, media, coords, axes, focus, setHover, onPick, hidden }: M
       ))}
       {nodes.filter(n => !hidden.has(n.d.id)).map(n => {
         const r = n.r0 * n.f
-        return <Bubble key={n.d.id} d={n.d} media={media} r={r} cls="bub3" dim={focus !== null && focus !== n.d.grupo} onPick={onPick} setHover={setHover} dragged={dragged}
-          showName={k >= 1.6} nameSize={11}
+        return <Bubble key={n.d.id} d={n.d} media={media} r={r} cls={`bub3${pulse === n.d.id ? ' pulse' : match?.has(n.d.id) ? ' hit' : ''}`} dim={(focus !== null && focus !== n.d.grupo) || (match !== null && !match.has(n.d.id))} onPick={onPick} setHover={setHover} dragged={dragged}
+          showName={k >= 1.6 || pulse === n.d.id || (match !== null && match.size <= 6 && match.has(n.d.id))} nameSize={11}
           style={{ left: n.x - r, top: n.y - r, width: r * 2, height: r * 2, zIndex: 10 + Math.round((n.z + 2) * 100), opacity: 0.55 + 0.45 * Math.min(1, Math.max(0, (n.z + 1.2) / 2.4)) }} />
       })}
       {ends.map(e => (

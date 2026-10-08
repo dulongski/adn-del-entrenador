@@ -355,6 +355,10 @@ def main(coach_filter=None, fast=False, n_boot=30, solo_extra=False):
     corners.main()  # córners 3D: envíos + posiciones 360 (web/public/data/corners_*.json)
     from pipeline import export_static
     export_static.main()  # datos para la web estática (web/src/boot.json + web/public/data)
+    from pipeline import sim_extra
+    sim_extra.main()  # goleador de cada tiro en sim_*.json (export_static los reescribe)
+    from pipeline import dist
+    dist.main()  # distribuciones entre DTs (campanas) para la web
     log("listo")
 
 

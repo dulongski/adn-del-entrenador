@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { dataUrl, fmt, getJSON, jugadorCorto, matchColors, type Any } from './lib'
 import { ClubName } from './charts'
 
-/* «Simular uno»: UNA realización animada del mismo modelo que las 10,000 rejugadas.
+/* «Simular uno»: UNA realización animada del mismo modelo que las 50,000 rejugadas.
    - Tiros: los del partido real, en su minuto; cada posesión con tiro es gol con p = 1 − Π(1 − xG).
    - Resto: posesiones según las jugadas tipo del DT (sus secuencias reales de pases y conducciones);
      el rival usa jugadas sintéticas con la mezcla promedio de la liga.
@@ -23,7 +23,13 @@ type Phase = 'ataque' | 'defensa' | 'trans_of' | 'trans_def'
 const rnd = (a: number, b: number) => a + Math.random() * (b - a)
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
 const mir = (p: Pt): Pt => [120 - p[0], 80 - p[1]]
-const STEP_DUR: Record<StepK, number> = { pass: 0.6, carry: 0.85, shot: 0.55 }
+/** Duración (s de simulación) de cada acción: crece con la distancia para que nadie tenga que correr a velocidades imposibles. */
+const stepDur = (s: Step) => {
+  const d = Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1])
+  return s.k === 'shot' ? 0.6 : s.k === 'pass' ? clamp(0.5 + d / 40, 0.6, 1.5) : clamp(0.55 + d / 13, 0.8, 2.2)
+}
+/** Velocidades máximas (unidades de cancha por s de simulación): resto, desmarque, portador, presión. */
+const V_BASE = 9, V_RUN = 14, V_HOLD = 30, V_PRESS = 13
 function pickW<T>(items: T[], w: number[]): T { const s = w.reduce((a, b) => a + b, 0); let r = Math.random() * s; for (let i = 0; i < items.length; i++) { r -= w[i]; if (r <= 0) return items[i] } return items[items.length - 1] }
 
 /** Posición base por puesto de la alineación (marco propio: ataca hacia x=120; derecha = y alta). */
@@ -127,7 +133,7 @@ function timeline(P: Poss[]): { segs: Seg[]; total: number } {
     // corte: fundido a negro + tarjeta con la jugada que viene + fundido de entrada
     push({ kind: 'cut', p: i, dur: 1.7, m0: p.t, m1: p.t }); m = p.t
     push({ kind: 'intro', p: i, dur: 0.6, m0: m, m1: m })
-    p.steps.forEach((s, j) => { push({ kind: 'step', p: i, s: j, dur: STEP_DUR[s.k], m0: m, m1: m + 0.12 }); m += 0.12 })
+    p.steps.forEach((s, j) => { push({ kind: 'step', p: i, s: j, dur: stepDur(s), m0: m, m1: m + 0.12 }); m += 0.12 })
     push({ kind: 'outro', p: i, dur: p.end === 'gol' ? 2.2 : 1.2, m0: m, m1: m })
   })
   push({ kind: 'cut', p: P.length, dur: 1.2, m0: 90, m1: 90 })
@@ -141,7 +147,7 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
   const canvas = useRef<HTMLCanvasElement>(null)
   const [seed, setSeed] = useState(0)
   const [playing, setPlaying] = useState(true)
-  const [speed, setSpeed] = useState(2)
+  const [speed, setSpeed] = useState(1)
   const [tau, setTau] = useState(0)
   const [formas, setFormas] = useState<Any | null>(null)
   const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -197,6 +203,8 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
 
   // posiciones suavizadas (fuera de React para 60 fps)
   const pos = useRef<{ A: Pt[]; B: Pt[] } | null>(null)
+  const vel = useRef<{ A: Pt[]; B: Pt[] } | null>(null)
+  const asg = useRef(new Map<string, number>())
   const last = useRef(performance.now())
   const drawRef = useRef<(dt: number) => void>(() => {})
   useEffect(() => {
@@ -212,19 +220,16 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
   }, [playing, speed, total])
   useEffect(() => { if (doneT) setPlaying(false) }, [doneT])
 
-  function ballAt(): { ball: Pt; carrierPt: Pt | null } {
-    if (!cur) return { ball: [60, 40], carrierPt: null }
+  function ballAt(): { ball: Pt } {
+    if (!cur) return { ball: [60, 40] }
     const toWorld = (p: Pt): Pt => (cur.own ? p : mir(p))
-    if (seg.kind === 'cut') return { ball: toWorld(cur.steps[0].a), carrierPt: null }
-    if (seg.kind === 'intro') return { ball: toWorld(cur.steps[0].a), carrierPt: toWorld(cur.steps[0].a) }
+    if (seg.kind === 'cut' || seg.kind === 'intro') return { ball: toWorld(cur.steps[0].a) }
     if (seg.kind === 'step') {
       const s = cur.steps[seg.s!]
       const e = s.k === 'pass' ? f * f * (3 - 2 * f) : f
-      const b: Pt = [s.a[0] + (s.b[0] - s.a[0]) * e, s.a[1] + (s.b[1] - s.a[1]) * e]
-      return { ball: toWorld(b), carrierPt: s.k === 'carry' ? toWorld(b) : s.k === 'pass' ? toWorld(f < 0.5 ? s.a : s.b) : toWorld(s.a) }
+      return { ball: toWorld([s.a[0] + (s.b[0] - s.a[0]) * e, s.a[1] + (s.b[1] - s.a[1]) * e]) }
     }
-    const lastS = cur.steps[cur.steps.length - 1]
-    return { ball: toWorld(lastS.b), carrierPt: cur.end === 'perdida' ? toWorld(lastS.b) : null }
+    return { ball: toWorld(cur.steps[cur.steps.length - 1].b) }
   }
 
   drawRef.current = (dt: number) => {
@@ -246,7 +251,7 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
     g.strokeRect(X(0), Y(30), 6 * sx, 20 * sy); g.strokeRect(X(114), Y(30), 6 * sx, 20 * sy)
     g.strokeRect(X(-1.5), Y(36), 1.5 * sx, 8 * sy); g.strokeRect(X(120), Y(36), 1.5 * sx, 8 * sy)
 
-    const { ball, carrierPt } = ballAt()
+    const { ball } = ballAt()
     // fase de cada equipo: tras un robo, los dos primeros movimientos son de transición
     const inTrans = !!cur?.trans && (seg.kind === 'intro' || (seg.kind === 'step' && (seg.s ?? 0) < 2))
     const ownAtt = cur ? cur.own : true
@@ -261,24 +266,77 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
       return mine ? out : out.map(mir)
     }
     const tA = shift(own[phA], true, ownAtt), tB = shift(riv[phB], false, !ownAtt)
-    // portador y receptor del pase van al balón; el rival más cercano presiona
-    const near = (arr: Pt[], p: Pt) => arr.map((q, i) => [Math.hypot(q[0] - p[0], q[1] - p[1]), i] as [number, number]).filter(([, i]) => i !== 0).sort((a, b) => a[0] - b[0])
+    if (!pos.current || seg.kind === 'cut') {
+      pos.current = { A: tA.map(p => [...p] as Pt), B: tB.map(p => [...p] as Pt) }
+      vel.current = { A: tA.map((): Pt => [0, 0]), B: tB.map((): Pt => [0, 0]) }
+    }
+    const vmA = tA.map(() => V_BASE), vmB = tB.map(() => V_BASE)
+    // quién tiene el balón y quién lo recibe: se decide una vez por jugada (con las posiciones del momento)
+    // y el receptor del siguiente pase empieza a desmarcarse desde la acción anterior, a velocidad limitada
     let carrier = -1
     if (cur && seg.kind !== 'cut') {
       const att = ownAtt ? tA : tB, def = ownAtt ? tB : tA
-      if (carrierPt) { carrier = near(att, carrierPt)[0][1]; att[carrier] = [carrierPt[0] - (ownAtt ? 1.2 : -1.2), carrierPt[1]] }
-      if (seg.kind === 'step' && cur.steps[seg.s!].k === 'pass') {
-        const s = cur.steps[seg.s!], tgt = ownAtt ? s.b : mir(s.b)
-        const r = near(att, tgt).find(([, i]) => i !== carrier)
-        if (r) att[r[1]] = [tgt[0] - (ownAtt ? 1 : -1), tgt[1]]
+      const attNow = ownAtt ? pos.current.A : pos.current.B, defNow = ownAtt ? pos.current.B : pos.current.A
+      const vAtt = ownAtt ? vmA : vmB, vDef = ownAtt ? vmB : vmA
+      const W_ = (p: Pt): Pt => (cur.own ? p : mir(p))
+      const back = ownAtt ? -1.2 : 1.2
+      const nearest = (arr: Pt[], p: Pt, excl: number[]) => {
+        let bi = 1, bd = 1e9
+        arr.forEach((q, i) => { if (i === 0 || excl.includes(i)) return; const d = Math.hypot(q[0] - p[0], q[1] - p[1]); if (d < bd) { bd = d; bi = i } })
+        return bi
       }
-      const pr = near(def, ball)[0]
-      if (pr) def[pr[1]] = [ball[0] + (ownAtt ? 3 : -3), ball[1] + 1.5]
+      const memo = (k: string, fn: () => number) => { const m = asg.current, kk = `${seed}:${seg.p}:${k}`; if (!m.has(kk)) m.set(kk, fn()); return m.get(kk)! }
+      const isOut = (k: number) => cur.end === 'fuera' && k === cur.steps.length - 1
+      const receiver = (j: number): number => memo(`r${j}`, () => nearest(attNow, W_(cur.steps[j].b), [holder(j)]))
+      const holder = (j: number): number => (j <= 0 ? memo('h0', () => nearest(attNow, W_(cur.steps[0].a), []))
+        : cur.steps[j - 1].k === 'pass' && !isOut(j - 1) ? receiver(j - 1) : holder(j - 1))
+      const last = cur.steps.length - 1
+      const j = seg.kind === 'step' ? seg.s! : seg.kind === 'intro' ? 0 : last
+      const st = seg.kind === 'step' ? cur.steps[j] : null
+      const h = seg.kind === 'outro' ? (cur.steps[last].k === 'pass' && !isOut(last) ? receiver(last) : holder(last)) : holder(j)
+      // portador: pegado al balón al conducir; al pasar se queda donde soltó el balón
+      const ls = cur.steps[last]
+      const stay = st && st.k !== 'carry' ? st.a : seg.kind === 'outro' && (ls.k === 'shot' || isOut(last)) ? ls.a : null
+      att[h] = stay ? [W_(stay)[0] + back, W_(stay)[1]] : [ball[0] + back, ball[1]]
+      vAtt[h] = V_HOLD
+      carrier = h
+      let rc = -1
+      if (st?.k === 'pass' && !isOut(j)) {
+        rc = receiver(j)
+        const tg = W_(st.b)
+        att[rc] = [tg[0] + back * 0.8, tg[1]]; vAtt[rc] = V_RUN
+        if (f >= 0.5) { carrier = rc; vAtt[rc] = f > 0.85 ? V_HOLD : V_RUN }
+      }
+      // desmarque anticipado del receptor del próximo pase: va hacia la zona donde lo recibirá
+      if (seg.kind !== 'outro') {
+        const from = seg.kind === 'intro' ? 0 : j + 1
+        const nk = cur.steps.findIndex((s, k) => k >= from && s.k === 'pass' && !isOut(k))
+        if (nk >= 0) {
+          const r2 = receiver(nk)
+          if (r2 !== h && r2 !== rc) {
+            const tg = W_(cur.steps[nk].b), w = 0.7
+            att[r2] = [att[r2][0] + (tg[0] - att[r2][0]) * w, att[r2][1] + (tg[1] - att[r2][1]) * w]; vAtt[r2] = V_RUN
+          }
+        }
+      }
+      // presión: el defensor más cercano al balón (uno por acción)
+      const pr = memo(`p${seg.kind}${j}`, () => nearest(defNow, ball, []))
+      const won = seg.kind === 'outro' && cur.end === 'perdida'
+      def[pr] = won ? [ball[0] - back, ball[1]] : [ball[0] - back * 2.5, ball[1] + 1.5]
+      vDef[pr] = won ? V_HOLD : V_PRESS
     }
-    if (!pos.current || seg.kind === 'cut') pos.current = { A: tA.map(p => [...p] as Pt), B: tB.map(p => [...p] as Pt) }
-    const ease = Math.min(1, dt * 5)
-    pos.current.A = pos.current.A.map((p, i): Pt => [p[0] + (tA[i][0] - p[0]) * ease, p[1] + (tA[i][1] - p[1]) * ease])
-    pos.current.B = pos.current.B.map((p, i): Pt => [p[0] + (tB[i][0] - p[0]) * ease, p[1] + (tB[i][1] - p[1]) * ease])
+    // movimiento suave: cada jugador acelera hacia su objetivo con velocidad máxima limitada
+    const move = (P: Pt[], V: Pt[], T: Pt[], vm: number[]) => P.map((p, i): Pt => {
+      const gain = vm[i] >= V_HOLD ? 8 : 3  // el portador va pegado al balón; el resto llega frenando
+      let vx = (T[i][0] - p[0]) * gain, vy = (T[i][1] - p[1]) * gain
+      const sp = Math.hypot(vx, vy)
+      if (sp > vm[i]) { vx *= vm[i] / sp; vy *= vm[i] / sp }
+      const k = Math.min(1, dt * (gain > 3 ? 14 : 7))
+      V[i] = [V[i][0] + (vx - V[i][0]) * k, V[i][1] + (vy - V[i][1]) * k]
+      return [p[0] + V[i][0] * dt, p[1] + V[i][1] * dt]
+    })
+    pos.current.A = move(pos.current.A, vel.current!.A, tA, vmA)
+    pos.current.B = move(pos.current.B, vel.current!.B, tB, vmB)
 
     // anotaciones de la posesión en curso: pase (línea + flecha), conducción (punteada), tiro (gruesa + xG)
     if (cur && seg.kind !== 'cut') {
@@ -289,7 +347,7 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
         if (!st || tau < st.t0) return
         const alpha = clamp(1 - (tau - st.t0) / 3.2, 0.2, 1)
         const a = W_(s.a), b0 = W_(s.b)
-        const prog = clamp((tau - st.t0) / STEP_DUR[s.k], 0, 1)
+        const prog = clamp((tau - st.t0) / st.dur, 0, 1)
         const b: Pt = [a[0] + (b0[0] - a[0]) * prog, a[1] + (b0[1] - a[1]) * prog]
         g.globalAlpha = alpha
         g.strokeStyle = s.k === 'shot' ? '#ffffff' : col
@@ -396,13 +454,13 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
         <div className="seg sm" role="group" aria-label="Velocidad">
           {[1, 2, 4].map(v => <button key={v} aria-pressed={speed === v} onClick={() => setSpeed(v)}>{v}×</button>)}
         </div>
-        <input className="msim-scrub" type="range" min={0} max={total} step={0.1} value={tau} onChange={e => { setTau(Number(e.target.value)); setPlaying(false) }} aria-label="Momento del partido" />
+        <input className="msim-scrub" type="range" min={0} max={total} step={0.1} value={tau} onChange={e => { setTau(Number(e.target.value)); setPlaying(false); pos.current = null }} aria-label="Momento del partido" />
         <button className="btn ghost" onClick={() => jump(-1)} aria-label="Jugada anterior">‹ Anterior</button>
         <button className="btn ghost" onClick={() => jump(1)} aria-label="Siguiente jugada">Siguiente ›</button>
         <button className="btn ghost" onClick={() => { setTau(total); setPlaying(false) }} disabled={doneT}>Ir al final</button>
         <button className="btn ghost" onClick={() => { pos.current = null; setSeed(s => s + 1) }}>↻ Otro partido</button>
       </div>
-      <p className="note">Una sola rejugada del partido. Los tiros y su xG son los reales y si cada uno es gol se sortea con su probabilidad (lo mismo que las 10,000 rejugadas). Se muestra como un resumen de jugadas separadas (cada corte a negro marca el fin de una y el inicio de la siguiente); las jugadas sin tiro siguen las jugadas tipo del DT. Juegan los onces iniciales reales de ese partido. Cada jugador del DT se coloca en su posición media real con ese DT en ataque, defensa y transición (o, si tiene pocos datos, según su puesto); el rival se coloca según el puesto de cada jugador en su alineación.</p>
+      <p className="note">Una sola rejugada del partido, contada como un resumen de jugadas. Los tiros, su minuto y su xG son los reales; si cada uno entra se sortea con esa probabilidad, igual que en las 50,000 rejugadas. Las jugadas sin tiro siguen las jugadas tipo del DT. Juegan los onces iniciales reales: cada jugador del DT se coloca donde solía estar con él en ataque, en defensa y en las transiciones; el rival, según su puesto en la alineación.</p>
     </div>
   )
 }

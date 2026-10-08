@@ -46,21 +46,35 @@ export function HeatGrid({ grid, mode = 'seq', label, unit = 'por partido', colo
   const [lx, ly] = pitchXY(118, 1, vertical)
   return (
     <div>
-      <Pitch vertical={vertical} labels={<text x={vertical ? 40 : lx} y={vertical ? -0.5 : ly - 1.4} fontSize={3} textAnchor={vertical ? 'middle' : 'end'} fill="var(--ink-3)">{vertical ? 'ataque ↑' : 'ataque →'}</text>}>
+      <Pitch vertical={vertical} labels={vertical ? undefined : <text x={vertical ? 40 : lx} y={vertical ? -0.5 : ly - 1.4} fontSize={3} textAnchor={vertical ? 'middle' : 'end'} fill="var(--ink-3)">{vertical ? 'ataque ↑' : 'ataque →'}</text>}>
         {grid.map((col, i) => col.map((v, j) => (
           <rect key={`${i}-${j}`} x={i * 120 / nx + 0.25} y={j * 80 / ny + 0.25} width={120 / nx - 0.5} height={80 / ny - 0.5}
-            fill={mode === 'div' ? divColor(v, max) : seq(v)} opacity={0.9} rx={0.6}
+            fill={mode === 'div' ? divColor(v, max) : seq(v)} opacity={0.92} rx={0.4}
             onMouseMove={e => tip.show(e, <>{label}<br /><b>{mode === 'div' && v > 0 ? '+' : ''}{fmt(v, 2)}</b> {unit}</>)} onMouseLeave={tip.hide} />
         )))}
-        <g fill="none" stroke="var(--pitch-line)" strokeWidth={0.4} pointerEvents="none">
-          <line x1={60} y1={0} x2={60} y2={80} /><rect x={102} y={18} width={18} height={44} /><rect x={0} y={18} width={18} height={44} />
-        </g>
+        {/* líneas encima de las celdas: halo claro + trazo de tinta, visibles en ambos temas */}
+        {[{ s: 'var(--surface)', w: 0.85, o: 0.55 }, { s: 'var(--ink)', w: 0.32, o: 0.7 }].map((l, i) => (
+          <g key={i} fill="none" stroke={l.s} strokeWidth={l.w} strokeOpacity={l.o} pointerEvents="none">
+            <rect x={0} y={0} width={120} height={80} />
+            <line x1={60} y1={0} x2={60} y2={80} /><circle cx={60} cy={40} r={10} />
+            <rect x={0} y={18} width={18} height={44} /><rect x={102} y={18} width={18} height={44} />
+            <rect x={0} y={30} width={6} height={20} /><rect x={114} y={30} width={6} height={20} />
+            <path d="M18 32.7 A10 10 0 0 1 18 47.3" /><path d="M102 32.7 A10 10 0 0 0 102 47.3" />
+          </g>
+        ))}
       </Pitch>
       {mode === 'div' && (
         <div className="legend" style={{ marginTop: 6 }}>
           <span><i style={{ background: 'var(--div-neg)' }} />menos que la liga</span>
           <span><i style={{ background: 'var(--div-mid)', border: '1px solid var(--rule)' }} />igual</span>
           <span><i style={{ background: 'var(--div-pos)' }} />más que la liga</span>
+        </div>
+      )}
+      {mode === 'seq' && (
+        <div className="legend" style={{ marginTop: 6 }}>
+          <span>pocas</span>
+          <span style={{ display: 'inline-block', width: 90, height: 10, borderRadius: 3, border: '1px solid var(--rule)', background: `linear-gradient(90deg, ${seq(0)}, ${seq(max)})` }} />
+          <span>muchas ({fmt(max, 1)} {unit})</span>
         </div>
       )}
       {tip.el}
@@ -73,18 +87,20 @@ export function Legend({ items = COMP as readonly { key: string; label: string; 
   return <div className="legend">{items.map(c => <span key={c.key}><i style={{ background: c.color }} />{c.label}</span>)}{extra}</div>
 }
 
-/** Desglose legible del prisma: una fila por fuente, barras divergentes desde el promedio de la liga. */
+/** Desglose legible del prisma: una fila por fuente, barras divergentes desde el promedio de la liga.
+ *  Primera fila = lo que se ve en sus partidos; las demás reparten ese valor entre quien lo empuja. */
+const PD_LABEL: Record<string, string> = { obs: 'Lo que se ve', coach: 'Él (DT)', player: 'Sus jugadores', club: 'El club', opp: 'Los rivales', ctx: 'El contexto' }
 export function PrismDetail({ row }: { row: Any }) {
-  const rows = [{ key: 'obs', label: 'En sus partidos', color: 'var(--ink)', v: row.observado as number },
-    ...COMP.map(c => ({ key: c.key, label: c.label, color: c.color, v: (row[c.key] ?? 0) as number }))]
+  const rows = [{ key: 'obs', color: 'var(--ink)', v: row.observado as number },
+    ...COMP.map(c => ({ key: c.key, color: c.color, v: (row[c.key] ?? 0) as number }))]
   const scale = Math.max(1, ...rows.map(r => Math.abs(r.v))) * 1.05
   const pctX = (v: number) => 50 + (v / scale) * 50
   return (
-    <div className="pd">
-      <div className="pd-axis"><span>← menos que la liga</span><span>liga</span><span>más que la liga →</span></div>
+    <div className="pd" title="Valores en desviaciones estándar entre equipos (σ). 0 = promedio de la liga.">
+      <div className="pd-axis"><span>← lo baja</span><span>liga</span><span>lo sube →</span></div>
       {rows.map((r, i) => (
         <div key={r.key} className={`pd-row${i === 0 ? ' pd-obs' : ''}`}>
-          <span className="pd-lbl">{i === 0 ? r.label : <><i style={{ background: r.color }} />{r.label}</>}</span>
+          <span className="pd-lbl">{i === 0 ? PD_LABEL.obs : <><i style={{ background: r.color }} />{PD_LABEL[r.key] ?? r.key}</>}</span>
           <span className="pd-track">
             <span className="pd-mid" />
             <span className="pd-bar" style={{ background: r.color, left: `${Math.min(50, pctX(r.v))}%`, width: `${Math.abs(pctX(r.v) - 50)}%` }} />
@@ -96,20 +112,25 @@ export function PrismDetail({ row }: { row: Any }) {
   )
 }
 
-/** Frase en lenguaje llano que explica el prisma. */
+/** Frase en lenguaje llano que explica el prisma (sin cifras técnicas). */
+const PS_WHO: Record<string, string> = { player: 'sus jugadores', club: 'el club', opp: 'los rivales', ctx: 'el contexto de los partidos' }
 export function prismSentence(row: Any, etiqueta: string): string {
   const obs = row.observado as number, dt = row.coach as number
-  const others = COMP.filter(c => c.key !== 'coach').map(c => ({ label: c.label.toLowerCase(), v: (row[c.key] ?? 0) as number }))
+  const others = COMP.filter(c => c.key !== 'coach').map(c => ({ who: PS_WHO[c.key] ?? c.label.toLowerCase(), v: (row[c.key] ?? 0) as number }))
     .sort((a, b) => Math.abs(b.v) - Math.abs(a.v))
   const top = others[0]
-  const dir = (v: number) => (v >= 0 ? 'por encima del' : 'por debajo del')
-  const lo = etiqueta.toLowerCase()
-  const base = `En sus partidos, «${lo}» está ${Math.abs(obs) < 0.15 ? 'en el promedio de la liga' : `${dir(obs)} promedio de la liga (${sig(obs)})`}.`
+  const lo = etiqueta.split(' (')[0].toLowerCase()
+  const cuanto = (v: number) => (Math.abs(v) < 0.5 ? 'un poco ' : Math.abs(v) >= 1 ? 'muy ' : '')
+  const where = Math.abs(obs) < 0.15 ? 'queda en el promedio de la liga' : `queda ${cuanto(obs)}${obs > 0 ? 'por encima' : 'por debajo'} de la liga`
+  const base = `En sus partidos, «${lo}» ${where}.`
+  const hacia = (v: number) => (v > 0 ? 'hacia arriba' : 'hacia abajo')
+  if (Math.abs(dt) < 0.08 && Math.abs(top.v) < 0.15) return `${base} Ni él ni sus jugadores lo mueven mucho.`
   if (Math.sign(obs) !== Math.sign(dt) && Math.abs(obs) >= 0.15 && Math.abs(top.v) > Math.abs(dt)) {
-    return `${base} Pero eso no lo pone el DT: lo empuja sobre todo la ${top.label} (${sig(top.v)}). Descontando esa parte, la idea propia del entrenador va en sentido contrario (${sig(dt)}).`
+    return `${base} Eso no sale de él: ${/^(sus|los) /.test(top.who) ? 'lo empujan' : 'lo empuja'} sobre todo ${top.who}. Por su cuenta, él tira hacia el lado contrario.`
   }
-  if (Math.abs(dt) >= Math.abs(top.v)) return `${base} La mayor parte la explica el propio DT (${sig(dt)}), no sus jugadores ni su club.`
-  return `${base} El DT aporta ${sig(dt)}; la ${top.label} también pesa (${sig(top.v)}).`
+  if (Math.abs(dt) >= Math.abs(top.v)) return `${base} Quien más lo empuja ${hacia(dt)} es él, por delante de ${top.who}.`
+  if (Math.sign(dt) === Math.sign(top.v)) return `${base} Él lo empuja ${hacia(dt)}, y ${top.who} todavía más.`
+  return `${base} Él lo empuja ${hacia(dt)}, pero ${top.who} ${/^(sus|los) /.test(top.who) ? 'pesan' : 'pesa'} más ${hacia(top.v)}.`
 }
 
 /* ------------------------------------------------------------ huella con IC */

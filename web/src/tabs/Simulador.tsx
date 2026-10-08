@@ -1,17 +1,28 @@
 import { useEffect, useMemo, useState } from 'react'
-import { dataUrl, fmt, getJSON, matchColors, pct, sig, simulateMatch, type Any } from '../lib'
+import { asset, dataUrl, fmt, getJSON, jugadorCorto, matchColors, pct, sig, simulateMatch, type Any } from '../lib'
 import { ClubName, Legend, Pitch, useTip } from '../charts'
 import { Seg } from './common'
 import MatchSim from '../MatchSim'
+import MatchPicker, { currentClub, type MatchRow } from '../MatchPicker'
 
 export function Simulador({ art, media }: { art: Any; media?: Any }) {
   const S = art.simulacion
-  const ps: Any[] = [...S.partidos].reverse()
-  const [mid, setMid] = useState<number>(ps[0]?.match_id)
+  // partidos del más reciente al más antiguo, con club y temporada
+  const rows: MatchRow[] = useMemo(() => {
+    const info = new Map<number, Any>((art.partidos || []).map((p: Any) => [p.match_id, p]))
+    return [...S.partidos].reverse().map((p: Any) => {
+      const q = info.get(p.match_id) || {}
+      return { match_id: p.match_id, fecha: q.fecha ?? p.date, club: q.club ?? '', rival: p.rival, local: p.local, gf: p.gf, gc: p.gc, temporada: q.temporada, xg: p.xg, xg_rival: p.xg_rival }
+    })
+  }, [art, S])
+  const clubActual = useMemo(() => currentClub(art, media, [...new Set(rows.map(r => r.club))]), [art, media, rows])
+  const [mid, setMid] = useState<number>(() => (rows.find(r => r.club === clubActual) ?? rows[0])?.match_id)
+  useEffect(() => { if (!rows.some(r => r.match_id === mid)) setMid((rows.find(r => r.club === clubActual) ?? rows[0])?.match_id) }, [rows]) // eslint-disable-line react-hooks/exhaustive-deps
   const n = 50000  // siempre 50,000 rejugadas
   const [modo, setModo] = useState<'mil' | 'uno'>('mil')
   const [res, setRes] = useState<Any>(null)
   const [err, setErr] = useState<string | null>(null)
+  const tip = useTip()
   const run = () => {
     setRes(null); setErr(null)
     getJSON(dataUrl(`sim_${art.id}.json`)).then((all: Any) => {
@@ -30,35 +41,46 @@ export function Simulador({ art, media }: { art: Any; media?: Any }) {
   }, [S])
   const cols = res ? matchColors(res.partido.club, res.partido.rival, media) : ['var(--c-dt)', 'var(--c-plantilla)']
   const golSim = new Set<number>(res?.golesSim || [])
+  const shooters: [number, string][] = res?.data?.s || []
+  const shotTip = (i: number, [, , xg, own, g, minute]: number[]) => {
+    const who = shooters[i]
+    return (
+      <div className="sim-tip">
+        <b>{who ? jugadorCorto(who[0], who[1]) : 'Tiro'}</b>
+        <span>{own ? res.partido.club : res.partido.rival} · minuto {minute}'</span><br />
+        <span>xG {fmt(xg, 2)} · {g ? <b style={{ display: 'inline' }}>fue gol</b> : 'no fue gol'}</span>
+        {golSim.has(i) && <div className="note">Gol en la rejugada que se muestra</div>}
+      </div>
+    )
+  }
   return (
     <div>
-      <h3 className="h2">Simulador: rejugar cada partido</h3>
-      <p className="lede">Cada posesión que terminó en tiro se vuelve gol con probabilidad igual a su xG (máximo un gol por posesión), miles de veces. No predice: muestra si el marcador reflejó lo que pasó en la cancha.</p>
-      <Seg opts={[['mil', '50,000 rejugadas'], ['uno', 'Simular uno (animado)']]} v={modo} set={v => setModo(v as 'mil' | 'uno')} />
-      <div className="sim-controls">
-        <select value={mid} onChange={e => setMid(Number(e.target.value))} aria-label="Partido">
-          {ps.map(p => <option key={p.match_id} value={p.match_id}>{p.date} · {p.local ? 'vs' : '@'} {p.rival} · {p.gf}-{p.gc}</option>)}
-        </select>
-      </div>
+      <h3 className="h2">Rejugar sus partidos</h3>
+      <p className="lede">Volvemos a jugar cada partido 50,000 veces con los mismos tiros: cada uno entra con la probabilidad que marca su xG. Así se ve si el marcador fue justo con lo que pasó en la cancha.</p>
+      <Seg opts={[['mil', 'Probabilidades'], ['uno', 'Verlo jugada a jugada']]} v={modo} set={v => setModo(v as 'mil' | 'uno')} />
+      <MatchPicker key={art.id} rows={rows} value={mid} onChange={setMid} media={media} defaultClub={clubActual} />
       {err && <p className="note">{err}</p>}
       {modo === 'uno' && (res ? <MatchSim key={res.partido.match_id} art={art} media={media} data={res.data} partido={res.partido} /> : <p className="note">Preparando partido…</p>)}
       {modo === 'mil' && <div className="sim-layout2">
         <div className="card">
-          {res ? <Pitch>{res.tiros.map(([x, y, xg, own, g]: number[], i: number) => {
+          {res ? <Pitch>{res.tiros.map((t: number[], i: number) => {
+            const [x, y, xg, own, g] = t
             const X = own ? x : 120 - x, Y = own ? y : 80 - y
             const c = own ? cols[0] : cols[1]
             const r = 0.7 + 3 * Math.sqrt(xg)
-            return <g key={i}>
+            return <g key={i} className="sim-shot" onMouseMove={e => tip.show(e, shotTip(i, t))} onMouseLeave={tip.hide}>
               <circle cx={X} cy={Y} r={r} fill={golSim.has(i) ? c : 'none'} stroke={c} strokeWidth={0.35} />
               {g === 1 && <circle cx={X} cy={Y} r={r + 1.1} fill="none" stroke="var(--ink)" strokeWidth={0.45} />}
+              <circle cx={X} cy={Y} r={Math.max(r + 1.2, 2.2)} fill="transparent" />
             </g>
           })}</Pitch> : <Pitch />}
           {res && <Legend items={[{ key: 'a', label: `${res.partido.club} ataca → · xG ${fmt(res.xg, 2)}`, color: cols[0] }, { key: 'b', label: `← ${res.partido.rival} ataca · xG ${fmt(res.xg_rival, 2)}`, color: cols[1] }]} />}
-          {res && <div className="note">Tamaño ∝ xG. <b>Relleno</b> = gol en una rejugada que terminó con el marcador más probable ({res.modal[0]}–{res.modal[1]}). <b>Anillo</b> = gol real ({res.partido.gf}–{res.partido.gc}).</div>}
+          {res && <div className="note">Cada círculo es un tiro; más grande, más claro el chance (xG). <b>Relleno</b>: gol en una rejugada que terminó con el marcador más probable ({res.modal[0]}–{res.modal[1]}). <b>Anillo</b>: gol real ({res.partido.gf}–{res.partido.gc}). Pasa el cursor por un tiro para ver quién lo hizo.</div>}
+          {tip.el}
         </div>
         <div className="card sim-box">
           <div className="sim-box-inner">
-            {res ? <><SimHeader r={res} media={media} cols={cols} /><SimScoreGrid r={res} /></> : <p className="note">Rejugando…</p>}
+            {res ? <><SimHeader r={res} media={media} cols={cols} /><SimScoreGrid r={res} media={media} /></> : <p className="note">Rejugando…</p>}
           </div>
         </div>
       </div>}
@@ -95,33 +117,53 @@ function SimHeader({ r, media, cols }: { r: Any; media?: Any; cols: string[] }) 
         {segs.map(([l, v, c]) => { const x = acc; acc += v * 400; return <g key={l}><rect x={x + 1} y={0} width={Math.max(0, v * 400 - 2)} height={22} rx={4} fill={c} />{v > 0.1 && <text x={x + v * 200} y={15} fontSize={12} textAnchor="middle" fill={light(c) ? '#111' : '#fff'} fontWeight={700}>{Math.round(v * 100)}%</text>}</g> })}
       </svg>
       <Legend items={segs.map(([l, , c]) => ({ key: l, label: l, color: c }))} />
-      <div className="note">xPts del partido <b>{fmt(r.xpts, 2)}</b> · {r.n.toLocaleString('es-MX')} rejugadas</div>
+      <div className="note">Puntos esperados del partido <b>{fmt(r.xpts, 2)}</b> · {r.n.toLocaleString('es-MX')} rejugadas</div>
     </div>
   )
 }
 
-function SimScoreGrid({ r }: { r: Any }) {
+/** Marcadores de las rejugadas: filas = goles del equipo del DT (0…5+), columnas = goles del rival. */
+function SimScoreGrid({ r, media }: { r: Any; media?: Any }) {
   const tip = useTip()
   const maxP = Math.max(...r.marcadores.flat())
+  const C = 36, X0 = 44, Y0 = 42, N = 6, L = N * C
+  const lab = (k: number) => (k === N - 1 ? `${k}+` : String(k))
+  const club = r.partido.club, rival = r.partido.rival
+  const realI = Math.min(r.partido.gf, N - 1), realJ = Math.min(r.partido.gc, N - 1)
+  // título de eje con escudo, centrado sobre la cuadrícula (ancho del texto estimado)
+  const Axis = ({ team, rot }: { team: string; rot?: boolean }) => {
+    const txt = `Goles de ${team}`, w = 18 + txt.length * 6.6, logo = asset(media?.clubes?.[team]?.logo)
+    const start = (L - w) / 2
+    return (
+      <g transform={rot ? `translate(12 ${Y0 + L}) rotate(-90)` : `translate(${X0} 12)`}>
+        {logo && <image href={logo} x={start} y={-12} width={15} height={15} />}
+        <text x={start + (logo ? 18 : 0)} y={0} className="sg-axis">{txt}</text>
+      </g>
+    )
+  }
   return (
     <div className="sim-grid">
       <div className="h3">Marcadores más probables</div>
-      <svg viewBox="0 6 230 224" preserveAspectRatio="xMidYMid meet">
-        <text x={130} y={12} fontSize={10} textAnchor="middle" fill="var(--ink-3)">goles de {r.partido.rival} →</text>
-        <text x={10} y={130} fontSize={10} textAnchor="middle" fill="var(--ink-3)" transform="rotate(-90 10 130)">goles de {r.partido.club} →</text>
+      <svg viewBox={`0 0 ${X0 + L + 2} ${Y0 + L + 2}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={`Probabilidad de cada marcador: filas goles de ${club}, columnas goles de ${rival}`}>
+        <Axis team={rival} />
+        <Axis team={club} rot />
+        {Array.from({ length: N }, (_, k) => <g key={k}>
+          <text x={X0 + k * C + C / 2 - 1} y={Y0 - 8} textAnchor="middle" className="sg-num">{lab(k)}</text>
+          <text x={X0 - 9} y={Y0 + k * C + C / 2 + 3} textAnchor="middle" className="sg-num">{lab(k)}</text>
+        </g>)}
         {r.marcadores.map((row: number[], i: number) => row.map((p, j) => {
-          const real = i === Math.min(r.partido.gf, 5) && j === Math.min(r.partido.gc, 5)
+          const real = i === realI && j === realJ
           const modal = i === r.modal[0] && j === r.modal[1]
           return (
-            <g key={`${i}${j}`} onMouseMove={e => tip.show(e, <>{i}{i === 5 ? '+' : ''}–{j}{j === 5 ? '+' : ''}: {pct(100 * p, 1)}{real ? ' · real' : ''}{modal ? ' · más probable' : ''}</>)} onMouseLeave={tip.hide}>
-              <rect x={24 + j * 34} y={20 + i * 34} width={32} height={32} rx={3} fill={`color-mix(in oklab, var(--c-dt) ${Math.round(100 * p / maxP)}%, var(--surface-2))`}
-                stroke={real ? 'var(--ink)' : modal ? 'var(--ink)' : 'none'} strokeWidth={2} strokeDasharray={modal && !real ? '4 3' : undefined} />
-              {p > 0.02 && <text x={40 + j * 34} y={40 + i * 34} fontSize={10} textAnchor="middle" fill={p / maxP > 0.55 ? '#fff' : 'var(--ink)'}>{Math.round(p * 100)}</text>}
+            <g key={`${i}-${j}`} className="sg-cell" onMouseMove={e => tip.show(e, <>{club} {lab(i)} – {lab(j)} {rival}: <b>{pct(100 * p, 1)}</b> de las rejugadas{real ? ' · marcador real' : ''}{modal ? ' · el más probable' : ''}</>)} onMouseLeave={tip.hide}>
+              <rect x={X0 + j * C} y={Y0 + i * C} width={C - 2} height={C - 2} rx={3} fill={`color-mix(in oklab, var(--c-dt) ${Math.round(100 * p / maxP)}%, var(--surface-2))`}
+                stroke={real || modal ? 'var(--ink)' : 'none'} strokeWidth={2} strokeDasharray={modal && !real ? '4 3' : undefined} />
+              {p > 0.005 && <text x={X0 + j * C + C / 2 - 1} y={Y0 + i * C + C / 2 + 3} fontSize={10} textAnchor="middle" fill={p / maxP > 0.55 ? '#fff' : 'var(--ink)'}>{p < 0.01 ? '<1' : Math.round(p * 100)}</text>}
             </g>
           )
         }))}
       </svg>
-      <div className="note">% de las rejugadas. Recuadro continuo: marcador real · punteado: más probable.</div>
+      <div className="note">% de las rejugadas que acabaron con cada marcador. Recuadro continuo: marcador real · punteado: el más probable.</div>
       {tip.el}
     </div>
   )

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import boot from './boot.json'
 import { dataUrl, fmt, getJSON, shortName, type Any } from './lib'
 
@@ -35,7 +35,17 @@ export default function Dist({ values, marks, refV = 0, refLabel = 'liga', forma
   low?: string; high?: string; height?: number; compact?: boolean
 }) {
   const [hover, setHover] = useState<string | null>(null)
-  const W = 600, padX = 18, top = compact ? 22 : 30, bot = compact ? 18 : 24, H = height + top + bot, mid = top + height / 2
+  // se dibuja al ancho real del contenedor (1 unidad = 1 px): los textos no se encogen en el teléfono
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [w, setW] = useState(600)
+  useEffect(() => {
+    const el = svgRef.current?.parentElement
+    if (!el) return
+    const ro = new ResizeObserver(([e]) => { const cw = Math.round(e.contentRect.width); if (cw > 0) setW(Math.max(260, cw)) })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const W = w, padX = 18, top = compact ? 22 : 30, bot = compact ? 18 : 24, H = height + top + bot, mid = top + height / 2
   const geo = useMemo(() => {
     const vs = values.map(o => o.v).filter(Number.isFinite)
     if (vs.length < 3) return null
@@ -70,13 +80,13 @@ export default function Dist({ values, marks, refV = 0, refLabel = 'liga', forma
       return { id: String(o.id), v: o.v, x, y }
     })
     return { X, poly: [...up, ...dn].join(' '), dots, r }
-  }, [values, refV, height, mid])
+  }, [values, refV, height, mid, W])
   if (!geo) return null
   const markIds = new Set(marks.map(m => String(m.id)))
   const hv = hover ? geo.dots.find(d => d.id === hover) : null
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="dist" role="img" style={{ width: '100%', display: 'block', overflow: 'visible' }}
+    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="dist" role="img" style={{ width: '100%', display: 'block', overflow: 'visible' }}
          aria-label={marks.map(m => `${m.label ?? coachShort(m.id)}: ${format(values.find(o => String(o.id) === String(m.id))?.v ?? NaN)}`).join(' · ')}>
       <polygon points={geo.poly} fill="color-mix(in oklab, var(--ink) 9%, transparent)" stroke="color-mix(in oklab, var(--ink) 22%, transparent)" strokeWidth={1} />
       {refV != null && (

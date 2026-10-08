@@ -8,7 +8,7 @@ import { Resumen, DtVsPlantilla, Transferencia, Fases, Contexto, Jugadores, Balo
 
 import Hub from './Hub'
 import Compare from './Compare'
-import { MODES, TAB_KEYS, inkOn, modeOf, type TabKey, type View } from './modes'
+import { MODES, TAB_KEYS, inkOn, modeOf, modeTitle, type TabKey, type View } from './modes'
 
 function readHash() {
   const [c, t] = window.location.hash.replace('#', '').split('/')
@@ -173,7 +173,7 @@ function CoachBar({ art, media, tab, setTab }: { art: Any; media: Any; tab: View
   const nm = nombreDT(art.id, art.nombre)
   const club = media.dts[art.id]?.club
   return (
-    <div className="coachbar" style={{ ['--mc' as string]: hub ? 'var(--ink-3)' : mode.color }}>
+    <div className="coachbar" style={{ ['--mc' as string]: hub ? 'var(--ink-3)' : mode.color, ['--mt' as string]: inkOn(mode.color) }}>
       <div className="cb-row">
         <button className="cb-id" onClick={() => setTab('hub')} title="Volver al menú de este DT">
           <CoachPhoto name={art.nombre} src={media.dts[art.id]?.foto} size={40} />
@@ -193,7 +193,7 @@ function CoachBar({ art, media, tab, setTab }: { art: Any; media: Any; tab: View
       </div>
       {!hub && (
         <div className="cb-subrow">
-          <b className="cb-mode-title">{mode.title}</b>
+          <b className="cb-mode-title">{modeTitle(mode, art)}</b>
           {mode.subs.length > 1 && (
             <div className="cb-subs" role="tablist">
               {mode.subs.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>{l}</button>)}

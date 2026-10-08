@@ -28,8 +28,8 @@ export const MODES: Mode[] = [
   { k: 'bp', name: 'Balón parado', title: 'Balón parado', q: '¿Qué hace en córners y tiros libres?', color: '#de4f87',
     desc: 'Córners en 3D: a dónde los manda, cuánto xG generan, dónde se paran sus jugadores. Puedes simularlos.', subs: [['bp', 'Balón parado']] },
   { k: 'lab', name: 'Laboratorio', title: 'Laboratorio', q: '¿Y si se jugara otra vez?', color: '#8f6cf0',
-    desc: 'Rejuega sus partidos 50,000 veces con el xG de cada tiro, o ponlo a dirigir otro club con otro once.',
-    subs: [['sim', 'Simular partidos'], ['whatif', '¿Y si…?']] },
+    desc: 'Rejuega sus partidos con el xG de cada tiro, o llévalo a dirigir otro club con el once que quieras.',
+    subs: [['sim', 'Rejugar partidos'], ['whatif', 'Llévalo a otro club']] },
   { k: 'vs', name: 'Cara a cara', title: 'Cara a cara', q: '¿En qué se parece a otro DT?', color: '#e5484d',
     desc: 'Compara su estilo propio contra cualquier otro entrenador, rasgo por rasgo.', subs: [['vs', '1 vs 1']] },
   { k: 'metodo', name: 'Método', title: 'Método', q: '¿Cómo se calcula todo esto?', color: '#8a9a92',
@@ -38,6 +38,13 @@ export const MODES: Mode[] = [
 
 /** Texto legible sobre el color del modo (oscuro sobre amarillo, blanco sobre el resto). */
 export const inkOn = (hex: string) => { const n = parseInt(hex.slice(1), 16); const l = (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; return l > 0.6 ? '#14100a' : '#fff' }
+
+/** Título que depende del DT: "Su ADN en dos ideas" si su resumen tiene dos rasgos claros, etc. */
+export function modeTitle(m: Mode, art?: { narrativa?: { principios?: unknown[] } } | null) {
+  if (m.k !== 'resumen') return m.title
+  const n = art?.narrativa?.principios?.length ?? 3
+  return n === 0 ? 'Su ADN' : `Su ADN en ${['una idea', 'dos ideas', 'tres ideas', 'cuatro ideas'][Math.min(n, 4) - 1]}`
+}
 
 export const modeOf = (t: View) => MODES.find(m => m.subs.some(([k]) => k === t)) ?? MODES[0]
 export const TAB_KEYS = MODES.flatMap(m => m.subs.map(([k]) => k))
