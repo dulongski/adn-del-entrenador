@@ -7,7 +7,7 @@ import { dataUrl, fmt, getJSON, type Any } from '../lib'
 import { L, LOCALE } from '../settings'
 import { archLabel, famLabel, kpiDesc, kpiLabel, mapLabel } from '../i18n/data'
 import {
-  ArchBars, C, ConfoundFig, Fig, IdentHist, IdentPanels, IdentWeights, LambdaBars, LevelCompare,
+  ArchBars, C, ConfoundFig, EventCurve, EventDots, Fig, TransplantForest, IdentHist, IdentPanels, IdentWeights, LambdaBars, LevelCompare,
   MapMini, MobilityNet, PitchGeometry, ShareLegend, SumSketch, SynthBars, TransferHist, VarianceChart, blockName,
 } from '../metodo/figs'
 import '../styles/metodo.css'
@@ -74,6 +74,10 @@ export function Metodo({ glob }: { glob: Any }) {
   // validación de «Llévalo a otro club» (archivo aparte; se carga al abrir la pestaña)
   const [wv, setWv] = useState<Any>(null)
   useEffect(() => { getJSON(dataUrl('whatif.json')).then(d => setWv(d.validacion), () => setWv(false)) }, [])
+  // estudio de eventos «trasplante de estilo» (pipeline/models/transplant.py)
+  const [tp, setTp] = useState<Any>(null)
+  useEffect(() => { getJSON(dataUrl('transplant.json')).then(setTp, () => setTp(false)) }, [])
+  const shortNames = useMemo(() => Object.fromEntries(Object.entries((boot as Any).nombres as Record<string, Any>).map(([k, v]) => [k, v.corto])), [])
 
   // índice con seguimiento de sección
   const [active, setActive] = useState<string>(SECS[0][0])
@@ -198,6 +202,7 @@ export function Metodo({ glob }: { glob: Any }) {
     { id: 'mac', t: <>Macdonald, B. (2012). Adjusted plus-minus for NHL players using ridge regression with goals, shots, Fenwick, and Corsi. <i>Journal of Quantitative Analysis in Sports</i>, 8(3).</>, url: 'https://doi.org/10.1515/1559-0410.1447' },
     { id: 'mssw', t: <>Muehlheusser, G., Schneemann, S., Sliwka, D. {L('y', '&')} Wallmeier, N. (2018). The contribution of managers to organizational success: Evidence from German soccer. <i>Journal of Sports Economics</i>, 19(6), 786–819.</>, url: 'https://ideas.repec.org/p/iza/izadps/dp8560.html' },
     { id: 'pst', t: <>Peeters, T., Szymanski, S. {L('y', '&')} Terviö, M. (2022). The survival of mediocre superstars in the labor market. <i>The Journal of Law, Economics, and Organization</i>, 38(3), 840–888.</>, url: 'https://tinbergen.nl/discussion-paper/4071/17-116-vii-the-survival-of-mediocre-superstars-in-the-labor-market' },
+    { id: 'vov', t: <>van Ours, J. C. {L('y', '&')} van Tuijl, M. A. (2016). In-season head-coach dismissals and the performance of professional football teams. <i>Economic Inquiry</i>, 54(1), 591–604.</>, url: 'https://ideas.repec.org/p/cpr/ceprdp/10191.html' },
   ]
 
   return (
@@ -232,6 +237,7 @@ export function Metodo({ glob }: { glob: Any }) {
             <b>{L('Pregunta. ', 'Question. ')}</b>{L('¿Qué parte del estilo de juego de un equipo pone el entrenador y qué parte ponen sus jugadores? ', "How much of a team's playing style comes from its coach and how much from its players? ")}
             <b>{L('Método. ', 'Method. ')}</b>{L(`Escribimos cada uno de ${nKpi} indicadores de estilo, medido en ${n(M.segmentos)} tramos de partido, como la suma de seis aportes: entrenador, jugadores en cancha, club, rival, contexto y ruido. Es una regresión de efectos fijos del tipo que la economía usa para separar a un directivo de su empresa, estimada con penalización ridge.`, `We write each of ${nKpi} style indicators, measured over ${n(M.segmentos)} match segments, as the sum of six contributions: coach, players on the pitch, club, opponent, context and noise. It is a fixed-effects regression of the kind economists use to separate a manager from his firm, estimated with a ridge penalty.`)}{' '}
             <b>{L('Resultado. ', 'Result. ')}</b>{L(`Entre equipos-temporada, el entrenador explica en promedio el ${pct(V.coach)} de las diferencias de estilo y los jugadores el ${pct(V.player)}. Cuando ocultamos la etapa de un entrenador en un club y le pedimos al modelo que lo reconozca solo por cómo jugó su equipo, el entrenador verdadero queda en la mitad superior de ${K} candidatos en ${R.ajustado.mitad_superior} de ${R.etapas} etapas (por azar serían ${R.etapas / 2}; ${pSign}).`, `Across team-seasons, the coach explains on average ${pct(V.coach)} of the differences in style and the players ${pct(V.player)}. When we hide a coach's spell at one club and ask the model to recognize him only from how his team played, the true coach lands in the top half of ${K} candidates in ${R.ajustado.mitad_superior} of ${R.etapas} spells (chance would give ${R.etapas / 2}; ${pSign}).`)}
+            {tp && <>{' '}{L(`Y en ${tp.n_eventos} cambios de entrenador, el equipo se mueve hacia la huella que el entrante mostró en otros clubes, más de lo que lo haría con un entrenador cualquiera (p = ${fmt(tp.sin_plantilla_todos.p_permutacion, 3)}, sección 5.5).`, `And across ${tp.n_eventos} coaching changes, the team moves toward the fingerprint the incoming coach showed at other clubs, more than it would with an arbitrary coach (p = ${fmt(tp.sin_plantilla_todos.p_permutacion, 3)}, section 5.5).`)}</>}
           </p>
           <p className="mt-kw"><b>{L('Palabras clave', 'Keywords')}:</b> {L('efectos fijos, modelo AKM, regresión ridge, estilo de juego, efecto del entrenador, Liga MX', 'fixed effects, AKM model, ridge regression, playing style, coach effect, Liga MX')}</p>
           </div>
@@ -458,6 +464,59 @@ export function Metodo({ glob }: { glob: Any }) {
               </Fig>
             </div>
           </div>
+
+          {tp && (() => {
+            const S = tp.sin_plantilla_todos, Cr = tp.crudo_todos, Mi = tp.sin_plantilla_mitad_temporada, B = tp.coef_sin_plantilla, P = tp.placebo_tiempo
+            const pp = (p: number) => p < 0.001 ? 'p < 0.001' : `p = ${fmt(p, 3)}`
+            const ci = (a: number[], d = 2) => `[${fmt(a[0], d)}, ${fmt(a[1], d)}]`
+            return (<>
+              <h3 className="mt-h3 mt-h3-gap" id="mt-s5-5"><span className="mt-subnum">5.5</span>{L('Trasplante de estilo: ¿el equipo se va hacia el estilo del entrenador nuevo?', "Style transplant: does the team move toward the new coach's style?")}</h3>
+              <div className="mt-two">
+                <div className="mt-prose">
+                  <p>{L('La crítica clásica al plus-minus ajustado en futbol es que hay pocos cambios: tres o cinco por partido, casi siempre en los mismos minutos, así que es difícil separar a un jugador de los que juegan con él. Las pruebas 5.1 a 5.4 se apoyan en otra fuente, los entrenadores que cambian de club. Esta prueba usa el experimento más limpio que ofrece la liga: el día que un club cambia de entrenador, cambia todo el cuerpo técnico y la plantilla es casi la misma.', 'The classic criticism of adjusted plus-minus in football is that there are few substitutions: three to five per match, almost always at the same minutes, so it is hard to separate a player from the players around him. Tests 5.1 to 5.4 rest on a different source, coaches who move between clubs. This test uses the cleanest experiment the league offers: on the day a club changes coach, the whole staff changes while the squad stays almost the same.')}</p>
+                  <p>{L('Si la huella del entrenador es real, la que estimamos en sus otros clubes debería predecir hacia dónde se mueve su equipo nuevo. Lo medimos así:', 'If the coach fingerprint is real, the one estimated at his other clubs should predict where his new team moves. We measure it like this:')}</p>
+                  <ol className="mt-steps mt-steps-tight">
+                    <li>{L(`Eventos: cada cambio de entrenador con al menos ${tp.params.MIN_PRE} partidos del saliente antes, ${tp.params.MIN_POST} del entrante después, y ${tp.params.MIN_OTHER} o más partidos del entrante en otros clubes. Quedan ${tp.n_eventos} cambios; ${tp.n_mitad_temporada} ocurren a mitad de torneo.`, `Events: every coaching change with at least ${tp.params.MIN_PRE} matches of the outgoing coach before, ${tp.params.MIN_POST} of the incoming one after, and ${tp.params.MIN_OTHER} or more matches of the incoming coach at other clubs. That leaves ${tp.n_eventos} changes; ${tp.n_mitad_temporada} happen mid-tournament.`)}</li>
+                    <li>{L('Fuera de muestra: para cada cambio reajustamos el modelo sin los partidos del entrante en ese club. Su huella sale solo de sus otros clubes, y nada de lo que pasa después del cambio entra en la predicción.', "Out of sample: for each change we refit the model without the incoming coach's matches at that club. His fingerprint comes only from his other clubs, and nothing that happens after the change enters the prediction.")}</li>
+                    <li>{L('Dirección predicha: d = α', 'Predicted direction: d = α')}<sub>{L('nuevo', 'new')}</sub> − α<sub>{L('anterior', 'old')}</sub>{L(`, en los ${nBase} indicadores. Cada partido recibe un puntaje`, ` across the ${nBase} indicators. Each match gets a score`)} <span className="mono">s<sub>t</sub> = (V<sub>t</sub> − V̄<sub>{L('antes', 'pre')}</sub>) · d / (d · d)</span>{L(': 0 si el equipo sigue jugando como antes, 1 si se movió justo lo que predice el cambio de entrenador. Como el ridge encoge las huellas, valores arriba de 1 son normales.', ': 0 if the team still plays as before, 1 if it moved exactly as the coaching change predicts. Since ridge shrinks fingerprints, values above 1 are normal.')}</li>
+                    <li>{L('V', 'V')}<sub>t</sub>{L(' es el estilo del partido sin el aporte de jugadores, rival y contexto. Así, los fichajes y la rotación que llegan con el entrenador no cuentan a su favor.', ' is the match style net of players, opponent and context. That way the signings and rotation that come with the coach do not count in his favour.')}</li>
+                  </ol>
+                  <div className="mt-stats">
+                    <div><b>{fmt(S.especifico, 2)}</b><span>{L('efecto propio del entrenador nuevo', "effect specific to the new coach")}</span><em>IC95 {ci(S.especifico_ic95)}</em></div>
+                    <div><b>{pp(S.p_permutacion).replace('p ', '').replace('= ', '')}</b><span>{L('p de permutación', 'permutation p')}</span><em>{L(`${tp.params.N_PERM} entrenadores placebo`, `${tp.params.N_PERM} placebo coaches`)}</em></div>
+                    <div><b>{fmt(S.vida_media, 1)}</b><span>{L('partidos de vida media: el cambio es inmediato', 'matches of half-life: the change is immediate')}</span><em>{S.vida_media_ic95 ? `IC95 ${ci(S.vida_media_ic95, 1)}` : ''}</em></div>
+                  </div>
+                </div>
+                <div>
+                  <Fig n={11} title={L(`Puntaje medio s por partido alrededor de los ${tp.n_eventos} cambios de entrenador. Línea gruesa: estilo sin plantilla, rival ni contexto, con IC95 por bootstrap de eventos. Gris fino: estilo crudo. Discontinua: lo que se esperaría con un entrenador cualquiera en lugar del que llegó.`, `Mean score s per match around the ${tp.n_eventos} coaching changes. Thick line: style net of squad, opponent and context, with 95% CI from an event bootstrap. Thin grey: raw style. Dashed: what we would expect from an arbitrary coach instead of the one who arrived.`)}>
+                    <EventCurve T={tp} />
+                  </Fig>
+                  <p className="mt-after-fig">{L(`El cambio aparece desde el primer partido (vida media de ${fmt(S.vida_media, 1)} partidos) y después se mantiene. Antes del cambio la curva es plana (pendiente ${fmt(S.pendiente_pre, 3)} por partido, IC95 ${ci(S.pendiente_pre_ic95, 3)}): los equipos no venían moviéndose ya en esa dirección.`, `The change shows up from the first match (half-life of ${fmt(S.vida_media, 1)} matches) and then it holds. Before the change the curve is flat (slope ${fmt(S.pendiente_pre, 3)} per match, 95% CI ${ci(S.pendiente_pre_ic95, 3)}): teams were not already drifting in that direction.`)}</p>
+                  <Fig n={12} title={L(`Efecto en cada uno de los ${tp.n_eventos} cambios. Relleno: el entrenador verdadero supera al 90% de sus placebos en ese cambio. Discontinua: placebo medio.`, `Effect in each of the ${tp.n_eventos} changes. Filled: the true coach beats 90% of his placebos in that change. Dashed: mean placebo.`)} note={L('Pasa el cursor por un punto para ver el cambio.', 'Hover a dot to see the change.')}>
+                    <EventDots T={tp} names={shortNames} />
+                  </Fig>
+                </div>
+              </div>
+
+              <div className="mt-h3-gap">
+                  <h3 className="mt-h3">{L('Cómo descartamos las explicaciones alternativas', 'How we rule out the alternatives')}</h3>
+                  <Fig n={13} className="mt-fig-forest" title={L('El mismo efecto bajo cada variante del diseño, con su IC95 por bootstrap de eventos. Los dos placebos de abajo deberían quedar lejos del efecto real.', 'The same effect under each design variant, with its 95% CI from an event bootstrap. The two placebos at the bottom should sit far from the real effect.')}>
+                    <TransplantForest T={tp} />
+                  </Fig>
+              <div className="mt-two mt-two-var">
+                <div className="mt-prose">
+                  <p><b>{L('Cualquier cambio mueve al equipo. ', 'Any change moves the team. ')}</b>{L(`Un club que despide a su entrenador se aleja de lo que hacía, y la regresión a la media empuja en el mismo sentido (van Ours y van Tuijl, 2016, lo muestran para los resultados). Por eso la comparación no es contra 0: repetimos el cálculo ${tp.params.N_PERM} veces con la huella de otro entrenador al azar en lugar del que llegó, dejando igual al saliente. Ese placebo da ${fmt(S.nula_media, 2)}; el entrenador verdadero da ${fmt(S.efecto, 2)} (IC95 ${ci(S.ic95)}). Lo que pone el entrenador nuevo es la diferencia, ${fmt(S.especifico, 2)}, y ${S.p_permutacion * (tp.params.N_PERM + 1) <= 1.01 ? `ninguno de los ${tp.params.N_PERM} placebos llega tan alto` : `solo el ${fmt(100 * S.p_permutacion, 1)}% de los placebos llega tan alto`}.`, `A club that sacks its coach moves away from what it did, and regression to the mean pushes the same way (van Ours and van Tuijl, 2016, show this for results). So the comparison is not against 0: we repeat the calculation ${tp.params.N_PERM} times with the fingerprint of a random other coach in place of the one who arrived, keeping the outgoing one. That placebo gives ${fmt(S.nula_media, 2)}; the true coach gives ${fmt(S.efecto, 2)} (95% CI ${ci(S.ic95)}). What the new coach brings is the difference, ${fmt(S.especifico, 2)}, and ${S.p_permutacion * (tp.params.N_PERM + 1) <= 1.01 ? `none of the ${tp.params.N_PERM} placebos reaches that high` : `only ${fmt(100 * S.p_permutacion, 1)}% of placebos reach that high`}.`)}</p>
+                  <p><b>{L('Sin cambio no hay salto. ', 'No change, no jump. ')}</b>{L(`Ponemos ${P.n} fechas falsas a mitad de etapas largas de un mismo entrenador. El puntaje medio es ${fmt(P.media, 2)} (IC95 ${ci(P.media_ic95)}): sin cambio real, nada se mueve.`, `We place ${P.n} fake dates in the middle of long spells under one coach. The mean score is ${fmt(P.media, 2)} (95% CI ${ci(P.media_ic95)}): with no real change, nothing moves.`)}</p>
+                </div>
+                <div className="mt-prose">
+                  <p><b>{L('Una regresión directa. ', 'A direct regression. ')}</b>{L('Juntando eventos e indicadores, estimamos Δ = b·α', 'Pooling events and indicators, we estimate Δ = b·α')}<sub>{L('nuevo', 'new')}</sub> + c·α<sub>{L('anterior', 'old')}</sub>{L(`, con efecto fijo por indicador, donde Δ es el cambio de estilo del equipo. Sin trasplante, b = 0. Sale b = ${fmt(B.b, 2)} (IC95 ${ci(B.ic95)}, ${pp(B.p_permutacion)} por permutación) y c = ${fmt(B.c, 2)}: el equipo gana la huella del que llega y pierde la del que se va.`, `, with a fixed effect per indicator, where Δ is the change in the team's style. With no transplant, b = 0. We get b = ${fmt(B.b, 2)} (95% CI ${ci(B.ic95)}, ${pp(B.p_permutacion)} by permutation) and c = ${fmt(B.c, 2)}: the team gains the fingerprint of the coach who arrives and loses that of the one who leaves.`)}</p>
+                  <p><b>{L('Fichajes y plantilla. ', 'Signings and squad. ')}</b>{L(`Con el estilo crudo el efecto es ${fmt(Cr.efecto, 2)}; sin plantilla, ${fmt(S.efecto, 2)}. Casi todo sobrevive al quitar a los jugadores. ${Mi ? `Solo con los ${Mi.n} cambios a mitad de torneo, cuando no hay ventana de fichajes, sale ${fmt(Mi.efecto, 2)} (${pp(Mi.p_permutacion)}).` : ''}`, `With raw style the effect is ${fmt(Cr.efecto, 2)}; net of squad, ${fmt(S.efecto, 2)}. Almost all of it survives removing the players. ${Mi ? `Using only the ${Mi.n} mid-tournament changes, when there is no transfer window, it is ${fmt(Mi.efecto, 2)} (${pp(Mi.p_permutacion)}).` : ''}`)}</p>
+                  <p><b>{L('Ningún club lo sostiene solo. ', 'No single club drives it. ')}</b>{L(`Quitando un club a la vez, el efecto queda entre ${fmt(tp.sensibilidad.sin_un_club.efecto_min, 2)} y ${fmt(tp.sensibilidad.sin_un_club.efecto_max, 2)}. Con entrantes de huella más sólida (≥ 15 partidos en otros clubes, ${tp.sensibilidad.otros15.n} cambios) da ${fmt(tp.sensibilidad.otros15.efecto, 2)}.`, `Dropping one club at a time, the effect stays between ${fmt(tp.sensibilidad.sin_un_club.efecto_min, 2)} and ${fmt(tp.sensibilidad.sin_un_club.efecto_max, 2)}. With incoming coaches whose fingerprint is better estimated (≥ 15 matches elsewhere, ${tp.sensibilidad.otros15.n} changes) it is ${fmt(tp.sensibilidad.otros15.efecto, 2)}.`)}</p>
+                </div>
+              </div>
+              </div>
+            </>)
+          })()}
         </Sec>
 
         {/* ------------------------------------------------------------ 6 */}
@@ -495,7 +554,7 @@ export function Metodo({ glob }: { glob: Any }) {
           <ol className="mt-refs">
             {refs.map(r => <li key={r.id}>{r.t} <a href={r.url} target="_blank" rel="noreferrer">{L('enlace', 'link')} ↗</a></li>)}
           </ol>
-          <p className="mt-repro">{L('Código: el modelo central está en ', 'Code: the main model is in ')}<code>pipeline/models/decomposition.py</code>{L(', la prueba de transferencia en ', ', the transfer test in ')}<code>pipeline/models/transfer_test.py</code>{L(' y la prueba sintética en ', ' and the synthetic check in ')}<code>tests/test_decomposition.py</code>.</p>
+          <p className="mt-repro">{L('Código: el modelo central está en ', 'Code: the main model is in ')}<code>pipeline/models/decomposition.py</code>{L(', la prueba de transferencia en ', ', the transfer test in ')}<code>pipeline/models/transfer_test.py</code>{L(', el trasplante de estilo en ', ', the style transplant in ')}<code>pipeline/models/transplant.py</code>{L(' y la prueba sintética en ', ' and the synthetic check in ')}<code>tests/test_decomposition.py</code>.</p>
         </section>
       </article>
     </div>

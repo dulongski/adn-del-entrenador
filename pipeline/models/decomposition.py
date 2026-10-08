@@ -43,7 +43,7 @@ def build_segments(stints: pd.DataFrame, matches: pd.DataFrame) -> pd.DataFrame:
     df["w_manadv"] = (df.n_own - df.n_opp) * df.dur
     df["w_tmid"] = (df.t0 + df.t1) / 2 * df.dur
     keys = ["match_id", "seg", "team_id"]
-    agg = df.groupby(keys).agg({**{c: "sum" for c in COUNTERS if c != "dur"}, "dur": "sum",
+    agg = df.groupby(keys).agg({**{c: "sum" for c in COUNTERS if c != "dur" and c in df.columns}, "dur": "sum",
                                 "w_losing": "sum", "w_drawing": "sum", "w_winning": "sum", "w_manadv": "sum",
                                 "w_tmid": "sum", "opp_id": "first", "home": "first", "coach_id": "first",
                                 "t0": "min", "t1": "max", "goal_diff": "mean"}).reset_index()

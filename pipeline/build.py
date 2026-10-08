@@ -360,6 +360,9 @@ def main(coach_filter=None, fast=False, n_boot=30, solo_extra=False):
     sim_extra.main()  # goleador de cada tiro en sim_*.json (export_static los reescribe)
     from pipeline import dist
     dist.main()  # distribuciones entre DTs (campanas) para la web
+    if not solo_extra:
+        from pipeline.models import transplant
+        transplant.main()  # estudio de eventos «trasplante de estilo» (Método 5.5)
     log("listo")
 
 

@@ -503,3 +503,108 @@ export function MapMini({ mapa, label }: { mapa: Any; label: (s: string) => stri
     </div>
   )
 }
+
+/* ------------------------------------------------------------ 5.5 trasplante de estilo (estudio de eventos) */
+/** Curva del estudio de eventos: puntaje medio por partido antes y después del cambio, con IC95 por evento. */
+export function EventCurve({ T }: { T: Any }) {
+  const S = T.sin_plantilla_todos, R = T.crudo_todos, win: number = T.params.WIN
+  const W = 540, H = 300, x0 = 40, x1 = W - 12, y0 = 244, yt = 22
+  const vals = [...S.curva_pre_lo, ...S.curva_pre_hi, ...S.curva_post_lo, ...S.curva_post_hi, S.nula_media, 0, 1].filter((v: Any) => v != null) as number[]
+  const lo = Math.min(-0.5, Math.floor(Math.min(...vals) * 2) / 2), hi = Math.max(...vals) + 0.25
+  const sx = (t: number) => x0 + ((t + win) / (2 * win)) * (x1 - x0)
+  const sy = (v: number) => y0 - ((v - lo) / (hi - lo)) * (y0 - yt)
+  const pre = (a: (number | null)[]) => a.map((v, i) => [i - win, v] as const)
+  const post = (a: (number | null)[]) => a.map((v, i) => [i + 1, v] as const)
+  const line = (pts: readonly (readonly [number, number | null])[]) => pts.filter(p => p[1] != null).map((p, i) => `${i ? 'L' : 'M'}${sx(p[0])} ${sy(p[1] as number)}`).join(' ')
+  const band = (pts: [number, number][], up: number[], dn: number[]) => `M${pts.map(([t], i) => `${sx(t)} ${sy(up[i])}`).join(' L')} L${pts.map(([t], i) => `${sx(t)} ${sy(dn[i])}`).reverse().join(' L')} Z`
+  const tPre = S.curva_pre.map((_: Any, i: number) => [i - win, 0] as [number, number]), tPost = S.curva_post.map((_: Any, i: number) => [i + 1, 0] as [number, number])
+  const ticks = [lo, ...[-1, 0, 1, 2, 3].filter(v => v > lo && v < hi)]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="mt-svg" role="img" aria-label={L('Estudio de eventos alrededor del cambio de entrenador', 'Event study around the coaching change')}>
+      {ticks.map(v => <g key={v}><line x1={x0} x2={x1} y1={sy(v)} y2={sy(v)} stroke="var(--rule)" /><text x={x0 - 6} y={sy(v) + 4} fontSize={15} textAnchor="end" fill="var(--ink-3)">{fmt(v, v % 1 ? 1 : 0)}</text></g>)}
+      <path d={band(tPre, S.curva_pre_hi, S.curva_pre_lo)} fill="var(--ink-3)" opacity={0.14} />
+      <path d={band(tPost, S.curva_post_hi, S.curva_post_lo)} fill="var(--c-dt)" opacity={0.18} />
+      <line x1={sx(0.5)} x2={sx(0.5)} y1={yt} y2={y0} stroke="var(--ink-2)" strokeDasharray="3 3" />
+      <text x={sx(0.5) + 6} y={yt + 12} fontSize={15} fill="var(--ink-2)">{L('llega el DT nuevo', 'new coach arrives')}</text>
+      <line x1={sx(1)} x2={x1} y1={sy(S.nula_media)} y2={sy(S.nula_media)} stroke="var(--c-plantilla)" strokeWidth={1.8} strokeDasharray="6 4" />
+      <text x={x1 - 2} y={sy(S.nula_media) + 16} fontSize={15} textAnchor="end" fill="var(--c-plantilla)" fontWeight={700}>{L('cualquier otro DT (placebo)', 'any other coach (placebo)')}</text>
+      <path d={line([...pre(R.curva_pre), ...post(R.curva_post)])} fill="none" stroke="var(--ink-3)" strokeWidth={1.4} />
+      <path d={line(pre(S.curva_pre))} fill="none" stroke="var(--ink-2)" strokeWidth={2.2} />
+      <path d={line(post(S.curva_post))} fill="none" stroke="var(--c-dt)" strokeWidth={2.6} />
+      {post(S.curva_post).map(([t, v]) => v != null && <circle key={t} cx={sx(t)} cy={sy(v)} r={3} fill="var(--c-dt)" />)}
+      <line x1={x0} x2={x1} y1={y0} y2={y0} stroke="var(--ink-3)" />
+      {[-win, -10, -5, 1, 5, 10, win].map(t => <text key={t} x={sx(t)} y={y0 + 17} fontSize={15} textAnchor="middle" fill="var(--ink-3)">{t > 0 ? `+${t}` : t}</text>)}
+      <text x={(x0 + x1) / 2} y={y0 + 40} fontSize={15.5} textAnchor="middle" fill="var(--ink-2)">{L('Partidos antes (−) y después (+) del cambio', 'Matches before (−) and after (+) the change')}</text>
+    </svg>
+  )
+}
+
+/** Gráfico de bosque: el mismo efecto bajo cada variante del diseño, con su IC95. */
+export function TransplantForest({ T }: { T: Any }) {
+  const rows: { l: string; v: number; lo?: number; hi?: number; c: string; note: string }[] = [
+    { l: L('Principal: sin plantilla, rival ni contexto', 'Main: net of squad, opponent and context'), v: T.sin_plantilla_todos.efecto, lo: T.sin_plantilla_todos.ic95[0], hi: T.sin_plantilla_todos.ic95[1], c: 'var(--c-dt)', note: `n=${T.sin_plantilla_todos.n}` },
+    { l: L('Estilo crudo, sin ajustar', 'Raw style, unadjusted'), v: T.crudo_todos.efecto, lo: T.crudo_todos.ic95[0], hi: T.crudo_todos.ic95[1], c: 'var(--ink-2)', note: `n=${T.crudo_todos.n}` },
+    ...(T.sin_plantilla_mitad_temporada ? [{ l: L('Solo cambios a mitad de torneo', 'Mid-tournament changes only'), v: T.sin_plantilla_mitad_temporada.efecto, lo: T.sin_plantilla_mitad_temporada.ic95[0], hi: T.sin_plantilla_mitad_temporada.ic95[1], c: 'var(--c-dt)', note: `n=${T.sin_plantilla_mitad_temporada.n}` }] : []),
+    { l: L('DT nuevo con ≥ 15 partidos en otros clubes', 'New coach with ≥ 15 matches elsewhere'), v: T.sensibilidad.otros15.efecto, c: 'var(--c-dt)', note: `n=${T.sensibilidad.otros15.n}` },
+    { l: L(`Quitando un club a la vez (${T.sensibilidad.sin_un_club.n_clubes} variantes)`, `Dropping one club at a time (${T.sensibilidad.sin_un_club.n_clubes} variants)`), v: (T.sensibilidad.sin_un_club.efecto_min + T.sensibilidad.sin_un_club.efecto_max) / 2, lo: T.sensibilidad.sin_un_club.efecto_min, hi: T.sensibilidad.sin_un_club.efecto_max, c: 'var(--c-dt)', note: L('rango', 'range') },
+    { l: L('Placebo: otro DT al azar en lugar del nuevo', 'Placebo: random coach instead of the new one'), v: T.sin_plantilla_todos.nula_media, hi: T.sin_plantilla_todos.nula_p95, lo: T.sin_plantilla_todos.nula_media, c: 'var(--c-plantilla)', note: L('media · p95', 'mean · p95') },
+    { l: L('Placebo: fecha falsa sin cambio de DT', 'Placebo: fake date with no change'), v: T.placebo_tiempo.media, lo: T.placebo_tiempo.media_ic95[0], hi: T.placebo_tiempo.media_ic95[1], c: 'var(--ink-3)', note: `n=${T.placebo_tiempo.n}` },
+  ]
+  const all = rows.flatMap(r => [r.v, r.lo ?? r.v, r.hi ?? r.v])
+  const lo = Math.min(-0.5, Math.floor(Math.min(...all) * 2) / 2), hi = Math.ceil(Math.max(...all) * 2) / 2 + 0.25
+  const pos = (v: number) => `${((v - lo) / (hi - lo)) * 100}%`
+  const ticks = [-1, 0, 1, 2, 3].filter(v => v >= lo && v <= hi)
+  return (
+    <div className="mt-forest">
+      {rows.map(r => (
+        <div key={r.l} className="mt-forest-row">
+          <span className="mt-forest-l">{r.l}</span>
+          <span className="mt-forest-track">
+            <i className="mt-forest-zero" style={{ left: pos(0) }} />
+            {r.lo != null && r.hi != null && <i className="mt-forest-ci" style={{ left: pos(r.lo), width: `calc(${pos(r.hi)} - ${pos(r.lo)})`, background: r.c }} />}
+            <i className="mt-forest-pt" style={{ left: pos(r.v), background: r.c }} />
+          </span>
+          <b className="mono">{fmt(r.v, 2)}</b>
+          <em>{r.note}</em>
+        </div>
+      ))}
+      <div className="mt-forest-row mt-forest-ax">
+        <span />
+        <span className="mt-forest-track">{ticks.map(v => <em key={v} style={{ left: pos(v) }}>{v}</em>)}</span>
+        <span /><span />
+      </div>
+    </div>
+  )
+}
+
+/** Un punto por cambio de DT, ordenados por efecto; color = si supera su propio placebo. */
+export function EventDots({ T, names }: { T: Any; names: Record<string, string> }) {
+  const tip = useTip()
+  const ev = useMemo(() => [...T.eventos].sort((a: Any, b: Any) => a.efecto_sin_plantilla - b.efecto_sin_plantilla), [T])
+  const W = 540, H = 220, x0 = 34, x1 = W - 8, y0 = 182, yt = 12
+  const vals = ev.map((e: Any) => e.efecto_sin_plantilla) as number[]
+  const lo = Math.min(-1, Math.floor(Math.min(...vals))), hi = Math.ceil(Math.max(...vals))
+  const sy = (v: number) => y0 - ((v - lo) / (hi - lo)) * (y0 - yt)
+  const sx = (i: number) => x0 + ((i + 0.5) / ev.length) * (x1 - x0)
+  const nm = (id: number, f: string) => names[String(id)] ?? f
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-svg" role="img" aria-label={L('Efecto por cambio de entrenador', 'Effect per coaching change')}>
+        {Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).map(v => <g key={v}><line x1={x0} x2={x1} y1={sy(v)} y2={sy(v)} stroke={v === 0 ? 'var(--ink-3)' : 'var(--rule)'} /><text x={x0 - 6} y={sy(v) + 4} fontSize={15} textAnchor="end" fill="var(--ink-3)">{v}</text></g>)}
+        <line x1={x0} x2={x1} y1={sy(T.sin_plantilla_todos.nula_media)} y2={sy(T.sin_plantilla_todos.nula_media)} stroke="var(--c-plantilla)" strokeDasharray="6 4" strokeWidth={1.6} />
+        {ev.map((e: Any, i: number) => {
+          const sig = e.p_evento < 0.1
+          return (
+            <g key={`${e.club_id}-${e.date}`} onMouseMove={m => tip.show(m, <>{nm(e.old, e.old_n)} → <b>{nm(e.new, e.new_n)}</b><br />{e.club_n} · {e.date}<br />{L('efecto', 'effect')} <b>{fmt(e.efecto_sin_plantilla, 2)}</b> · {L('p del evento', 'event p')} {fmt(e.p_evento, 2)}</>)} onMouseLeave={tip.hide}>
+              <rect x={sx(i) - (x1 - x0) / ev.length / 2} y={yt} width={(x1 - x0) / ev.length} height={y0 - yt} fill="transparent" />
+              <line x1={sx(i)} x2={sx(i)} y1={sy(0)} y2={sy(e.efecto_sin_plantilla)} stroke={sig ? 'var(--c-dt)' : 'var(--ink-3)'} strokeWidth={2} />
+              <circle cx={sx(i)} cy={sy(e.efecto_sin_plantilla)} r={4.6} fill={sig ? 'var(--c-dt)' : 'var(--surface)'} stroke={sig ? 'var(--c-dt)' : 'var(--ink-3)'} strokeWidth={1.6} />
+            </g>
+          )
+        })}
+        <text x={(x0 + x1) / 2} y={y0 + 24} fontSize={15.5} textAnchor="middle" fill="var(--ink-2)">{L(`${ev.length} cambios de entrenador, ordenados por efecto`, `${ev.length} coaching changes, sorted by effect`)}</text>
+      </svg>
+      {tip.el}
+    </div>
+  )
+}

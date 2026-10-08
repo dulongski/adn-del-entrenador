@@ -261,3 +261,24 @@
 .mt-keys dt { font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
 @media (min-width: 1400px) { .mt-abstract { grid-template-columns: minmax(0, 1fr) 280px; } .mt-keys { grid-template-columns: 1fr; align-content: center; gap: 18px; border-left: 1px solid color-mix(in oklab, var(--c-dt) 30%, var(--rule)); padding-left: 30px; } }
 @media (max-width: 600px) { .mt-var-mean { grid-template-columns: 112px minmax(0, 1fr) 34px !important; } .mt-var-mean > span:first-child { white-space: normal !important; line-height: 1.25; } }
+
+/* 5.5 trasplante: gráfico de bosque */
+.mt-forest { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; }
+.mt-forest-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) 44px 86px; gap: 10px; align-items: center; min-height: 30px; }
+.mt-forest-l { color: var(--ink); line-height: 1.25; }
+.mt-forest-row > b { text-align: right; font-size: 13.5px; }
+.mt-forest-row > em { font-style: normal; font-size: 12px; color: var(--ink-3); }
+.mt-forest-track { position: relative; height: 22px; }
+.mt-forest-track > i { position: absolute; top: 50%; transform: translateY(-50%); display: block; }
+.mt-forest-zero { width: 1px; height: 100%; background: var(--ink-3); }
+.mt-forest-ci { height: 3px; border-radius: 2px; opacity: .55; }
+.mt-forest-pt { width: 12px; height: 12px; border-radius: 50%; margin-left: -6px; }
+.mt-forest-ax { min-height: 18px; }
+.mt-forest-ax .mt-forest-track em { position: absolute; transform: translateX(-50%); font-style: normal; font-size: 12px; color: var(--ink-3); }
+@media (max-width: 620px) {
+  .mt-forest-row { grid-template-columns: minmax(0, 1fr) 44px; row-gap: 2px; }
+  .mt-forest-l { grid-column: 1 / -1; }
+  .mt-forest-row > em { display: none; }
+  .mt-forest-ax .mt-forest-l, .mt-forest-ax > span:first-child { display: none; }
+}
+.mt-fig-forest { margin: 4px 0 22px; }
