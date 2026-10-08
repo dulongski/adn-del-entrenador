@@ -12,6 +12,7 @@ import WhatIf from './WhatIf'
 import { Resumen, DtVsPlantilla, Transferencia, Fases, Contexto, Jugadores, BalonParado, Simulador, Metodo } from './tabs'
 
 import Hub from './Hub'
+import Chat from './Chat'
 import Compare from './Compare'
 import { MODES, TAB_KEYS, inkOn, modeOf, modeTitle, type TabKey, type View } from './modes'
 
@@ -65,6 +66,16 @@ export default function App() {
   }
   const openCoach = (id: number) => swap(() => { setTabRaw('hub'); setCoachId(id); setSideOpen(false); window.scrollTo({ top: 0 }) })
   const goMap = () => swap(() => { setCoachId(null); setArt(null); setSideOpen(false); setHash('#mapa'); window.scrollTo({ top: 0 }) })
+  // el chat de IA pide ir a un DT y una vista
+  useEffect(() => {
+    const onGo = (e: Event) => {
+      const { coach, view } = (e as CustomEvent).detail as { coach: number | null; view: string }
+      if (coach == null) return goMap()
+      swap(() => { setCoachId(coach); setTabRaw((TAB_KEYS.includes(view as TabKey) ? view : 'hub') as View); setSideOpen(false); window.scrollTo({ top: 0 }) })
+    }
+    window.addEventListener('coachdna:go', onGo)
+    return () => window.removeEventListener('coachdna:go', onGo)
+  }) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (coachId === null) return
     setArt(null)
@@ -94,6 +105,7 @@ export default function App() {
         <svg viewBox="0 0 24 24" aria-hidden><circle cx="7" cy="8" r="2.4" /><circle cx="16.5" cy="6.5" r="1.8" /><circle cx="15" cy="15.5" r="2.8" /><circle cx="6.5" cy="17" r="1.6" /><path d="M7 8 L16.5 6.5 M7 8 L15 15.5 M15 15.5 L6.5 17" fill="none" strokeWidth="1.1" stroke="currentColor" opacity=".55" /></svg>
       </button>
       <SettingsMenu />
+      <Chat coach={coachId} view={coachId === null ? 'mapa' : tab} />
       {sideOpen && <div className="scrim" onClick={() => setSideOpen(false)} />}
       <aside className="side" aria-hidden={!sideOpen}>
         <button className="map-link" onClick={goMap}>◎ {L('Mapa de estilos', 'Style map')}</button>

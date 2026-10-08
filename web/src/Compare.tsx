@@ -1,3 +1,4 @@
+import { chatBus } from './chatBus'
 import { useEffect, useMemo, useState } from 'react'
 import { ClubName, CoachPhoto } from './charts'
 import CoachPicker from './compare/CoachPicker'
@@ -43,8 +44,14 @@ type Fact = { label: string; get: (f: Any) => number | string | null; show: (v: 
 export default function Compare({ art, glob, media, mapa, onOpen }: { art: Any; glob: Any; media: Any; mapa: Any; onOpen: (id: number) => void }) {
   const sims = useMemo(() => similares(art.id, mapa), [art.id, mapa])
   const pts = useMemo(() => new Map<number, Any>(mapa.puntos.map((p: Any) => [p.id, p])), [mapa])
-  const [rid, setRid] = useState<number | null>(sims[0]?.id ?? null)
+  const [rid, setRid] = useState<number | null>(() => { const r = chatBus.vsRival; chatBus.vsRival = null; return r ?? sims[0]?.id ?? null })
   const [other, setOther] = useState<Any>(null)
+  // el chat de IA puede pedir «Cara a cara» contra un DT concreto con esta vista ya abierta
+  useEffect(() => {
+    const f = () => setTimeout(() => { if (chatBus.vsRival != null) { setRid(chatBus.vsRival); chatBus.vsRival = null } }, 0)
+    window.addEventListener('coachdna:go', f)
+    return () => window.removeEventListener('coachdna:go', f)
+  }, [])
   const [all, setAll] = useState(false)
   const dd = useDistData()
   useEffect(() => { setOther(null); if (rid !== null) getJSON(dataUrl(`dt_${rid}.json`)).then(setOther).catch(() => setOther(false)) }, [rid])
