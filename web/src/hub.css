@@ -97,3 +97,10 @@
   .hub-desc { max-height: 80px; opacity: 1; }
   .hub-formula { display: none; }
 }
+.cb-modes.ov-r { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.cb-modes.ov-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%); mask-image: linear-gradient(90deg, transparent, #000 15%); }
+.cb-modes.ov-l.ov-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+@media (max-width: 700px) {
+  .cb-subrow { flex-wrap: wrap; gap: 6px 10px; }
+  .cb-subs { width: 100%; }
+}

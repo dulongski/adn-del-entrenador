@@ -137,7 +137,9 @@ table.t.vs-facts td.win { background: color-mix(in oklab, var(--vc) 20%, transpa
   .vs-r .vs-id { justify-items: start; }
   .vs-side .coach-photo { width: 72px !important; height: 72px !important; }
   .vs-cp-list { grid-template-columns: 1fr; max-height: 300px; }
-  .vs-cp-row { grid-template-columns: auto minmax(0, 1fr) 84px; }
+  .vs-cp-row { grid-template-columns: auto minmax(0, 1fr) 72px; }
+  .vs-cp-sub { flex-direction: column; gap: 1px; white-space: normal; }
+  .vs-cp-club, .vs-cp-fam { white-space: nowrap; }
   .vs-cp-pj { display: none; }
   .vs-dg { grid-template-columns: 1fr; }
 }

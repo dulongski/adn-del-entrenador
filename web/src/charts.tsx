@@ -128,7 +128,7 @@ export function prismSentence(row: Any, etiqueta: string): string {
   if (Math.sign(obs) !== Math.sign(dt) && Math.abs(obs) >= 0.15 && Math.abs(top.v) > Math.abs(dt)) {
     return `${base} Eso no sale de él: ${/^(sus|los) /.test(top.who) ? 'lo empujan' : 'lo empuja'} sobre todo ${top.who}. Por su cuenta, él tira hacia el lado contrario.`
   }
-  if (Math.abs(dt) >= Math.abs(top.v)) return `${base} Quien más lo empuja ${hacia(dt)} es él, por delante de ${top.who}.`
+  if (Math.abs(dt) >= Math.abs(top.v)) return `${base} Quien más lo empuja ${hacia(dt)} es él, por delante ${top.who.startsWith('el ') ? 'del ' + top.who.slice(3) : 'de ' + top.who}.`
   if (Math.sign(dt) === Math.sign(top.v)) return `${base} Él lo empuja ${hacia(dt)}, y ${top.who} todavía más.`
   return `${base} Él lo empuja ${hacia(dt)}, pero ${top.who} ${/^(sus|los) /.test(top.who) ? 'pesan' : 'pesa'} más ${hacia(top.v)}.`
 }

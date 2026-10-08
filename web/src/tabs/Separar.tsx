@@ -89,7 +89,7 @@ function AttribTable({ rows, glob, hu, art, dd }: { rows: Any[]; glob: Any; hu: 
             </tr>
             {isOpen && (
               <tr><td colSpan={ATT_COLS.length + 2} className="att-open">
-                <p className="explain">{prismSentence(r, glob.kpis[r.kpi].etiqueta)}</p>
+                <p className="explain">{prismSentence(r, kName(r.kpi, glob))}</p>
                 <div className="att-open-grid">
                   <div><div className="att-open-h">Entre todos los DTs</div><KpiBell k={r.kpi} art={art} glob={glob} dd={dd} color="var(--c-dt)" mode="v" /></div>
                   <div><div className="att-open-h">¿Quién lo empuja?</div><PrismDetail row={r} /></div>
@@ -130,7 +130,7 @@ export function Transferencia({ art, glob, media }: P) {
       <h3 className="h2">¿Su estilo viaja con él?</h3>
       <p className="lede">La prueba más directa de que un estilo es del DT y no de sus jugadores: le escondemos al modelo todos sus partidos en un club, lo entrenamos con el resto de la liga y le pedimos que adivine quién dirigía esos partidos. Si lo reconoce aunque los jugadores sean otros, el estilo es suyo.</p>
       {mine.length ? (
-        <div className="grid2">
+        <div className="grid2" style={mine.length % 2 ? { gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))' } : undefined}>
           {mine.map((t: Any) => (
             <div key={t.club} className="card">
               <div className="h3 inline-club">Partidos escondidos: <ClubName club={t.club} media={media} size={20} /> ({t.partidos})</div>
@@ -173,7 +173,7 @@ function RankPlot({ rows, highlight }: { rows: Any[]; highlight: number }) {
   return (
     <div className="card tbl-wrap">
       <Legend items={[{ key: 'a', label: 'Descontando jugadores, club y rival', color: 'var(--c-dt)' }, { key: 'c', label: 'Sin descontar', color: 'var(--c-plantilla)' }, { key: 'n', label: 'Al azar', color: 'var(--c-resid)' }]} />
-      <svg viewBox={`0 0 ${W} ${sorted.length * rowH + 24}`} style={{ width: '100%', minWidth: 520 }}>
+      <svg viewBox={`0 0 ${W} ${sorted.length * rowH + 24}`} style={{ width: '100%', minWidth: 520, maxWidth: 820, display: 'block' }}>
         {[1, 2, 5, 10, 20, 40].filter(t => t <= K).map(t => <g key={t}><line x1={x(t)} x2={x(t)} y1={0} y2={sorted.length * rowH} stroke="var(--rule)" /><text x={x(t)} y={sorted.length * rowH + 16} fontSize={11} textAnchor="middle" fill="var(--ink-3)">{t}</text></g>)}
         {sorted.map((r, i) => {
           const y = i * rowH + rowH / 2

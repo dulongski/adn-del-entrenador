@@ -61,7 +61,8 @@ export function divColor(v: number, max: number) {
   const t = Math.max(-1, Math.min(1, v / (max || 1)))
   const a = Math.abs(t)
   const pole = t >= 0 ? 'var(--div-pos)' : 'var(--div-neg)'
-  return `color-mix(in oklab, ${pole} ${Math.round(a * 100)}%, var(--div-mid))`
+  // raíz: los valores intermedios se ven con color claro en vez de un gris turbio
+  return `color-mix(in oklab, ${pole} ${Math.round(Math.sqrt(a) * 100)}%, var(--div-mid))`
 }
 /** Secuencial de un solo tono. */
 export function seqColor(v: number, max: number) {

@@ -43,7 +43,7 @@ export const inkOn = (hex: string) => { const n = parseInt(hex.slice(1), 16); co
 export function modeTitle(m: Mode, art?: { narrativa?: { principios?: unknown[] } } | null) {
   if (m.k !== 'resumen') return m.title
   const n = art?.narrativa?.principios?.length ?? 3
-  return n === 0 ? 'Su ADN' : `Su ADN en ${['una idea', 'dos ideas', 'tres ideas', 'cuatro ideas'][Math.min(n, 4) - 1]}`
+  return n === 0 ? 'Su ADN' : `Su ADN en ${['una idea', 'dos ideas', 'tres ideas', 'cuatro ideas', 'cinco ideas', 'seis ideas', 'siete ideas', 'ocho ideas'][Math.min(n, 8) - 1]}`
 }
 
 export const modeOf = (t: View) => MODES.find(m => m.subs.some(([k]) => k === t)) ?? MODES[0]

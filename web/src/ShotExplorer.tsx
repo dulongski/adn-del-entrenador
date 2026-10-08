@@ -51,8 +51,8 @@ export function ShotExplorer({ shots, color, media }: { shots: Shot[]; color: st
   const xg = shots.reduce((a, s) => a + s.xg, 0)
   // la portería: y 36–44 (8 yardas), alto 2.67; vista desde el tirador (y crece hacia la derecha, como en la cancha vertical)
   const G = { y0: 36, y1: 44, h: 2.67 }
-  const gx = (y: number) => 10 + (y - (G.y0 - 3)) / 14 * 100
-  const gy = (z: number) => 40 - z * 100 / 14
+  const gx = (y: number) => (y - (G.y0 - 4.5)) / 17 * 120
+  const gy = (z: number) => 52 - z * 120 / 17
   const onFrame = (s: Shot) => s.ez != null && s.ey != null && s.ex != null && s.ex >= 117 && ['Goal', 'Saved', 'Saved to Post', 'Post', 'Off T', 'Saved Off Target'].includes(s.res)
   return (
     <div className="st">
@@ -89,28 +89,50 @@ export function ShotExplorer({ shots, color, media }: { shots: Shot[]; color: st
       </Pitch>
       {sel ? (
         <div className="st-detail">
-          <svg className="st-goal" viewBox="0 0 120 44" role="img" aria-label="Dónde terminó el tiro en la portería">
-            <line x1={0} x2={120} y1={40} y2={40} stroke="var(--rule)" strokeWidth={0.8} />
-            <rect x={gx(G.y0)} y={gy(G.h)} width={gx(G.y1) - gx(G.y0)} height={gy(0) - gy(G.h)} fill="color-mix(in oklab, var(--pitch) 70%, transparent)" />
-            <path d={`M${gx(G.y0)} ${gy(0)} V${gy(G.h)} H${gx(G.y1)} V${gy(0)}`} fill="none" stroke="var(--ink)" strokeWidth={1.2} strokeLinejoin="round" />
-            {filtro === 'goles' && list.filter(onFrame).map(s => s.i !== sel.i && (
-              <circle key={s.i} cx={gx(Math.max(G.y0 - 3, Math.min(G.y1 + 3, s.ey!)))} cy={gy(Math.min(4.4, s.ez!))} r={0.9} fill={s.gol ? color : 'none'} stroke={color} strokeWidth={0.4} opacity={0.4} />
-            ))}
-            {onFrame(sel) ? (
-              <circle cx={gx(Math.max(G.y0 - 3, Math.min(G.y1 + 3, sel.ey!)))} cy={gy(Math.min(4.4, sel.ez!))} r={2.1} fill={sel.gol ? color : 'var(--surface)'} stroke="var(--ink)" strokeWidth={0.7} />
-            ) : (
-              <text x={60} y={22} fontSize={6} textAnchor="middle" fill="var(--ink-3)">{sel.res === 'Blocked' ? 'bloqueado antes de llegar' : 'lejos de la portería'}</text>
-            )}
-          </svg>
           <div className="st-info">
             <div className="st-who"><b>{sel.jugador}</b><span className={`st-res${sel.gol ? ' gol' : ''}`} style={sel.gol ? { background: color } : undefined}>{RES_ES[sel.res] ?? sel.res}</span></div>
             <div className="st-row"><ClubLogo club={sel.p[1]} media={media} size={16} /><span>vs {sel.p[1]}</span></div>
-            <div className="note">{fecha(sel.p[0])} · min {sel.min + 1}' · {sel.gp != null ? `iban ${sel.gp}-${sel.gr}` : ''} · terminó {sel.p[3]}-{sel.p[4]}</div>
+            <div className="note">{fecha(sel.p[0])} · {sel.p[2] ? 'local' : 'visita'} · min {sel.min + 1}'{sel.gp != null ? ` · iban ${sel.gp}-${sel.gr}` : ''} · terminó {sel.p[3]}-{sel.p[4]}</div>
             <div className="note">xG {fmt(sel.xg, 2)}{sel.cuerpo ? ` · ${CUERPO_ES[sel.cuerpo]}` : ''}{TIPO_ES[sel.tipo] ? ` · ${TIPO_ES[sel.tipo]}` : ''}</div>
+          </div>
+          <div className="st-goal-wrap">
+          <svg className="st-goal" viewBox="0 19 120 37" role="img" aria-label="Dónde terminó el tiro en la portería">
+            <line x1={0} x2={120} y1={52} y2={52} stroke="var(--ink-3)" strokeWidth={0.6} />
+            <rect x={gx(G.y0)} y={gy(G.h)} width={gx(G.y1) - gx(G.y0)} height={gy(0) - gy(G.h)} fill="color-mix(in oklab, var(--pitch) 70%, transparent)" />
+            <g stroke="var(--ink-3)" strokeWidth={0.2} opacity={0.6}>
+              {[1, 2, 3, 4, 5, 6, 7].map(t => <line key={`v${t}`} x1={gx(G.y0 + t)} x2={gx(G.y0 + t)} y1={gy(G.h)} y2={gy(0)} />)}
+              {[0.67, 1.33, 2].map(t => <line key={`h${t}`} x1={gx(G.y0)} x2={gx(G.y1)} y1={gy(t)} y2={gy(t)} />)}
+            </g>
+            <path d={`M${gx(G.y0)} ${gy(0)} V${gy(G.h)} H${gx(G.y1)} V${gy(0)}`} fill="none" stroke="var(--ink)" strokeWidth={1.2} strokeLinejoin="round" />
+            {list.filter(s => s.gol && onFrame(s)).map(s => s.i !== sel.i && (
+              <circle key={s.i} cx={gx(Math.max(G.y0 - 4.2, Math.min(G.y1 + 4.2, s.ey!)))} cy={gy(Math.min(4.2, s.ez!))} r={1.3} fill={color} opacity={0.35} />
+            ))}
+            {onFrame(sel) ? (
+              <circle cx={gx(Math.max(G.y0 - 4.2, Math.min(G.y1 + 4.2, sel.ey!)))} cy={gy(Math.min(4.2, sel.ez!))} r={2.6} fill={sel.gol ? color : 'var(--surface)'} stroke="var(--ink)" strokeWidth={0.7} />
+            ) : (
+              <text x={60} y={30} fontSize={5.5} textAnchor="middle" fill="var(--ink-3)">{sel.res === 'Blocked' ? 'bloqueado antes de llegar' : 'lejos de la portería'}</text>
+            )}
+          </svg>
           </div>
         </div>
       ) : <div className="note">Sin tiros en este club.</div>}
-      <div className="note st-foot">{fmt(goles, 0)} goles con {fmt(xg, 1)} xG. Tamaño = xG; relleno = gol. ‹ › recorre de la ocasión más clara a la menos clara.</div>
+      {ranked.length > 1 && (
+        <div className="st-next">
+          <span className="jg-ctrl-label">Siguientes en la lista</span>
+          {[1, 2].map(d => k + d).filter(i => i < ranked.length).map(i => {
+            const s = ranked[i]
+            return (
+              <button key={s.i} className="st-next-row" onClick={() => setK(i)}>
+                <span className="mono">{fmt(s.xg, 2)}</span>
+                <span className="st-next-name">{s.jugador}</span>
+                <ClubLogo club={s.p[1]} media={media} size={14} />
+                <span className={`st-res${s.gol ? ' gol' : ''}`} style={s.gol ? { background: color } : undefined}>{RES_ES[s.res] ?? s.res}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+      <div className="note st-foot">{fmt(goles, 0)} goles con {fmt(xg, 1)} xG (goles esperados). Tamaño = xG, relleno = gol. Abajo, la portería vista desde el tirador (tenues: sus otros goles). ‹ › va de la ocasión más clara a la menos clara.</div>
       {tip.el}
     </div>
   )

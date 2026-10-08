@@ -191,6 +191,7 @@ def main():
             index.setdefault(r.kk, []).append((r.match_id, r.team_id, r.poss))
         G = {k: g for k, g in Ac.groupby(["match_id", "team_id", "poss"], sort=False)}
         Pm = P.set_index(["match_id", "team_id", "poss"])
+        nxt = P.sort_values(["match_id", "poss"]).assign(next_team=lambda d: d.groupby("match_id").team_id.shift(-1)).set_index(["match_id", "team_id", "poss"]).next_team
         ejemplos = {}
         for arq, seqs in art["arquetipos_ejemplos"].items():
             out = []
@@ -215,7 +216,7 @@ def main():
                     fin = "gol"
                 elif last.type == "Shot":
                     fin = "tiro"
-                elif last.type == "Pass" and isinstance(last.outcome, str):
+                elif (last.type == "Pass" and isinstance(last.outcome, str)) or (hit in nxt.index and nxt.loc[hit] == nxt.loc[hit] and nxt.loc[hit] != hit[1]):
                     fin = "perdida"
                 else:
                     fin = "fin"

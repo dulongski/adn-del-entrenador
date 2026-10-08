@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { dataUrl, getJSON, nombreDT, shortName, fmt, type Any } from './lib'
 import boot from './boot.json'
 import { ClubLogo, ClubName, CoachPhoto } from './charts'
@@ -37,9 +37,16 @@ export default function App() {
   const [theme, setTheme] = useState<string | null>(() => { try { return localStorage.getItem('theme') } catch { return null } })
 
   useEffect(() => {
-    const onHash = () => { const h = readHash(); setCoachId(h.c); if (h.c !== null) setTabRaw(h.t) }
+    const onHash = () => { const h = readHash(); setCoachId(h.c); if (h.c !== null) setTabRaw(h.t); else setSideOpen(false) }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+  // si la ventana pasa a ancho de teléfono, el menú lateral (que ahí es un cajón encima) se cierra
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 900px)')
+    const onChange = () => { if (!mq.matches) setSideOpen(false) }
+    mq.addEventListener?.('change', onChange)
+    return () => mq.removeEventListener?.('change', onChange)
   }, [])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSideOpen(false) }
@@ -170,6 +177,17 @@ export default function App() {
 /** Barra fija: tarjeta compacta del DT que estás viendo + modos + subpestañas del modo actual. */
 function CoachBar({ art, media, tab, setTab }: { art: Any; media: Any; tab: View; setTab: (t: View) => void }) {
   const mode = modeOf(tab), hub = tab === 'hub'
+  // si los modos no caben, se difumina el borde y el modo activo se desplaza a la vista
+  const modesRef = useRef<HTMLElement>(null)
+  const [over, setOver] = useState({ l: false, r: false })
+  useEffect(() => {
+    const el = modesRef.current
+    if (!el) return
+    const upd = () => setOver({ l: el.scrollLeft > 4, r: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 })
+    const ro = new ResizeObserver(upd); ro.observe(el); el.addEventListener('scroll', upd, { passive: true }); upd()
+    el.querySelector<HTMLElement>('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' })
+    return () => { ro.disconnect(); el.removeEventListener('scroll', upd) }
+  }, [tab])
   const nm = nombreDT(art.id, art.nombre)
   const club = media.dts[art.id]?.club
   return (
@@ -182,7 +200,7 @@ function CoachBar({ art, media, tab, setTab }: { art: Any; media: Any; tab: View
             <span className="cb-club">{club && <ClubLogo club={club} media={media} size={14} />}{club ?? ''}{art.partidos_total ? ` · ${art.partidos_total} p.` : ''}</span>
           </span>
         </button>
-        <nav className="cb-modes" aria-label="Modos">
+        <nav ref={modesRef} className={`cb-modes${over.l ? ' ov-l' : ''}${over.r ? ' ov-r' : ''}`} aria-label="Modos">
           <button className="cb-mode cb-hubbtn" aria-pressed={hub} onClick={() => setTab('hub')}>Menú</button>
           {MODES.map(m => (
             <button key={m.k} className="cb-mode" style={{ ['--pc' as string]: m.color, ['--pt' as string]: inkOn(m.color) }} aria-pressed={!hub && mode.k === m.k} onClick={() => setTab(m.subs[0][0])}>

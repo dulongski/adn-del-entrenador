@@ -95,7 +95,10 @@ export function KpiBell({ k, art, glob, dd, color, mode: mode0 = 'a', showStats 
   const sello = a !== undefined ? K.liga + a * sd : undefined
   const vals = kValues(dd, glob, k, mode)
   const mine = mode === 'v' ? raw : sello
-  const cmp = mine !== undefined ? vsLiga(mine, K.liga, sd) : null
+  // «un poco / mucho más que la liga» medido contra la dispersión de la misma campana que se dibuja
+  const mu = vals.reduce((t, o) => t + o.v, 0) / Math.max(1, vals.length)
+  const sdV = Math.sqrt(vals.reduce((t, o) => t + (o.v - mu) ** 2, 0) / Math.max(1, vals.length)) || sd
+  const cmp = mine !== undefined ? vsLiga(mine, K.liga, sdV) : null
   const opt = (m: 'v' | 'a', lbl: string, sub: string, v?: number) => (
     <button type="button" className="rs-stat rs-pick" aria-pressed={mode === m} onClick={() => setMode(m)}>
       <span className="rs-stat-l">{lbl}</span><b>{kFmt(k, v)}</b><span className="rs-stat-s">{sub}</span>

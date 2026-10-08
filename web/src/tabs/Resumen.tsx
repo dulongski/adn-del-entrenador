@@ -4,7 +4,7 @@ import { ClubLogo, PrismDetail, prismSentence } from '../charts'
 import { useDistData } from '../Dist'
 import { MODES, type TabKey } from '../modes'
 import { type P } from './common'
-import { KpiBell, RankStrip, alphaPos, useWide } from './resumenKit'
+import { KpiBell, RankStrip, alphaPos, kName, useWide } from './resumenKit'
 import '../styles/resumen.css'
 
 /* ================================================================ RESUMEN */
@@ -49,6 +49,7 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
       <h3 className="h2 rs-title">{N.titular.split(': ').slice(1).join(': ') || N.titular}</h3>
       <p className="lede">Lo que hace con cualquier plantilla. En cada idea ves sus números, los de la liga y dónde queda entre los {nDT} técnicos.
         <b> Su sello</b> es lo que harían sus equipos con jugadores, club y rivales promedio.</p>
+      {art.partidos_total < 10 && <p className="rs-empty rs-warn">Con solo {art.partidos_total} partidos estas ideas son preliminares: el modelo acerca su estilo al promedio hasta tener más datos.</p>}
 
       {N.principios.length ? (
         <div className={`rs-principles${N.principios.length === 1 ? ' one' : ''}`}>
@@ -62,7 +63,7 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
                 <div className="rs-pr-who">
                   <div className="rs-pr-h">¿Quién lo empuja?</div>
                   <PrismDetail row={att[p.kpi]} />
-                  <p className="explain">{prismSentence(att[p.kpi], glob.kpis[p.kpi].etiqueta)}</p>
+                  <p className="explain">{prismSentence(att[p.kpi], kName(p.kpi, glob))}</p>
                 </div>
               )}
             </article>

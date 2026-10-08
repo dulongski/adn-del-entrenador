@@ -80,7 +80,6 @@
 .rs-end { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .rs-caret { font-size: 11px; color: var(--ink-3); transition: transform .15s; width: 10px; text-align: center; }
 .rs-row.open .rs-caret { transform: rotate(180deg); color: var(--acc-ink); }
-.rs-caret-demo { font-size: 11px; color: var(--ink-3); padding: 0 2px; }
 .rs-open { padding: 6px 0 12px; border-top: 1px dashed var(--rule); }
 
 .rs-strip { position: relative; display: block; flex: 1; height: 14px; min-width: 48px; }
@@ -153,3 +152,5 @@
 @media (max-width: 860px) {
   .att-open-grid { grid-template-columns: 1fr; position: sticky; left: 0; width: min(calc(100vw - 64px), 640px); }
 }
+
+.rs-warn { margin: 0 0 14px; border-style: solid; border-color: color-mix(in oklab, var(--c-rival) 45%, var(--rule)); }

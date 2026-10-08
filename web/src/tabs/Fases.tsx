@@ -53,9 +53,9 @@ export function Fases({ art, glob, media }: P) {
         </div>
         <div className="jg-clubs" role="group" aria-label="Club para la red de pases y los tiros">
           <span className="jg-clubs-label">Red y tiros con</span>
-          {clubes.length ? clubes.map(c => (
+          {clubes.length ? [...clubes].reverse().sort((a, b) => Number(b.club === cur) - Number(a.club === cur)).map(c => (
             <button key={c.club} className="jg-chip" aria-pressed={c.club === club_} onClick={() => setClub(c.club)} style={{ ['--hue' as Any]: clubColor(c.club, media) }}>
-              <ClubLogo club={c.club} media={media} size={22} />{c.club}<span className="note">{c.partidos} PJ</span>
+              <ClubLogo club={c.club} media={media} size={20} />{c.club}<span className="note">{c.partidos} PJ</span>
               {c.club === cur && <span className="badge-live">actual</span>}
             </button>
           )) : <span className="note">{J === false ? 'Sin datos por club.' : 'Cargando…'}</span>}
@@ -72,7 +72,7 @@ export function Fases({ art, glob, media }: P) {
       </div>
 
       <h3 className="h2">Huella de estilo</h3>
-      <p className="lede">Efecto propio del DT en cada indicador, ya descontados plantilla, club, rival y contexto. El punto relleno indica que el efecto supera dos veces su error (bootstrap por partido); la barra es el intervalo del 95%.</p>
+      <p className="lede">Su sello en cada aspecto del juego: lo que harían sus equipos con jugadores, club y rivales promedio. Punto a la derecha del centro: más que el DT típico; a la izquierda: menos. Relleno: la diferencia es clara, no ruido. La raya es el margen de error.</p>
       <div className="grid2">
         {FAM_ORDER.map(f => {
           const rs = hu.filter((h: Any) => h.familia === f)
@@ -86,7 +86,7 @@ export function Fases({ art, glob, media }: P) {
                   <span className="mono" style={{ fontSize: 12, textAlign: 'right' }}>{fmt(h.crudo)} <span style={{ color: 'var(--ink-3)' }}>/ {fmt(h.liga)}</span></span>
                 </div>
               ))}
-              <div className="note" style={{ marginTop: 4 }}>Eje: −2.5σ … +2.5σ · derecha: DT / liga (crudo)</div>
+              <div className="note" style={{ marginTop: 4 }}>Centro: el DT típico. Números: lo que se vio en sus partidos / promedio de la liga.</div>
             </div>
           ) : null
         })}
@@ -147,7 +147,7 @@ function PassNet({ net, J, color }: { net: Any; J: Any; color: string }) {
           <line key={i} x1={byId[e.a].x} y1={byId[e.a].y} x2={byId[e.b].x} y2={byId[e.b].y} stroke={color} strokeOpacity={0.3 + 0.6 * e.n / maxE} strokeWidth={0.3 + 1.6 * e.n / maxE} strokeLinecap="round" />
         ) : null)}
         {nodos.map((n: Any) => (
-          <circle key={n.id} cx={n.x} cy={n.y} r={1.8 + 2.2 * n.pases / maxP} fill={color} stroke="var(--surface)" strokeWidth={0.6}
+          <circle key={n.id} cx={n.x} cy={n.y} r={1.8 + 2.2 * n.pases / maxP} fill={color} stroke="var(--ink)" strokeOpacity={0.55} strokeWidth={0.4}
             onMouseMove={e => tip.show(e, <><b>{n.nombre}</b><br />{fmt(n.pases)} pases completados por 90 min · {fmt(n.minutos, 0)} min jugados</>)} onMouseLeave={tip.hide} />
         ))}
       </Pitch>
@@ -198,7 +198,7 @@ function Archetypes({ art, J, media }: { art: Any; J: Any; media: Any }) {
         {ex.length ? (
           <>
             <PlayAnim key={`${sel}-${k}`} seq={seq} meta={meta} jugadores={J?.jugadores} partido={partido} club={club} color={color} media={media} />
-            <div className="note">Una de sus jugadas más valiosas de este tipo. Sólo aparecen los jugadores que tocan el balón. Línea continua: pase; discontinua: conducción. Ataque hacia la derecha.</div>
+            <div className="note">Una de sus jugadas más valiosas de este tipo. Sólo aparecen los jugadores que tocan el balón. Línea continua: pase; discontinua: conducción; punteada gris: tramo que los datos no registran. Ataque hacia la derecha.</div>
           </>
         ) : <div className="note">Sin ejemplos para este tipo de jugada.</div>}
       </div>

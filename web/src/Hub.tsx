@@ -1,5 +1,5 @@
-import { type ReactNode } from 'react'
-import { asset, fmt, shortName, type Any } from './lib'
+import { useEffect, useState, type ReactNode } from 'react'
+import { asset, dataUrl, fmt, getJSON, shortName, type Any } from './lib'
 import { MODES, modeTitle, type Mode, type TabKey } from './modes'
 import { similares } from './Compare'
 import './hub.css'
@@ -132,7 +132,7 @@ function ArtFormula() {
 }
 
 /* ---------------------------------------------------------------- ganchos con datos del DT */
-function hook(m: Mode, art: Any, mapa: Any): string {
+function hook(m: Mode, art: Any, mapa: Any, jug: Any): string {
   switch (m.k) {
     case 'resumen': return (art.narrativa?.principios ?? []).map((p: Any) => p.titulo ?? p).slice(0, 3).join(' · ') || 'Sin rasgos por encima del umbral'
     case 'separar': {
@@ -145,6 +145,9 @@ function hook(m: Mode, art: Any, mapa: Any): string {
       return a ? `Su jugada más propia: ${a.nombre.replace(/ \(\d\)$/, '')}` : ''
     }
     case 'jugadores': {
+      // club actual primero (como en la pestaña Jugadores); si no hay datos por club, toda su carrera
+      const club = jug?.clubes?.[0], b = club ? jug?.por_club?.[club] : null
+      if (b?.dibujo) return `${fmtForm(b.dibujo)} en ${b.partidos_dibujo} de ${b.partidos} partidos con ${club}`
       const f = Object.entries(art.jugadores?.formaciones ?? {}).sort((a: Any, b: Any) => b[1] - a[1])[0]
       const tot = Object.values(art.jugadores?.formaciones ?? {}).reduce((s: number, v: Any) => s + v, 0) as number
       return f ? `${fmtForm(f[0])} en ${f[1]} de ${tot} partidos` : ''
@@ -164,6 +167,8 @@ function hook(m: Mode, art: Any, mapa: Any): string {
 }
 
 export default function Hub({ art, media, mapa, go }: { art: Any; media: Any; mapa: Any; go: (t: TabKey) => void }) {
+  const [jug, setJug] = useState<Any>(null)
+  useEffect(() => { setJug(null); getJSON(dataUrl(`jugadores_${art.id}.json`)).then(setJug).catch(() => {}) }, [art.id])
   const ART: Record<string, ReactNode> = {
     resumen: <ArtPhoto art={art} media={media} />, separar: <ArtPrism art={art} />, juego: <ArtNet art={art} />,
     jugadores: <ArtFormation art={art} />, bp: <ArtCorners art={art} />, lab: <ArtShots art={art} />,
@@ -179,7 +184,7 @@ export default function Hub({ art, media, mapa, go }: { art: Any; media: Any; ma
             <span className="hub-q">{m.q}</span>
             <span className="hub-title">{modeTitle(m, art)}</span>
             <span className="hub-desc">{m.desc}</span>
-            <span className="hub-hook">{hook(m, art, mapa)}</span>
+            <span className="hub-hook">{hook(m, art, mapa, jug)}</span>
             {m.subs.length > 1 && <span className="hub-subs">{m.subs.map(([, l]) => l).join(' · ')}</span>}
           </span>
           <span className="hub-go" aria-hidden>→</span>

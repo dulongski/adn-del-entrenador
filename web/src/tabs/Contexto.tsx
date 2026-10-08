@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { fmt, sig, type Any } from '../lib'
+import { sig, type Any } from '../lib'
 import { Legend, MiniLines, useTip } from '../charts'
 import { KEY, Seg, type P } from './common'
 
@@ -11,7 +11,7 @@ export function Contexto({ art, glob }: P) {
   return (
     <div>
       <h3 className="h2">Cómo se adapta</h3>
-      <p className="lede">Estilo ajustado (sin plantilla, club ni rival) del DT según la situación del partido, frente a la liga en la misma situación. Si su línea se separa de la de la liga, ese ajuste es suyo.</p>
+      <p className="lede">Cómo cambia su juego cuando va perdiendo, empatando o ganando, según el minuto, si juega en casa o la fuerza del rival. Ya quitamos lo que ponen sus jugadores. La línea punteada es lo que hace la liga en esa misma situación: si la suya se separa, esa reacción es suya.</p>
       <Seg opts={[['marcador', 'Marcador'], ['minuto', 'Minuto'], ['localia', 'Localía'], ['rival', 'Fuerza del rival']]} v={dim} set={setDim} />
       <Legend items={[{ key: 'd', label: art.nombre.split(' ')[0] + ' ' + (art.nombre.split(' ').slice(-2, -1)[0] || ''), color: 'var(--c-dt)' }, { key: 'l', label: 'Liga', color: 'var(--ink-3)' }]} />
       <div className="grid3">
@@ -24,7 +24,7 @@ export function Contexto({ art, glob }: P) {
       </div>
 
       <h3 className="h2">Qué le hace cambiar de un partido a otro</h3>
-      <p className="lede">Modelo de gradient boosting con SHAP entrenado sobre sus partidos: cuánto pesan la localía, la fuerza del rival, el marcador y el <b>estilo del rival</b> (su efecto DT en presión, posesión y verticalidad).</p>
+      <p className="lede">Qué es lo que más cambia su forma de jugar de un partido a otro: jugar en casa, la fuerza del rival, el marcador o <b>cómo juega el rival</b> (si presiona, si tiene el balón, si es directo).</p>
       <Seg opts={KEY.filter(x => C.motores?.[x]).slice(0, 8).map(x => [x, glob.kpis[x].etiqueta] as [string, string])} v={k} set={setK} />
       {C.motores?.[k] ? <Drivers rows={C.motores[k]} /> : <div className="note">Hacen falta al menos 15 partidos.</div>}
 
@@ -44,7 +44,7 @@ function Drivers({ rows }: { rows: Any[] }) {
         <div key={r.variable} style={{ display: 'grid', gridTemplateColumns: '180px 1fr 190px', gap: 10, alignItems: 'center', margin: '6px 0' }}>
           <span style={{ fontSize: 14 }}>{VAR_ES[r.variable] || r.variable}</span>
           <svg viewBox="0 0 200 12" preserveAspectRatio="none" style={{ width: '100%', height: 12 }}><rect x={0} y={1} width={r.importancia / max * 200} height={10} rx={3} fill="var(--c-dt)" /></svg>
-          <span className="note">{Math.abs(r.direccion) < 0.2 ? 'efecto no lineal / débil' : r.direccion > 0 ? 'cuanto más, más sube' : 'cuanto más, más baja'} · |SHAP| {fmt(r.importancia, 2)}σ</span>
+          <span className="note">{Math.abs(r.direccion) < 0.2 ? 'depende del caso' : r.direccion > 0 ? 'cuanto más, más sube' : 'cuanto más, más baja'}</span>
         </div>
       ))}
     </div>
@@ -71,7 +71,7 @@ function Evolution({ rows, k }: { rows: Any[]; k: string }) {
         <text x={P.l} y={H - 6} fontSize={11} fill="var(--ink-3)">{rows[0].date}</text>
         <text x={W - P.r} y={H - 6} fontSize={11} textAnchor="end" fill="var(--ink-3)">{rows.at(-1).date}</text>
       </svg>
-      <div className="note">Puntos: cada partido (ajustado). Línea: media móvil de 5 partidos.</div>
+      <div className="note">Cada punto es un partido (sin el efecto de sus jugadores). La línea es el promedio de los últimos 5.</div>
       {tip.el}
     </div>
   )

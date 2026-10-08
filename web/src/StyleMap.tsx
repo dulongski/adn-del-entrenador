@@ -229,7 +229,7 @@ function Map2D({ mapa, media, coords, axes, focus, setHover, onPick, groupLabels
   const nodes = useMemo(() => {
     const P: Any[] = mapa.puntos
     const narrow = W < 600
-    const pad = narrow ? { l: 44, r: 44, t: 190, b: 150 } : { l: 70, r: 70, t: 150, b: 70 }
+    const pad = narrow ? { l: 44, r: 44, t: 262, b: 150 } : { l: 70, r: 70, t: 150, b: 70 }
     const xs = coords.map(c => c[0]), ys = coords.map(c => c[1])
     const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
     const sx = (W - pad.l - pad.r) / (x1 - x0 || 1), sy = (H - pad.t - pad.b) / (y1 - y0 || 1)
@@ -265,7 +265,7 @@ function Map2D({ mapa, media, coords, axes, focus, setHover, onPick, groupLabels
     <div className="smap" ref={ref} {...handlers} style={{ backgroundSize: `${grid}px ${grid}px`, backgroundPosition: `${view.x}px ${view.y}px` }}>
       <div className="smap-world" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})` }}>
         {blobs.map((b: Any) => <div key={b.id} className={`smap-blob${focus !== null && focus !== b.id ? ' dim' : ''}`} style={{ left: b.mx - b.rad, top: b.my - b.rad, width: b.rad * 2, height: b.rad * 2, '--hue': HUES[b.id % HUES.length] } as CSSProperties} />)}
-        {groupLabels && blobs.map((b: Any) => <div key={`l${b.id}`} className="smap-glabel" style={{ left: b.mx, top: Math.max(W < 600 ? 205 : 165, b.my - b.rad * 0.72), color: HUES[b.id % HUES.length], opacity: focus !== null && focus !== b.id ? 0.25 : 1 }}>{b.nombre}</div>)}
+        {groupLabels && blobs.map((b: Any) => <div key={`l${b.id}`} className="smap-glabel" style={{ left: b.mx, top: Math.max(W < 600 ? 270 : 165, b.my - b.rad * 0.72), color: HUES[b.id % HUES.length], opacity: focus !== null && focus !== b.id ? 0.25 : 1 }}>{b.nombre}</div>)}
         {nodes.filter(n => !hidden.has(n.d.id)).map(n => {
           const float = reduce ? {} : { '--dx': `${(hash(n.d.id) - 0.5) * 10}px`, '--dy': `${(hash(n.d.id + 7) - 0.5) * 10}px`, '--dur': `${6 + hash(n.d.id + 3) * 6}s`, '--delay': `${-hash(n.d.id + 11) * 8}s` }
           return <Bubble key={n.d.id} d={n.d} media={media} r={n.r} dim={(focus !== null && focus !== n.d.grupo) || (match !== null && !match.has(n.d.id))} cls={pulse === n.d.id ? 'pulse' : match?.has(n.d.id) ? 'hit' : undefined} onPick={onPick} setHover={setHover} dragged={dragged}

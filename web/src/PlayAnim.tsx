@@ -53,9 +53,15 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
     let T = 450
     seq.forEach(([t, x, y, ex, ey]: Any, i: number) => {
       const acc = meta?.acc?.[i]
+      const prev = steps.at(-1)
+      if (prev && Math.hypot(prev.ex - x, prev.ey - y) > 2) { // hueco en los datos: el balón llega sin pase registrado
+        const g = Math.hypot(prev.ex - x, prev.ey - y)
+        steps.push({ t: 'Gap', x: prev.ex, y: prev.ey, ex: x, ey: y, a: null, r: acc?.[0] ?? null, ok: true, s: T, e: T + 300 + g * 10 })
+        T += 300 + g * 10 + 120
+      }
       const toX = ex ?? (t === 'Shot' ? 120 : x), toY = ey ?? (t === 'Shot' ? 40 : y)
       const d = Math.hypot(toX - x, toY - y)
-      const dur = t === 'Pass' ? 420 + d * 13 : t === 'Carry' ? 380 + d * 32 : 420 + d * 9
+      const dur = t === 'Pass' ? 420 + d * 13 : t === 'Carry' ? (d < 1.5 ? 140 : 380 + d * 30) : 420 + d * 9
       steps.push({ t, x, y, ex: toX, ey: toY, a: acc?.[0] ?? null, r: acc?.[1] ?? null, ok: acc ? acc[2] === 1 : true, s: T, e: T + dur })
       T += dur + 160
     })
@@ -64,7 +70,7 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
     steps.forEach(st => {
       add(st.a, { t0: st.s - 260, t1: st.s, x: st.x, y: st.y })
       if (st.t === 'Carry') add(st.a, { t0: st.s, t1: st.e, x: st.ex, y: st.ey })
-      if (st.t === 'Pass' && st.r != null) add(st.r, { t0: st.s, t1: st.e, x: st.ex, y: st.ey })
+      if ((st.t === 'Pass' || st.t === 'Gap') && st.r != null) add(st.r, { t0: st.s, t1: st.e, x: st.ex, y: st.ey })
     })
     const names: Record<number, string> = {}
     for (const p of Object.keys(moves).map(Number)) {
@@ -160,11 +166,12 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
   const nm = (p: number | null) => (p != null && names[p]) || 'un compañero'
   const caption = (() => {
     if (!steps.length) return ''
-    if (finished && done) return `${steps.length} ${steps.length === 1 ? 'acción' : 'acciones'} · ${endLabel}`
+    if (finished && done) { const n = steps.filter(x => x.t !== 'Gap').length; return `${n} ${n === 1 ? 'acción' : 'acciones'} · ${endLabel}` }
     const st = steps[ci]
     if (time < st.s && ci === 0) return `Arranca ${nm(st.a)}`
     if (st.t === 'Pass') return st.ok ? `Pase de ${nm(st.a)}${st.r != null ? ` a ${nm(st.r)}` : ''}` : `Pase de ${nm(st.a)}, no llega`
     if (st.t === 'Carry') return `Conduce ${nm(st.a)}`
+    if (st.t === 'Gap') return `El balón le llega a ${nm(st.r)}`
     return `Remata ${nm(st.a)}${time >= st.e ? ` · ${endLabel}` : ''}`
   })()
 
@@ -172,6 +179,26 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
   const FS = Math.min(4.6, Math.max(2.8, 10.5 / (wPx / 124))) // ≥ ~10.5 px en pantalla
   const R = Math.min(3, Math.max(2, 6 / (wPx / 124)))
   const shown = Object.keys(moves).map(Number).map(p => [p, posOf(p)] as const).filter(([, q]) => q)
+  // etiquetas sin solaparse: primera posición libre (abajo, arriba, derecha, izquierda) respecto a otras etiquetas y puntos
+  type Box = { x0: number; y0: number; x1: number; y1: number }
+  const hit = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
+  const dots: Box[] = shown.map(([, q]) => ({ x0: q![0] - R, y0: q![1] - R, x1: q![0] + R, y1: q![1] + R }))
+  const placed: Box[] = []
+  const labelPos: Record<number, [number, number, 'middle' | 'start' | 'end']> = {}
+  for (const [p, q] of [...shown].sort((a, b) => (a[0] === onBall ? -1 : b[0] === onBall ? 1 : 0))) {
+    const [x, y] = q!
+    const w = (names[p]?.length || 1) * FS * 0.56, h = FS
+    const cands: [number, number, 'middle' | 'start' | 'end'][] = [
+      [x, y + R + FS * 0.95, 'middle'], [x, y - R - FS * 0.3, 'middle'], [x + R + 0.8, y + FS * 0.35, 'start'], [x - R - 0.8, y + FS * 0.35, 'end'],
+    ]
+    const box = ([cx, cy, an]: [number, number, string]): Box => {
+      const x0 = an === 'middle' ? cx - w / 2 : an === 'start' ? cx : cx - w
+      return { x0, y0: cy - h * 0.8, x1: x0 + w, y1: cy + h * 0.2 }
+    }
+    const pick = cands.find(c => { const b = box(c); return b.y0 > -2 && b.y1 < 82 && !placed.some(o => hit(o, b)) && !dots.some(o => hit(o, b)) }) ?? cands[0]
+    placed.push(box(pick))
+    labelPos[p] = pick
+  }
   const dimTrail = (i: number) => (done ? 0.75 : Math.max(0.16, 0.95 - (ci - i) * 0.24))
 
   return (
@@ -187,13 +214,14 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
       )}
       <Pitch labels={<>
         {shown.map(([p, q]) => {
-          const [x, y, o] = q!
-          return <text key={p} x={x} y={y + R + FS * 0.95} fontSize={FS} fontWeight={600} textAnchor="middle" fill="var(--ink)" opacity={o}
+          const [, , o] = q!
+          const [lx, ly, an] = labelPos[p]
+          return <text key={p} x={lx} y={ly} fontSize={FS} fontWeight={600} textAnchor={an} fill="var(--ink)" opacity={o}
             className="pa-label">{names[p]}</text>
         })}
         {steps.length > 0 && time >= 0 && <text x={steps[0].x} y={steps[0].y - R - 1.2} fontSize={FS * 0.85} textAnchor="middle" fill="var(--ink-2)" className="pa-label">inicio</text>}
         {finished && last && (
-          <text x={Math.min(last.ex, 112)} y={Math.max(5, last.ey - 3.6)} fontSize={fin === 'gol' ? FS * 1.45 : FS * 1.1} fontWeight={800} textAnchor="middle"
+          <text x={Math.max(10, Math.min(last.ex, 110))} y={Math.hypot(last.ex - steps[0].x, last.ey - steps[0].y) < 12 || last.ey < 9 ? Math.min(78, last.ey + R + FS * 2.3) : last.ey - R - FS * 0.6} fontSize={fin === 'gol' ? FS * 1.45 : FS * 1.1} fontWeight={800} textAnchor="middle"
             fill={fin === 'gol' ? color : 'var(--ink)'} className="pa-label pa-end">{endLabel}</text>
         )}
       </>}>
@@ -209,8 +237,8 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
           const kk = st.t === 'Carry' ? ease(k) : easeOut(k)
           const x2 = lerp(st.x, st.ex, kk), y2 = lerp(st.y, st.ey, kk)
           return (
-            <line key={i} x1={st.x} y1={st.y} x2={x2} y2={y2} stroke={st.t === 'Shot' ? 'var(--c-plantilla)' : color} strokeOpacity={i === ci && !done ? 1 : dimTrail(i)}
-              strokeWidth={st.t === 'Carry' ? 0.55 : 0.85} strokeDasharray={st.t === 'Carry' ? '1.4 1' : undefined} strokeLinecap="round"
+            <line key={i} x1={st.x} y1={st.y} x2={x2} y2={y2} stroke={st.t === 'Shot' ? 'var(--c-plantilla)' : st.t === 'Gap' ? 'var(--ink-3)' : color} strokeOpacity={i === ci && !done ? 1 : dimTrail(i)}
+              strokeWidth={st.t === 'Carry' ? 0.55 : st.t === 'Gap' ? 0.4 : 0.85} strokeDasharray={st.t === 'Carry' ? '1.4 1' : st.t === 'Gap' ? '0.3 1' : undefined} strokeLinecap="round"
               markerEnd={k >= 1 && st.t === 'Pass' ? `url(#${mk})` : undefined} />
           )
         })}
@@ -225,7 +253,7 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
           const on = p === onBall && !done
           return <g key={p} opacity={o}>
             {on && <circle cx={x} cy={y} r={R + 0.9} fill="none" stroke={color} strokeWidth={0.4} strokeOpacity={0.7} />}
-            <circle cx={x} cy={y} r={R} fill={color} stroke="var(--surface)" strokeWidth={0.55} />
+            <circle cx={x} cy={y} r={R} fill={color} stroke="var(--ink)" strokeOpacity={0.6} strokeWidth={0.4} />
           </g>
         })}
         {/* balón */}
