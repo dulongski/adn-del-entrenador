@@ -118,8 +118,7 @@ export default function App() {
           mapa ? (
             <section className="landing">
               <header className="landing-head">
-                <h1 className="landing-title"><Logo kind={SETTINGS.logo} size={40} /></h1>
-                <p className="landing-sub">{L('Cada burbuja es un DT de Liga MX. Cerca = ideas de juego parecidas, ', 'Each bubble is a Liga MX coach. Closer = similar ideas about the game, ')}<b>{L('ya descontada su plantilla', 'squad already factored out')}</b>{L('. Toca una para abrir su perfil.', '. Tap one to open his profile.')}</p>
+                <h1 className="landing-title"><Logo kind={SETTINGS.logo} size={40} /><span className="landing-info"><Info wide>{L('Cada burbuja es un DT de Liga MX. Cerca = ideas de juego parecidas, ', 'Each bubble is a Liga MX coach. Closer = similar ideas about the game, ')}<b>{L('ya descontada su plantilla', 'squad already factored out')}</b>{L('. Toca una para abrir su perfil.', '. Tap one to open his profile.')}</Info></span></h1>
               </header>
               <StyleMap mapa={mapa} media={media} kpis={glob.kpis} onPick={openCoach} activos={activos} setActivos={setActivos} />
             </section>

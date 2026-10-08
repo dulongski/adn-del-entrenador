@@ -510,7 +510,7 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
   padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--bg); font-family: var(--body); font-size: 13.5px; line-height: 1.45; font-weight: 400; font-style: normal;
   text-align: left; white-space: normal; box-shadow: 0 12px 34px rgba(0,0,0,.35); animation: infofade .12s ease-out; pointer-events: auto; }
 @keyframes infofade { from { opacity: 0; } }
-.info.wide .info-pop { max-width: min(480px, calc(100vw - 24px)); }
+.info-pop.wide { max-width: min(480px, calc(100vw - 24px)); }
 .info-pop::before { content: ''; position: absolute; top: -5px; left: var(--ax, 50%); width: 10px; height: 10px; background: inherit; transform: translateX(-50%) rotate(45deg); border-radius: 2px; }
 .info-pop.up::before { top: auto; bottom: -5px; }
 .info-pop b { font-weight: 700; }
@@ -528,3 +528,6 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 .landing .smap-world { animation: map-settle .6s cubic-bezier(.2, .7, .2, 1) both; transform-origin: 50% 50%; }
 @keyframes map-settle { from { opacity: 0; scale: .96; } }
 @media (prefers-reduced-motion: reduce) { ::view-transition-old(root), ::view-transition-new(root), .landing, .landing .smap-world { animation: none; } }
+.landing-title { display: flex; align-items: center; gap: 4px; }
+.landing-info { pointer-events: auto; display: inline-flex; align-self: center; }
+.landing-info .info-i { width: 20px; height: 20px; font-size: 13px; }

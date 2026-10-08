@@ -1,15 +1,17 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { L } from './settings'
 
 /* "i" en un circulito: el texto explicativo aparece al pasar el cursor (o al tocar / enfocar con teclado).
    Úsalo junto a títulos y leyendas en lugar de párrafos debajo:  <h3>Título <Info>explicación…</Info></h3> */
 export default function Info({ children, label, wide = false }: { children: ReactNode; label?: string; wide?: boolean }) {
   const ref = useRef<HTMLSpanElement>(null)
+  const popRef = useRef<HTMLSpanElement>(null)
   const [open, setOpen] = useState(false)
   // posición fija calculada desde el icono, siempre dentro de la pantalla; la flecha apunta al icono
   useLayoutEffect(() => {
     if (!open || !ref.current) return
-    const pop = ref.current.querySelector<HTMLElement>('.info-pop')
+    const pop = popRef.current
     if (!pop) return
     const place = () => {
       const ic = ref.current!.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight, m = 12
@@ -34,7 +36,8 @@ export default function Info({ children, label, wide = false }: { children: Reac
       onClick={e => { e.stopPropagation(); setOpen(o => !o) }}
       onKeyDown={e => { if (e.key === 'Escape') (e.currentTarget as HTMLElement).blur() }}>
       <span className="info-i" aria-hidden>i</span>
-      {open && <span className="info-pop" role="tooltip">{children}</span>}
+      {/* el globo se monta en <body> para quedar por encima de cualquier capa (botones fijos, animaciones) */}
+      {open && createPortal(<span ref={popRef} className={`info-pop${wide ? ' wide' : ''}`} role="tooltip">{children}</span>, document.body)}
     </span>
   )
 }
