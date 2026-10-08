@@ -269,7 +269,7 @@ function Map2D({ mapa, media, coords, axes, focus, setHover, onPick, groupLabels
     <div className="smap" ref={ref} {...handlers} style={{ backgroundSize: `${grid}px ${grid}px`, backgroundPosition: `${view.x}px ${view.y}px` }}>
       <div className="smap-world" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})` }}>
         {blobs.map((b: Any) => <div key={b.id} className={`smap-blob${focus !== null && focus !== b.id ? ' dim' : ''}`} style={{ left: b.mx - b.rad, top: b.my - b.rad, width: b.rad * 2, height: b.rad * 2, '--hue': HUES[b.id % HUES.length] } as CSSProperties} />)}
-        {groupLabels && blobs.map((b: Any) => <div key={`l${b.id}`} className="smap-glabel" style={{ left: b.mx, top: Math.max(W < 600 ? 270 : 165, b.my - b.rad * 0.72), color: HUES[b.id % HUES.length], opacity: focus !== null && focus !== b.id ? 0.25 : 1 }}>{mapLabel(b.nombre)}</div>)}
+        {groupLabels && blobs.map((b: Any) => <div key={`l${b.id}`} className="smap-glabel" style={{ left: b.mx, top: Math.max(W < 600 ? 270 : 165, b.my - b.rad * 0.3), color: HUES[b.id % HUES.length], opacity: focus !== null && focus !== b.id ? 0.25 : 1 }}>{mapLabel(b.nombre)}</div>)}
         {nodes.filter(n => !hidden.has(n.d.id)).map(n => {
           const float = reduce ? {} : { '--dx': `${(hash(n.d.id) - 0.5) * 16}px`, '--dy': `${(hash(n.d.id + 7) - 0.5) * 16}px`, '--dur': `${6 + hash(n.d.id + 3) * 5}s`, '--delay': `${-hash(n.d.id + 11) * 8}s` }
           return <Bubble key={n.d.id} d={n.d} media={media} r={n.r} dim={(focus !== null && focus !== n.d.grupo) || (match !== null && !match.has(n.d.id))} cls={pulse === n.d.id ? 'pulse' : match?.has(n.d.id) ? 'hit' : undefined} onPick={onPick} setHover={setHover} dragged={dragged}
