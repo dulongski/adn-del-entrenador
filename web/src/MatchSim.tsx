@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { dataUrl, fmt, getJSON, jugadorCorto, matchColors, type Any } from './lib'
 import { ClubName } from './charts'
+import { L } from './settings'
+import { archLabel } from './i18n/data'
 
 /* «Simular uno»: UNA realización animada del mismo modelo que las 50,000 rejugadas.
    - Tiros: los del partido real, en su minuto; cada posesión con tiro es gol con p = 1 − Π(1 − xG).
@@ -100,7 +102,7 @@ function buildMatch(art: Any, shots: number[][]): Poss[] {
     else steps.push({ k: Math.random() < 0.6 ? 'pass' : 'carry', a: steps[steps.length - 1].b, b: shotAt })
     const goal = Math.random() < p
     steps.push({ k: 'shot', a: shotAt, b: [120, goal ? 40 + rnd(-3, 3) : 40 + (Math.random() < 0.5 ? -1 : 1) * rnd(5, 11)] })
-    P.push({ t: last[5], own, arch: area?.nombre ?? 'Ataque', trans: false, steps, end: goal ? 'gol' : 'tiro', xg: ss.reduce((a, s) => a + s[2], 0) })
+    P.push({ t: last[5], own, arch: area?.nombre ? archLabel(area.nombre) : L('Ataque', 'Attack'), trans: false, steps, end: goal ? 'gol' : 'tiro', xg: ss.reduce((a, s) => a + s[2], 0) })
   })
   // relleno según las jugadas tipo
   const pool = arqs.filter(a => !/pisa el área/i.test(a.nombre))
@@ -110,7 +112,7 @@ function buildMatch(art: Any, shots: number[][]): Poss[] {
     const seqs = own ? ex[a.id] : undefined
     const steps = seqs?.length ? stepsFromTemplate(seqs[Math.floor(Math.random() * seqs.length)]).filter(s => s.k !== 'shot') : syntheticSteps(a)
     if (!steps.length) continue
-    P.push({ t: rnd(1, 92), own, arch: a.nombre, trans: false, steps, end: Math.random() < 0.85 ? 'perdida' : 'fuera' })
+    P.push({ t: rnd(1, 92), own, arch: archLabel(a.nombre), trans: false, steps, end: Math.random() < 0.85 ? 'perdida' : 'fuera' })
   }
   P.sort((a, b) => a.t - b.t)
   for (let i = 1; i < P.length; i++) if (P[i].t - P[i - 1].t < 1) P[i].t = P[i - 1].t + 1
@@ -194,9 +196,9 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
     segs.forEach(s => {
       const p = P[s.p]
       if (!p || tau < s.t0) return
-      if (s.kind === 'intro') ev.push({ m: s.m0, own: p.own, txt: `Jugada ${s.p + 1}: ${p.arch}` })
+      if (s.kind === 'intro') ev.push({ m: s.m0, own: p.own, txt: L(`Jugada ${s.p + 1}: ${p.arch}`, `Move ${s.p + 1}: ${p.arch}`) })
       if (s.kind === 'outro') ev.push({ m: s.m0, own: p.end === 'perdida' || p.end === 'fuera' ? !p.own : p.own,
-        txt: p.end === 'gol' ? `¡Gol! (xG ${fmt(p.xg ?? 0, 2)})` : p.end === 'tiro' ? `Tiro sin gol de ${teamName(p.own)} (xG ${fmt(p.xg ?? 0, 2)})` : p.end === 'perdida' ? 'Recupera el balón' : 'saca tras balón fuera', cls: p.end === 'gol' ? 'goal' : '' })
+        txt: p.end === 'gol' ? `${L('¡Gol!', 'Goal!')} (xG ${fmt(p.xg ?? 0, 2)})` : p.end === 'tiro' ? L(`Tiro sin gol de ${teamName(p.own)} (xG ${fmt(p.xg ?? 0, 2)})`, `${teamName(p.own)} shot, no goal (xG ${fmt(p.xg ?? 0, 2)})`) : p.end === 'perdida' ? L('Recupera el balón', 'Wins the ball back') : L('saca tras balón fuera', 'restart after the ball goes out'), cls: p.end === 'gol' ? 'goal' : '' })
     })
     return ev.slice(-14).reverse()
   }, [segs, P, tau]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -393,7 +395,7 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
 
   const inTransUI = !!cur?.trans && (seg.kind === 'intro' || (seg.kind === 'step' && (seg.s ?? 0) < 2))
   const nPlay = Math.min(seg.p, P.length - 1) + 1
-  const phaseChip = doneT || seg.p >= P.length ? 'Final del partido' : seg.kind === 'cut' ? `Jugada ${nPlay} de ${P.length}` : seg.kind === 'outro' ? `Fin de la jugada ${nPlay}` : `Jugada ${nPlay} · ${inTransUI ? 'transición' : 'ataque'} de ${teamName(cur!.own)}`
+  const phaseChip = doneT || seg.p >= P.length ? L('Final del partido', 'Full time') : seg.kind === 'cut' ? L(`Jugada ${nPlay} de ${P.length}`, `Move ${nPlay} of ${P.length}`) : seg.kind === 'outro' ? L(`Fin de la jugada ${nPlay}`, `End of move ${nPlay}`) : L(`Jugada ${nPlay} · ${inTransUI ? 'transición' : 'ataque'} de ${teamName(cur!.own)}`, `Move ${nPlay} · ${teamName(cur!.own)} ${inTransUI ? 'transition' : 'attack'}`)
   const jump = (d: number) => {
     const target = clamp(seg.p + d, 0, P.length - 1)
     const c = segs.find(q => q.kind === 'cut' && q.p === target)
@@ -406,61 +408,61 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
         <ClubName club={partido.club} media={media} size={30} />
         <b className="msim-score">{score[0]} – {score[1]}</b>
         <ClubName club={partido.rival} media={media} size={30} />
-        <span className="msim-clock mono">{doneT ? 'Final' : `${mm}'`}</span>
+        <span className="msim-clock mono">{doneT ? L('Final', 'FT') : `${mm}'`}</span>
       </div>
       <div className="msim-phase" style={cur && !doneT && seg.kind !== 'cut' ? { background: `color-mix(in oklab, ${cur.own ? teamCols[0] : teamCols[1]} 28%, var(--surface))`, color: 'var(--ink)' } : undefined}>{phaseChip}</div>
       <div className="msim-main">
       <div className="msim-stage">
-        <canvas ref={canvas} className="msim-canvas" aria-label={`Partido simulado: ${partido.club} ${score[0]}, ${partido.rival} ${score[1]}`} />
+        <canvas ref={canvas} className="msim-canvas" aria-label={`${L('Partido simulado', 'Simulated match')}: ${partido.club} ${score[0]}, ${partido.rival} ${score[1]}`} />
         {cur && !doneT && seg.kind === 'cut' && f > 0.15 && f < 0.85 && (
           <div key={`c${segIdx}`} className="msim-card">
-            <div className="note">Jugada {nPlay} de {P.length} · minuto {Math.floor(cur.t)}'</div>
+            <div className="note">{L(`Jugada ${nPlay} de ${P.length} · minuto`, `Move ${nPlay} of ${P.length} · minute`)} {Math.floor(cur.t)}'</div>
             <div className="msim-card-team"><ClubName club={teamName(cur.own)} media={media} size={34} /></div>
-            <div className="msim-card-arch">{cur.trans ? 'Transición tras recuperar' : cur.arch}</div>
+            <div className="msim-card-arch">{cur.trans ? L('Transición tras recuperar', 'Transition after winning it back') : cur.arch}</div>
           </div>
         )}
         {cur && !doneT && seg.kind === 'intro' && (
           <div key={`i${segIdx}`} className="msim-banner" style={{ borderLeftColor: cur.own ? teamCols[0] : teamCols[1] }}>
-            <b>{teamName(cur.own)}</b> · {cur.trans ? 'recupera y sale en transición' : cur.arch}
+            <b>{teamName(cur.own)}</b> · {cur.trans ? L('recupera y sale en transición', 'wins it back and breaks') : cur.arch}
           </div>
         )}
         {cur && !doneT && seg.kind === 'outro' && (
           <div key={`o${segIdx}`} className={`msim-result ${cur.end}`}>
-            {cur.end === 'perdida' ? <>Pierde el balón <span>{teamName(!cur.own)} recupera</span></>
-              : cur.end === 'gol' ? <>¡GOL! <span>{teamName(cur.own)}</span></>
-              : cur.end === 'tiro' ? <>Tiro sin gol <span>xG {fmt(cur.xg ?? 0, 2)}</span></>
-              : <>Balón fuera <span>saca {teamName(!cur.own)}</span></>}
+            {cur.end === 'perdida' ? <>{L('Pierde el balón', 'Ball lost')} <span>{L(`${teamName(!cur.own)} recupera`, `${teamName(!cur.own)} win it back`)}</span></>
+              : cur.end === 'gol' ? <>{L('¡GOL!', 'GOAL!')} <span>{teamName(cur.own)}</span></>
+              : cur.end === 'tiro' ? <>{L('Tiro sin gol', 'Shot, no goal')} <span>xG {fmt(cur.xg ?? 0, 2)}</span></>
+              : <>{L('Balón fuera', 'Ball out')} <span>{L(`saca ${teamName(!cur.own)}`, `${teamName(!cur.own)} restart`)}</span></>}
           </div>
         )}
-        {doneT && <div className="msim-result gol">Final <span>{partido.club} {score[0]} – {score[1]} {partido.rival}</span></div>}
+        {doneT && <div className="msim-result gol">{L('Final', 'Full time')} <span>{partido.club} {score[0]} – {score[1]} {partido.rival}</span></div>}
       </div>
       <ul className="msim-feed">
-        <li className="msim-feed-h">Relato</li>
+        <li className="msim-feed-h">{L('Relato', 'Commentary')}</li>
         {events.map((e, i) => (
           <li key={i} className={e.cls}><span className="mono">{Math.floor(e.m)}'</span><i style={{ background: e.own ? teamCols[0] : teamCols[1] }} />{teamName(e.own)} · {e.txt}</li>
         ))}
       </ul>
       </div>
       <div className="msim-legend">
-        <span><svg width="26" height="10" aria-hidden><line x1="1" y1="5" x2="19" y2="5" stroke="currentColor" strokeWidth="2" /><path d="M25 5 L18 1.5 L18 8.5z" fill="currentColor" /></svg>Pase</span>
-        <span><svg width="26" height="10" aria-hidden><line x1="1" y1="5" x2="25" y2="5" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" /></svg>Conducción</span>
-        <span><svg width="26" height="10" aria-hidden><line x1="1" y1="5" x2="25" y2="5" stroke="currentColor" strokeWidth="3.5" /></svg>Tiro (con su xG)</span>
-        <span><svg width="14" height="14" aria-hidden><path d="M2 2 L12 12 M12 2 L2 12" stroke="#ff4d4d" strokeWidth="2.5" /></svg>Robo</span>
+        <span><svg width="26" height="10" aria-hidden><line x1="1" y1="5" x2="19" y2="5" stroke="currentColor" strokeWidth="2" /><path d="M25 5 L18 1.5 L18 8.5z" fill="currentColor" /></svg>{L('Pase', 'Pass')}</span>
+        <span><svg width="26" height="10" aria-hidden><line x1="1" y1="5" x2="25" y2="5" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" /></svg>{L('Conducción', 'Carry')}</span>
+        <span><svg width="26" height="10" aria-hidden><line x1="1" y1="5" x2="25" y2="5" stroke="currentColor" strokeWidth="3.5" /></svg>{L('Tiro (con su xG)', 'Shot (with its xG)')}</span>
+        <span><svg width="14" height="14" aria-hidden><path d="M2 2 L12 12 M12 2 L2 12" stroke="#ff4d4d" strokeWidth="2.5" /></svg>{L('Robo', 'Turnover')}</span>
         <span><i className="sw" style={{ background: teamCols[0] }} />{partido.club}</span><span><i className="sw" style={{ background: teamCols[1] }} />{partido.rival}</span>
-        <span className="note">Borde blanco = quien lleva el balón · once inicial real del partido</span>
+        <span className="note">{L('Borde blanco = quien lleva el balón · once inicial real del partido', 'White outline = player on the ball · actual starting XI')}</span>
       </div>
       <div className="msim-ctrl">
-        <button className="btn" onClick={() => { if (doneT) setTau(0); setPlaying(p => (doneT ? true : !p)) }}>{doneT ? '↺ Ver de nuevo' : playing ? '❚❚ Pausa' : '▶ Seguir'}</button>
-        <div className="seg sm" role="group" aria-label="Velocidad">
+        <button className="btn" onClick={() => { if (doneT) setTau(0); setPlaying(p => (doneT ? true : !p)) }}>{doneT ? L('↺ Ver de nuevo', '↺ Watch again') : playing ? L('❚❚ Pausa', '❚❚ Pause') : L('▶ Seguir', '▶ Resume')}</button>
+        <div className="seg sm" role="group" aria-label={L('Velocidad', 'Speed')}>
           {[1, 2, 4].map(v => <button key={v} aria-pressed={speed === v} onClick={() => setSpeed(v)}>{v}×</button>)}
         </div>
-        <input className="msim-scrub" type="range" min={0} max={total} step={0.1} value={tau} onChange={e => { setTau(Number(e.target.value)); setPlaying(false); pos.current = null }} aria-label="Momento del partido" />
-        <button className="btn ghost" onClick={() => jump(-1)} aria-label="Jugada anterior">‹ Anterior</button>
-        <button className="btn ghost" onClick={() => jump(1)} aria-label="Siguiente jugada">Siguiente ›</button>
-        <button className="btn ghost" onClick={() => { setTau(total); setPlaying(false) }} disabled={doneT}>Ir al final</button>
-        <button className="btn ghost" onClick={() => { pos.current = null; setSeed(s => s + 1) }}>↻ Otro partido</button>
+        <input className="msim-scrub" type="range" min={0} max={total} step={0.1} value={tau} onChange={e => { setTau(Number(e.target.value)); setPlaying(false); pos.current = null }} aria-label={L('Momento del partido', 'Match time')} />
+        <button className="btn ghost" onClick={() => jump(-1)} aria-label={L('Jugada anterior', 'Previous move')}>{L('‹ Anterior', '‹ Previous')}</button>
+        <button className="btn ghost" onClick={() => jump(1)} aria-label={L('Siguiente jugada', 'Next move')}>{L('Siguiente ›', 'Next ›')}</button>
+        <button className="btn ghost" onClick={() => { setTau(total); setPlaying(false) }} disabled={doneT}>{L('Ir al final', 'Skip to end')}</button>
+        <button className="btn ghost" onClick={() => { pos.current = null; setSeed(s => s + 1) }}>{L('↻ Otro partido', '↻ Another match')}</button>
       </div>
-      <p className="note">Una sola rejugada del partido, contada como un resumen de jugadas. Los tiros, su minuto y su xG son los reales; si cada uno entra se sortea con esa probabilidad, igual que en las 50,000 rejugadas. Las jugadas sin tiro siguen las jugadas tipo del DT. Juegan los onces iniciales reales: cada jugador del DT se coloca donde solía estar con él en ataque, en defensa y en las transiciones; el rival, según su puesto en la alineación.</p>
+      <p className="note">{L('Una sola rejugada del partido, contada como un resumen de jugadas. Los tiros, su minuto y su xG son los reales; si cada uno entra se sortea con esa probabilidad, igual que en las 50,000 rejugadas. Las jugadas sin tiro siguen las jugadas tipo del DT. Juegan los onces iniciales reales: cada jugador del DT se coloca donde solía estar con él en ataque, en defensa y en las transiciones; el rival, según su puesto en la alineación.', "One single replay of the match, told as a highlights reel. The shots, their minute and their xG are real; whether each one goes in is drawn with that probability, just like in the 50,000 replays. Moves without a shot follow the coach's signature moves. The actual starting XIs play: each of the coach's players lines up where he usually stood under him in attack, defence and transitions; the opponent, by his position in the lineup.")}</p>
     </div>
   )
 }

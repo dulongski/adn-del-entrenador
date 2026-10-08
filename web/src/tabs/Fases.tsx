@@ -4,6 +4,8 @@ import { ClubLogo, DotCI, HeatGrid, Pitch, pitchXY, useTip } from '../charts'
 import { apellidoCorto, PlayAnim } from '../PlayAnim'
 import { parseShots, ShotExplorer } from '../ShotExplorer'
 import '../styles/juego.css'
+import { L } from '../settings'
+import { archLabel, famLabel, kpiDesc, kpiLabel } from '../i18n/data'
 import { FAM_ORDER, Seg, type P } from './common'
 
 export function Fases({ art, glob, media }: P) {
@@ -25,68 +27,68 @@ export function Fases({ art, glob, media }: P) {
   const net = J?.redes?.[club_]
   const hu = art.huella.filter((h: Any) => !h.kpi.startsWith('arq_'))
   const M = art.mapas
-  const mapLabels: Record<string, string> = { presion: 'Presiones', recuperaciones: 'Recuperaciones', progresion: 'Destino de las acciones que hacen avanzar' }
+  const mapLabels: Record<string, string> = { presion: L('Presiones', 'Pressures'), recuperaciones: L('Recuperaciones', 'Ball recoveries'), progresion: L('Destino de las acciones que hacen avanzar', 'Where progressive actions end up') }
   const total = clubes.reduce((a, c) => a + c.partidos, 0)
   return (
     <div>
-      <h3 className="h2">Jugadas tipo</h3>
-      <p className="lede">Cada posesión de sus equipos cae en uno de 8 tipos de jugada según dónde empieza, cuánto avanza, cuánto dura y cuánto peligro genera. Elige un tipo para ver, paso a paso, jugadas reales de sus equipos.</p>
+      <h3 className="h2">{L('Jugadas tipo', 'Signature plays')}</h3>
+      <p className="lede">{L('Cada posesión de sus equipos cae en uno de 8 tipos de jugada según dónde empieza, cuánto avanza, cuánto dura y cuánto peligro genera. Elige un tipo para ver, paso a paso, jugadas reales de sus equipos.', 'Every possession his teams have falls into one of 8 play types, based on where it starts, how far it gets, how long it lasts and how much danger it creates. Pick a type to watch real moves from his teams, step by step.')}</p>
       <Archetypes art={art} J={J || null} media={media} />
 
-      <h3 className="h2">Dónde ocurre</h3>
+      <h3 className="h2">{L('Dónde ocurre', 'Where it happens')}</h3>
       <div className="jg-grid">
         <div className="card jg-heat">
-          <div className="h3">Mapa de calor</div>
+          <div className="h3">{L('Mapa de calor', 'Heat map')}</div>
           <div className="jg-heat-in">
             <div className="jg-ctrl">
-              <span className="jg-ctrl-label">Qué mostrar</span>
-              <Seg opts={[['presion', 'Presión'], ['recuperaciones', 'Recuperaciones'], ['progresion', 'Progresión']]} v={map} set={setMap} />
-              <span className="jg-ctrl-label">Cómo</span>
-              <Seg opts={[['div', 'Diferencia vs liga'], ['seq', 'Volumen del DT']]} v={mode} set={s => setMode(s as Any)} />
-              <div className="note">{mapLabels[map]} por partido{mode === 'div' ? ', comparado con el promedio de la liga' : ''}. Todos sus partidos{total ? ` (${total})` : ''}, en todos sus clubes.</div>
+              <span className="jg-ctrl-label">{L('Qué mostrar', 'Show')}</span>
+              <Seg opts={[['presion', L('Presión', 'Pressing')], ['recuperaciones', L('Recuperaciones', 'Recoveries')], ['progresion', L('Progresión', 'Progression')]]} v={map} set={setMap} />
+              <span className="jg-ctrl-label">{L('Cómo', 'View')}</span>
+              <Seg opts={[['div', L('Diferencia vs liga', 'Vs league average')], ['seq', L('Volumen del DT', 'Coach volume')]]} v={mode} set={s => setMode(s as Any)} />
+              <div className="note">{mapLabels[map]} {L('por partido', 'per match')}{mode === 'div' ? L(', comparado con el promedio de la liga', ', compared with the league average') : ''}. {L('Todos sus partidos', 'All his matches')}{total ? ` (${total})` : ''}, {L('en todos sus clubes', 'across all his clubs')}.</div>
             </div>
             <div className="jg-grow">
-              <HeatGrid grid={mode === 'div' ? M[map].dif : M[map].dt} mode={mode} label={mapLabels[map]} unit={mode === 'div' ? 'vs liga, por partido' : 'por partido'} color={tc} vertical />
+              <HeatGrid grid={mode === 'div' ? M[map].dif : M[map].dt} mode={mode} label={mapLabels[map]} unit={mode === 'div' ? L('vs liga, por partido', 'vs league, per match') : L('por partido', 'per match')} color={tc} vertical />
             </div>
           </div>
-          <div className="note jg-card-foot">Su equipo ataca hacia arriba. Es lo que pasó en sus partidos: incluye lo que ponen sus jugadores.</div>
+          <div className="note jg-card-foot">{L('Su equipo ataca hacia arriba. Es lo que pasó en sus partidos: incluye lo que ponen sus jugadores.', 'His team attacks upwards. This is what happened in his matches, so it includes what his players bring.')}</div>
         </div>
-        <div className="jg-clubs" role="group" aria-label="Club para la red de pases y los tiros">
-          <span className="jg-clubs-label">Red y tiros con</span>
+        <div className="jg-clubs" role="group" aria-label={L('Club para la red de pases y los tiros', 'Club for the passing network and shots')}>
+          <span className="jg-clubs-label">{L('Red y tiros con', 'Network and shots for')}</span>
           {clubes.length ? [...clubes].reverse().sort((a, b) => Number(b.club === cur) - Number(a.club === cur)).map(c => (
             <button key={c.club} className="jg-chip" aria-pressed={c.club === club_} onClick={() => setClub(c.club)} style={{ ['--hue' as Any]: clubColor(c.club, media) }}>
-              <ClubLogo club={c.club} media={media} size={20} />{c.club}<span className="note">{c.partidos} PJ</span>
-              {c.club === cur && <span className="badge-live">actual</span>}
+              <ClubLogo club={c.club} media={media} size={20} />{c.club}<span className="note">{c.partidos} {L('PJ', 'MP')}</span>
+              {c.club === cur && <span className="badge-live">{L('actual', 'current')}</span>}
             </button>
-          )) : <span className="note">{J === false ? 'Sin datos por club.' : 'Cargando…'}</span>}
+          )) : <span className="note">{J === false ? L('Sin datos por club.', 'No club data.') : L('Cargando…', 'Loading…')}</span>}
         </div>
         <div className="card jg-net">
-          <div className="h3">Red de pases · {club_}</div>
-          <div className="jg-grow">{net ? <PassNet net={net} J={J} color={cc} /> : <div className="note">{J === false ? 'Sin datos.' : 'Cargando…'}</div>}</div>
-          {net && <div className="note jg-card-foot">Los 11 con más minutos en {club_} ({net.partidos} partidos). Ataca hacia arriba. Cada punto es la posición media de sus pases (más grande = más pases); las líneas unen parejas con al menos un pase por partido.</div>}
+          <div className="h3">{L('Red de pases', 'Passing network')} · {club_}</div>
+          <div className="jg-grow">{net ? <PassNet net={net} J={J} color={cc} /> : <div className="note">{J === false ? L('Sin datos.', 'No data.') : L('Cargando…', 'Loading…')}</div>}</div>
+          {net && <div className="note jg-card-foot">{L(`Los 11 con más minutos en ${club_} (${net.partidos} partidos). Ataca hacia arriba. Cada punto es la posición media de sus pases (más grande = más pases); las líneas unen parejas con al menos un pase por partido.`, `The 11 players with the most minutes at ${club_} (${net.partidos} matches). Attacking upwards. Each dot is a player's average passing position (bigger = more passes); lines link pairs with at least one pass per match.`)}</div>}
         </div>
         <div className="card jg-shots">
-          <div className="h3">Tiros · {club_}</div>
-          {J ? <ShotExplorer shots={shots} color={cc} media={media} /> : <div className="note">{J === false ? 'Sin datos.' : 'Cargando…'}</div>}
+          <div className="h3">{L('Tiros', 'Shots')} · {club_}</div>
+          {J ? <ShotExplorer shots={shots} color={cc} media={media} /> : <div className="note">{J === false ? L('Sin datos.', 'No data.') : L('Cargando…', 'Loading…')}</div>}
         </div>
       </div>
 
-      <h3 className="h2">Huella de estilo</h3>
-      <p className="lede">Su sello en cada aspecto del juego: lo que harían sus equipos con jugadores, club y rivales promedio. Punto a la derecha del centro: más que el DT típico; a la izquierda: menos. Relleno: la diferencia es clara, no ruido. La raya es el margen de error.</p>
+      <h3 className="h2">{L('Huella de estilo', 'Style fingerprint')}</h3>
+      <p className="lede">{L('Su sello en cada aspecto del juego: lo que harían sus equipos con jugadores, club y rivales promedio. Punto a la derecha del centro: más que el DT típico; a la izquierda: menos. Relleno: la diferencia es clara, no ruido. La raya es el margen de error.', 'His mark on every part of the game: what his teams would do with average players, club and opponents. Dot right of center: more than the typical coach; left: less. Filled: the difference is real, not noise. The line is the margin of error.')}</p>
       <div className="grid2">
         {FAM_ORDER.map(f => {
           const rs = hu.filter((h: Any) => h.familia === f)
           return rs.length ? (
             <div key={f} className="card">
-              <div className="h3">{f}</div>
+              <div className="h3">{famLabel(f)}</div>
               {rs.map((h: Any) => (
                 <div key={h.kpi} style={{ display: 'grid', gridTemplateColumns: 'minmax(120px,1fr) 1.3fr 90px', gap: 10, alignItems: 'center', padding: '3px 0' }}>
-                  <span style={{ fontSize: 13, lineHeight: 1.2 }} title={glob.kpis[h.kpi].descripcion}>{h.etiqueta}</span>
+                  <span style={{ fontSize: 13, lineHeight: 1.2 }} title={kpiDesc(h.kpi, glob.kpis[h.kpi].descripcion)}>{kpiLabel(h.kpi, h.etiqueta)}</span>
                   <DotCI v={h.alpha} se={h.se} pctl={h.pct} />
                   <span className="mono" style={{ fontSize: 12, textAlign: 'right' }}>{fmt(h.crudo)} <span style={{ color: 'var(--ink-3)' }}>/ {fmt(h.liga)}</span></span>
                 </div>
               ))}
-              <div className="note" style={{ marginTop: 4 }}>Centro: el DT típico. Números: lo que se vio en sus partidos / promedio de la liga.</div>
+              <div className="note" style={{ marginTop: 4 }}>{L('Centro: el DT típico. Números: lo que se vio en sus partidos / promedio de la liga.', 'Center: the typical coach. Numbers: what we saw in his matches / league average.')}</div>
             </div>
           ) : null
         })}
@@ -148,7 +150,7 @@ function PassNet({ net, J, color }: { net: Any; J: Any; color: string }) {
         ) : null)}
         {nodos.map((n: Any) => (
           <circle key={n.id} cx={n.x} cy={n.y} r={1.8 + 2.2 * n.pases / maxP} fill={color} stroke="var(--ink)" strokeOpacity={0.55} strokeWidth={0.4}
-            onMouseMove={e => tip.show(e, <><b>{n.nombre}</b><br />{fmt(n.pases)} pases completados por 90 min · {fmt(n.minutos, 0)} min jugados</>)} onMouseLeave={tip.hide} />
+            onMouseMove={e => tip.show(e, <><b>{n.nombre}</b><br />{fmt(n.pases)} {L('pases completados por 90 min', 'completed passes per 90')} · {fmt(n.minutos, 0)} {L('min jugados', 'min played')}</>)} onMouseLeave={tip.hide} />
         ))}
       </Pitch>
       {tip.el}
@@ -174,33 +176,33 @@ function Archetypes({ art, J, media }: { art: Any; J: Any; media: Any }) {
       <div className="card arq-list">
         {arqs.map((a: Any) => (
           <button key={a.id} className="arq-row" aria-pressed={a.id === sel} onClick={() => pick(a.id)}>
-            <span className="arq-name">{a.nombre}</span>
+            <span className="arq-name">{archLabel(a.nombre)}</span>
             <span className="arq-bar"><span style={{ width: `${(a.dt_pct ?? 0) / max * 100}%` }} /><i style={{ left: `${(a.liga_pct ?? 0) / max * 100}%` }} /></span>
             <span className="mono arq-val">{fmt(a.dt_pct)}%</span>
           </button>
         ))}
-        <div className="note" style={{ marginTop: 6 }}>Barra azul: % de sus posesiones · línea negra: promedio de la liga</div>
+        <div className="note" style={{ marginTop: 6 }}>{L('Barra azul: % de sus posesiones · línea negra: promedio de la liga', 'Blue bar: % of his possessions · black line: league average')}</div>
       </div>
       <div className="card arq-ex">
         <div className="arq-head">
           <div>
-            <div className="h3" style={{ margin: 0 }}>{cur?.nombre}</div>
-            <div className="note">{fmt(cur?.dt_pct)}% de sus posesiones (liga {fmt(cur?.liga_pct)}%) · efecto DT {sig(cur?.alpha)}</div>
+            <div className="h3" style={{ margin: 0 }}>{cur?.nombre ? archLabel(cur.nombre) : null}</div>
+            <div className="note">{fmt(cur?.dt_pct)}% {L('de sus posesiones', 'of his possessions')} ({L('liga', 'league')} {fmt(cur?.liga_pct)}%) · {L('efecto DT', 'coach effect')} {sig(cur?.alpha)}</div>
           </div>
           {ex.length > 0 && (
             <div className="carousel">
-              <button onClick={() => setK((k - 1 + ex.length) % ex.length)} aria-label="Ejemplo anterior">‹</button>
+              <button onClick={() => setK((k - 1 + ex.length) % ex.length)} aria-label={L('Ejemplo anterior', 'Previous example')}>‹</button>
               <span className="mono">{k + 1} / {ex.length}</span>
-              <button onClick={() => setK((k + 1) % ex.length)} aria-label="Ejemplo siguiente">›</button>
+              <button onClick={() => setK((k + 1) % ex.length)} aria-label={L('Ejemplo siguiente', 'Next example')}>›</button>
             </div>
           )}
         </div>
         {ex.length ? (
           <>
             <PlayAnim key={`${sel}-${k}`} seq={seq} meta={meta} jugadores={J?.jugadores} partido={partido} club={club} color={color} media={media} />
-            <div className="note">Una de sus jugadas más valiosas de este tipo. Sólo aparecen los jugadores que tocan el balón. Línea continua: pase; discontinua: conducción; punteada gris: tramo que los datos no registran. Ataque hacia la derecha.</div>
+            <div className="note">{L('Una de sus jugadas más valiosas de este tipo. Sólo aparecen los jugadores que tocan el balón. Línea continua: pase; discontinua: conducción; punteada gris: tramo que los datos no registran. Ataque hacia la derecha.', 'One of his most valuable plays of this type. Only players who touch the ball are shown. Solid line: pass; dashed: carry; grey dotted: a stretch the data doesn\'t capture. Attacking to the right.')}</div>
           </>
-        ) : <div className="note">Sin ejemplos para este tipo de jugada.</div>}
+        ) : <div className="note">{L('Sin ejemplos para este tipo de jugada.', 'No examples for this play type.')}</div>}
       </div>
     </div>
   )

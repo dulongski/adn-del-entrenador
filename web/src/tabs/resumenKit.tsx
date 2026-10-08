@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import Dist, { rankOf } from '../Dist'
 import { fmt, sig, type Any } from '../lib'
+import { LANG, L } from '../settings'
+import { kpiLabel } from '../i18n/data'
 
 /* Piezas compartidas por Resumen y «De dónde sale cada rasgo»: unidades legibles por indicador,
    comparación en palabras contra la liga y la campana de los DTs con dos lecturas:
@@ -24,7 +26,25 @@ export const KU: Record<string, [string, string, number]> = {
   contraataque: ['Transiciones rápidas', '%', 1], xg_transicion: ['xG de transiciones rápidas', '%', 1],
   transicion_def: ['Contras rápidas concedidas', '%', 1], field_tilt: ['Dominio territorial', '%', 1], xg_balon_parado_90: ['xG a balón parado', ' por 90', 2],
 }
-export const kName = (k: string, glob: Any) => KU[k]?.[0] ?? String(glob.kpis[k]?.etiqueta ?? k).split(' (')[0]
+/** Las mismas etiquetas cortas y unidades en inglés: forma corta de KPI_EN (i18n/data.ts), iguales a CORTO_EN de la narrativa. */
+const KU_EN: Record<string, [string, string]> = {
+  posesion: ['Possession', '%'], salida_corta: ['Short GK distribution', '%'], pase_largo: ['Long passes', '%'],
+  construccion_exito: ['Successful build-up', '%'], pases_por_posesion: ['Passes per possession', ''],
+  tempo: ['Tempo', ' passes/min'], verticalidad: ['Directness', '%'], progresivos: ['Progressive actions', ' per 100'],
+  conduccion_prog: ['Progression by carrying', '%'], progresion_banda: ['Progression down the flanks', '%'],
+  cambios_orientacion: ['Switches of play', ' per 100 passes'], entradas_ultimo_tercio: ['Final-third entries', ' per 100 possessions'],
+  xg_90: ['xG for', ' per 90'], xg_por_tiro: ['xG per shot', ''], tiros_90: ['Shots', ' per 90'],
+  llegada_area: ['Possessions reaching the box', '%'], centros: ['Crosses', ' per 100 entries'], obv_90: ['OBV', ' per 90'],
+  ppda: ['PPDA', ''], altura_presion: ['Average pressing height', ' yd'], presion_alta: ['Pressures in the final third', '%'],
+  intensidad_presion: ['Pressures per min of opponent possession', ''], contrapresion: ['Counter-pressing after a loss', '%'],
+  recuperaciones_altas_90: ["Recoveries in the opponent's half", ' per 90'], altura_defensiva: ['Defensive action height', ' yd'],
+  linea_360: ['Defensive line height', ' yd'], compacidad_360: ['Block length', ' yd'],
+  posesion_rival_dur: ['Average opponent possession length', ' s'], xg_contra_90: ['xG against', ' per 90'],
+  contraataque: ['Fast transitions', '%'], xg_transicion: ['xG from fast transitions', '%'],
+  transicion_def: ['Fast transitions conceded', '%'], field_tilt: ['Field tilt', '%'], xg_balon_parado_90: ['Set-piece xG', ' per 90'],
+}
+if (LANG === 'en') for (const k in KU_EN) if (KU[k]) KU[k] = [KU_EN[k][0], KU_EN[k][1], KU[k][2]]
+export const kName = (k: string, glob: Any) => KU[k]?.[0] ?? kpiLabel(k, String(glob.kpis[k]?.etiqueta ?? k)).split(' (')[0]
 /** Valor con su unidad («50.8%», «3.0 por 100 pases»). `short` deja solo las unidades de 1–3 letras. */
 export function kFmt(k: string, v: number | null | undefined, short = false) {
   if (v === null || v === undefined || !Number.isFinite(v)) return '—'
@@ -36,7 +56,11 @@ export function kFmt(k: string, v: number | null | undefined, short = false) {
 /** Compara con la liga en palabras usando la dispersión entre equipos (sd del indicador). */
 export function vsLiga(x: number, ref: number, sd: number) {
   const d = sd ? (x - ref) / sd : 0
-  if (Math.abs(d) < 0.15) return { txt: 'casi igual que la liga', dir: 0 }
+  if (Math.abs(d) < 0.15) return { txt: L('casi igual que la liga', 'about the same as the league'), dir: 0 }
+  if (LANG === 'en') {
+    const w = d > 0 ? 'higher' : 'lower'
+    return { txt: `${Math.abs(d) < 0.6 ? `slightly ${w}` : Math.abs(d) < 1.2 ? w : `much ${w}`} than the league`, dir: Math.sign(d) }
+  }
   const w = d > 0 ? 'más' : 'menos'
   return { txt: `${Math.abs(d) < 0.6 ? `un poco ${w}` : Math.abs(d) < 1.2 ? w : `mucho ${w}`} que la liga`, dir: Math.sign(d) }
 }
@@ -45,6 +69,12 @@ export function vsLiga(x: number, ref: number, sd: number) {
 export function rankText(values: { id: string | number; v: number }[], v: number) {
   const { below, above, n } = rankOf(values, v)
   if (n < 3) return ''
+  if (LANG === 'en') {
+    if (above === 0) return `The highest of the ${n} coaches.`
+    if (below === 0) return `The lowest of the ${n} coaches.`
+    if (above <= below) return above <= n / 4 ? `Only ${above} of ${n} coaches are higher.` : `Higher than ${below} of ${n} coaches.`
+    return below <= n / 4 ? `Only ${below} of ${n} coaches are lower.` : `Lower than ${above} of ${n} coaches.`
+  }
   if (above === 0) return `El más alto de los ${n} DTs.`
   if (below === 0) return `El más bajo de los ${n} DTs.`
   if (above <= below) return above <= n / 4 ? `Solo ${above} de ${n} DTs están más arriba.` : `Más arriba que ${below} de ${n} DTs.`
@@ -73,7 +103,7 @@ export function alphaPos(dd: Any, k: string, id: number | string) {
 export function RankStrip({ pos, color }: { pos: { p: number; a: number; se?: number; n: number } | null; color: string }) {
   if (!pos) return null
   return (
-    <span className="rs-strip" title={`Su sello entre ${pos.n} DTs (izquierda = lo baja, derecha = lo sube). Dato técnico: ${sig(pos.a)}${pos.se ? ` ± ${fmt(pos.se, 2)}` : ''}`}>
+    <span className="rs-strip" title={`${L(`Su sello entre ${pos.n} DTs (izquierda = lo baja, derecha = lo sube). Dato técnico: `, `His imprint among ${pos.n} coaches (left = pushes it down, right = pushes it up). Technical note: `)}${sig(pos.a)}${pos.se ? ` ± ${fmt(pos.se, 2)}` : ''}`}>
       <span className="rs-strip-mid" />
       <span className="rs-strip-dot" style={{ left: `${4 + pos.p * 92}%`, background: color }} />
     </span>
@@ -88,7 +118,7 @@ export function KpiBell({ k, art, glob, dd, color, mode: mode0 = 'a', showStats 
   useEffect(() => setMode(mode0), [mode0, k])
   const K = dd?.kpis?.[k]
   const sd = glob.kpis[k]?.sd ?? 1
-  if (!K) return <div className="rs-bell-wait">Cargando la comparación con los demás DTs…</div>
+  if (!K) return <div className="rs-bell-wait">{L('Cargando la comparación con los demás DTs…', 'Loading the comparison with the other coaches…')}</div>
   const id = String(art.id)
   const raw = K.v?.[id] as number | undefined
   const a = K.a?.[id] as number | undefined
@@ -108,17 +138,17 @@ export function KpiBell({ k, art, glob, dd, color, mode: mode0 = 'a', showStats 
     <div className="rs-bell" style={{ ['--acc' as string]: color }}>
       {showStats && (
         <div className="rs-stats">
-          {opt('v', 'En sus partidos', 'lo que se vio', raw)}
-          {opt('a', 'Su sello', 'con jugadores promedio', sello)}
-          <div className="rs-stat rs-liga"><span className="rs-stat-l">Liga</span><b>{kFmt(k, K.liga)}</b><span className="rs-stat-s">promedio</span></div>
+          {opt('v', L('En sus partidos', 'In his matches'), L('lo que se vio', 'what we saw'), raw)}
+          {opt('a', L('Su sello', 'His imprint'), L('con jugadores promedio', 'with average players'), sello)}
+          <div className="rs-stat rs-liga"><span className="rs-stat-l">{L('Liga', 'League')}</span><b>{kFmt(k, K.liga)}</b><span className="rs-stat-s">{L('promedio', 'average')}</span></div>
         </div>
       )}
-      <Dist values={vals} marks={[{ id: art.id, color }]} refV={K.liga} refLabel="liga" format={v => kFmt(k, v, true)}
-            low="menos" high="más" height={compact ? 64 : 78} compact={compact} />
+      <Dist values={vals} marks={[{ id: art.id, color }]} refV={K.liga} refLabel={L('liga', 'league')} format={v => kFmt(k, v, true)}
+            low={L('menos', 'less')} high={L('más', 'more')} height={compact ? 64 : 78} compact={compact} />
       {mine !== undefined && cmp && (
         <p className="rs-bell-say">
-          <b>{mode === 'v' ? 'En sus partidos' : 'Su sello'}: {cmp.txt}.</b> {rankText(vals, mine)}
-          {mode === 'a' && a !== undefined && <span className="rs-tech" title="Efecto propio del DT en desviaciones estándar entre equipos, con su error"> {sig(a)}{K.se?.[id] ? ` ± ${fmt(K.se[id], 2)}` : ''}</span>}
+          <b>{mode === 'v' ? L('En sus partidos', 'In his matches') : L('Su sello', 'His imprint')}: {cmp.txt}.</b> {rankText(vals, mine)}
+          {mode === 'a' && a !== undefined && <span className="rs-tech" title={L('Efecto propio del DT en desviaciones estándar entre equipos, con su error', "The coach's own effect in standard deviations across teams, with its error")}> {sig(a)}{K.se?.[id] ? ` ± ${fmt(K.se[id], 2)}` : ''}</span>}
         </p>
       )}
     </div>

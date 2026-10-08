@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { fmt } from '../lib'
+import { L } from '../settings'
 
 /** Mismos tonos por familia de estilo que el mapa de la portada (StyleMap.tsx). */
 export const HUES = ['var(--c-dt)', 'var(--c-plantilla)', 'var(--c-club)', 'var(--c-rival)', 'var(--c-ctx)', '#008300']
@@ -19,6 +20,9 @@ export function rawFormat(etiqueta: string, liga: number) {
 }
 
 export const apellido = (n: string) => n.split(' ').at(-1) ?? n
+
+/** Ordinal: 3º en español; 3rd en inglés. */
+export const ordinal = (n: number) => L(`${n}º`, `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`)
 
 /** Ancho real de un elemento (para dibujar SVG a tamaño 1:1, sin escalar el texto). */
 export function useWidth<T extends HTMLElement>() {

@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { ClubLogo, CoachPhoto } from '../charts'
 import { fmt, shortName, type Any } from '../lib'
-import { famHue, norm, signed } from './util'
+import { famHue, norm, ordinal, signed } from './util'
+import { L } from '../settings'
+import { mapLabel } from '../i18n/data'
 
 type Orden = 'parecido' | 'distinto' | 'nombre' | 'partidos'
 
@@ -47,24 +49,24 @@ export default function CoachPicker({ sims, pts, mapa, media, selected, onPick, 
   return (
     <div className="card vs-cp">
       <div className="vs-cp-head">
-        <div className="h3" style={{ margin: 0 }}>¿Con quién comparar a {nA}?</div>
+        <div className="h3" style={{ margin: 0 }}>{L(`¿Con quién comparar a ${nA}?`, `Who should ${nA} face?`)}</div>
         <div className="vs-cp-quick">
           <button className="vs-cp-chip" aria-pressed={selected === twin.id} onClick={() => onPick(twin.id)}>
-            <span className="vs-cp-chip-k">Su gemelo</span> {shortName(pts.get(twin.id).nombre)}
+            <span className="vs-cp-chip-k">{L('Su gemelo', 'His twin')}</span> {shortName(pts.get(twin.id).nombre)}
           </button>
           <button className="vs-cp-chip" aria-pressed={selected === opp.id} onClick={() => onPick(opp.id)}>
-            <span className="vs-cp-chip-k">Su opuesto</span> {shortName(pts.get(opp.id).nombre)}
+            <span className="vs-cp-chip-k">{L('Su opuesto', 'His opposite')}</span> {shortName(pts.get(opp.id).nombre)}
           </button>
         </div>
       </div>
 
       <div className="vs-cp-searchrow">
-        <input className="vs-cp-search" type="search" value={q} placeholder="Busca un DT por nombre o club…" aria-label="Buscar DT" onChange={e => setQ(e.target.value)} />
-        <button className="vs-cp-ftoggle" aria-expanded={open} onClick={() => setShowF(v => !v)}>{open ? 'Ocultar filtros' : 'Filtros y lista completa'}</button>
+        <input className="vs-cp-search" type="search" value={q} placeholder={L('Busca un DT por nombre o club…', 'Search a coach by name or club…')} aria-label={L('Buscar DT', 'Search coaches')} onChange={e => setQ(e.target.value)} />
+        <button className="vs-cp-ftoggle" aria-expanded={open} onClick={() => setShowF(v => !v)}>{open ? L('Ocultar filtros', 'Hide filters') : L('Filtros y lista completa', 'Filters and full list')}</button>
       </div>
       {!open && (
         <div className="vs-cp-strip">
-          <span className="note">Más parecidos:</span>
+          <span className="note">{L('Más parecidos:', 'Most similar:')}</span>
           {sims.slice(0, 5).map(x => (
             <button key={x.id} className="vs-cp-chip" aria-pressed={selected === x.id} onClick={() => onPick(x.id)}>{shortName(pts.get(x.id).nombre)} <span className="vs-cp-chip-k">{signed(x.r)}</span></button>
           ))}
@@ -72,35 +74,35 @@ export default function CoachPicker({ sims, pts, mapa, media, selected, onPick, 
       )}
       {open && <>
       <div className="vs-cp-controls">
-        <label className="vs-cp-field"><span>Familia de estilo</span>
+        <label className="vs-cp-field"><span>{L('Familia de estilo', 'Style family')}</span>
           <select value={fam} onChange={e => setFam(Number(e.target.value))}>
-            <option value={-1}>Todas</option>
-            {mapa.grupos.map((g: Any) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+            <option value={-1}>{L('Todas', 'All')}</option>
+            {mapa.grupos.map((g: Any) => <option key={g.id} value={g.id}>{mapLabel(g.nombre)}</option>)}
           </select>
         </label>
-        <label className="vs-cp-field"><span>Club que dirigió</span>
+        <label className="vs-cp-field"><span>{L('Club que dirigió', 'Club coached')}</span>
           <select value={club} onChange={e => setClub(e.target.value)}>
-            <option value="todos">Todos</option>
+            <option value="todos">{L('Todos', 'All')}</option>
             {clubes.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </label>
-        <label className="vs-cp-field"><span>Partidos mín.</span>
+        <label className="vs-cp-field"><span>{L('Partidos mín.', 'Min. matches')}</span>
           <select value={minP} onChange={e => setMinP(Number(e.target.value))}>
-            {[0, 10, 34, 60, 100].map(m => <option key={m} value={m}>{m === 0 ? 'Cualquiera' : `${m}+`}</option>)}
+            {[0, 10, 34, 60, 100].map(m => <option key={m} value={m}>{m === 0 ? L('Cualquiera', 'Any') : `${m}+`}</option>)}
           </select>
         </label>
-        <label className="vs-cp-field"><span>Ordenar por</span>
+        <label className="vs-cp-field"><span>{L('Ordenar por', 'Sort by')}</span>
           <select value={orden} onChange={e => setOrden(e.target.value as Orden)}>
-            <option value="parecido">Más parecido</option><option value="distinto">Más distinto</option>
-            <option value="nombre">Nombre</option><option value="partidos">Partidos</option>
+            <option value="parecido">{L('Más parecido', 'Most similar')}</option><option value="distinto">{L('Más distinto', 'Most different')}</option>
+            <option value="nombre">{L('Nombre', 'Name')}</option><option value="partidos">{L('Partidos', 'Matches')}</option>
           </select>
         </label>
-        <label className="vs-cp-check"><input type="checkbox" checked={activos} onChange={e => setActivos(e.target.checked)} /> Solo DTs en activo</label>
+        <label className="vs-cp-check"><input type="checkbox" checked={activos} onChange={e => setActivos(e.target.checked)} /> {L('Solo DTs en activo', 'Active coaches only')}</label>
       </div>
 
       <div className="vs-cp-meta note">
-        <span>{results.length} de {sims.length} DTs{filtered && <> · <button className="vs-cp-reset" onClick={reset}>quitar filtros</button></>}</span>
-        <span className="vs-cp-meta-r">Parecido de estilo con {nA}: +1 idéntico · 0 nada que ver · −1 opuesto</span>
+        <span>{L(`${results.length} de ${sims.length} DTs`, `${results.length} of ${sims.length} coaches`)}{filtered && <> · <button className="vs-cp-reset" onClick={reset}>{L('quitar filtros', 'clear filters')}</button></>}</span>
+        <span className="vs-cp-meta-r">{L(`Parecido de estilo con ${nA}: +1 idéntico · 0 nada que ver · −1 opuesto`, `Style similarity to ${nA}: +1 identical · 0 unrelated · −1 opposite`)}</span>
       </div>
 
       <ul className="vs-cp-list">
@@ -112,22 +114,22 @@ export default function CoachPicker({ sims, pts, mapa, media, selected, onPick, 
               <button className="vs-cp-row" aria-pressed={selected === s.id} onClick={() => onPick(s.id)}>
                 <CoachPhoto name={p.nombre} src={media.dts[s.id]?.foto} size={36} />
                 <span className="vs-cp-who">
-                  <span className="vs-cp-name">{shortName(p.nombre)}{p.partidos < 10 && <span className="vs-cp-pre" title="Menos de 10 partidos: perfil preliminar">preliminar</span>}</span>
+                  <span className="vs-cp-name">{shortName(p.nombre)}{p.partidos < 10 && <span className="vs-cp-pre" title={L('Menos de 10 partidos: perfil preliminar', 'Fewer than 10 matches: early profile')}>{L('preliminar', 'early')}</span>}</span>
                   <span className="vs-cp-sub">
                     {c && <span className="vs-cp-club"><ClubLogo club={c} media={media} size={14} />{c}</span>}
-                    <span className="vs-cp-fam"><i style={{ background: famHue(p.grupo) }} />{g?.nombre}</span>
+                    <span className="vs-cp-fam"><i style={{ background: famHue(p.grupo) }} />{g?.nombre ? mapLabel(g.nombre) : ''}</span>
                   </span>
                 </span>
-                <span className="vs-cp-r" title={`${rank.get(s.id)}º más parecido a ${nA} de ${sims.length}`}>
+                <span className="vs-cp-r" title={L(`${rank.get(s.id)}º más parecido a ${nA} de ${sims.length}`, `${rank.get(s.id) === 1 ? 'Most' : `${ordinal(rank.get(s.id) ?? 0)} most`} similar to ${nA} of ${sims.length}`)}>
                   <span className="vs-cp-bar"><i className={s.r >= 0 ? 'up' : 'dn'} style={s.r >= 0 ? { left: '50%', width: `${w}%` } : { right: '50%', width: `${w}%` }} /></span>
                   <b>{signed(s.r)}</b>
                 </span>
-                <span className="vs-cp-pj">{fmt(p.partidos, 0)} PJ</span>
+                <span className="vs-cp-pj">{fmt(p.partidos, 0)} {L('PJ', 'MP')}</span>
               </button>
             </li>
           )
         })}
-        {results.length === 0 && <li className="note" style={{ padding: 10 }}>Ningún DT cumple esos filtros.</li>}
+        {results.length === 0 && <li className="note" style={{ padding: 10 }}>{L('Ningún DT cumple esos filtros.', 'No coach matches those filters.')}</li>}
       </ul>
       </>}
     </div>

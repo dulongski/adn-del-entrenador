@@ -3,6 +3,8 @@ import { asset, dataUrl, fmt, getJSON, shortName, type Any } from './lib'
 import { MODES, modeTitle, type Mode, type TabKey } from './modes'
 import { similares } from './Compare'
 import './hub.css'
+import { L } from './settings'
+import { archLabel, td } from './i18n/data'
 
 /* Selector de modos: una tarjeta por pregunta. El fondo de cada tarjeta se dibuja con los datos
    de ESTE DT (su foto, su red de pases, su formación, sus tiros…), así que cambia de un DT a otro. */
@@ -128,39 +130,39 @@ function ArtVs({ art, media, mapa }: { art: Any; media: Any; mapa: Any }) {
 }
 
 function ArtFormula() {
-  return <div className="hub-formula" aria-hidden>z = α<sub>DT</sub> + φ<sub>club</sub> + Σβ<sub>jugador</sub> + γ<sub>rival</sub> + δ<sub>contexto</sub></div>
+  return <div className="hub-formula" aria-hidden>z = α<sub>{L('DT', 'coach')}</sub> + φ<sub>club</sub> + Σβ<sub>{L('jugador', 'player')}</sub> + γ<sub>{L('rival', 'opp')}</sub> + δ<sub>{L('contexto', 'context')}</sub></div>
 }
 
 /* ---------------------------------------------------------------- ganchos con datos del DT */
 function hook(m: Mode, art: Any, mapa: Any, jug: Any): string {
   switch (m.k) {
-    case 'resumen': return (art.narrativa?.principios ?? []).map((p: Any) => p.titulo ?? p).slice(0, 3).join(' · ') || 'Sin rasgos por encima del umbral'
+    case 'resumen': return (art.narrativa?.principios ?? []).map((p: Any) => td(p.titulo ?? p)).slice(0, 3).join(' · ') || L('Sin rasgos por encima del umbral', 'No traits above the threshold')
     case 'separar': {
       const tr = art.transferencia ?? []
       const best = tr.length ? tr.reduce((a: Any, b: Any) => (a.rank_ajustado <= b.rank_ajustado ? a : b)) : null
-      return best ? `Reconocible en ${best.club}: ${best.rank_ajustado}º de ${best.n_clases} DTs` : `Identificabilidad ${fmt(art.identificabilidad?.indice, 0)}/100`
+      return best ? L(`Reconocible en ${best.club}: ${best.rank_ajustado}º de ${best.n_clases} DTs`, `Recognizable at ${best.club}: #${best.rank_ajustado} of ${best.n_clases} coaches`) : L(`Identificabilidad ${fmt(art.identificabilidad?.indice, 0)}/100`, `Identifiability ${fmt(art.identificabilidad?.indice, 0)}/100`)
     }
     case 'juego': {
       const a = [...(art.arquetipos ?? [])].sort((x: Any, y: Any) => y.alpha - x.alpha)[0]
-      return a ? `Su jugada más propia: ${a.nombre.replace(/ \(\d\)$/, '')}` : ''
+      return a ? L(`Su jugada más propia: ${a.nombre.replace(/ \(\d\)$/, '')}`, `His signature move: ${archLabel(a.nombre.replace(/ \(\d\)$/, ''))}`) : ''
     }
     case 'jugadores': {
       // club actual primero (como en la pestaña Jugadores); si no hay datos por club, toda su carrera
       const club = jug?.clubes?.[0], b = club ? jug?.por_club?.[club] : null
-      if (b?.dibujo) return `${fmtForm(b.dibujo)} en ${b.partidos_dibujo} de ${b.partidos} partidos con ${club}`
+      if (b?.dibujo) return L(`${fmtForm(b.dibujo)} en ${b.partidos_dibujo} de ${b.partidos} partidos con ${club}`, `${fmtForm(b.dibujo)} in ${b.partidos_dibujo} of ${b.partidos} matches with ${club}`)
       const f = Object.entries(art.jugadores?.formaciones ?? {}).sort((a: Any, b: Any) => b[1] - a[1])[0]
       const tot = Object.values(art.jugadores?.formaciones ?? {}).reduce((s: number, v: Any) => s + v, 0) as number
-      return f ? `${fmtForm(f[0])} en ${f[1]} de ${tot} partidos` : ''
+      return f ? L(`${fmtForm(f[0])} en ${f[1]} de ${tot} partidos`, `${fmtForm(f[0])} in ${f[1]} of ${tot} matches`) : ''
     }
     case 'bp': {
       const o = art.balon_parado?.ofensivo
-      return o ? `${fmt(o.corners_por_partido, 1)} córners por partido · ${fmt(o.corner_primer_contacto_pct, 0)}% primer contacto` : ''
+      return o ? L(`${fmt(o.corners_por_partido, 1)} córners por partido · ${fmt(o.corner_primer_contacto_pct, 0)}% primer contacto`, `${fmt(o.corners_por_partido, 1)} corners per match · ${fmt(o.corner_primer_contacto_pct, 0)}% first contact`) : ''
     }
-    case 'lab': { const s = art.simulacion; return s ? `${s.puntos} puntos reales vs ${fmt(s.xpts, 0)} esperados` : '' }
+    case 'lab': { const s = art.simulacion; return s ? L(`${s.puntos} puntos reales vs ${fmt(s.xpts, 0)} esperados`, `${s.puntos} actual points vs ${fmt(s.xpts, 0)} expected`) : '' }
     case 'vs': {
       const s = similares(art.id, mapa)[0]
       const p = s && mapa.puntos.find((q: Any) => q.id === s.id)
-      return p ? `Su gemelo de estilo: ${shortName(p.nombre)}` : ''
+      return p ? L(`Su gemelo de estilo: ${shortName(p.nombre)}`, `His style twin: ${shortName(p.nombre)}`) : ''
     }
     default: return 'z = α + φ + Σβ + γ + δ'
   }
@@ -175,7 +177,7 @@ export default function Hub({ art, media, mapa, go }: { art: Any; media: Any; ma
     vs: <ArtVs art={art} media={media} mapa={mapa} />, metodo: <ArtFormula />,
   }
   return (
-    <nav className="hub" aria-label="Qué quieres ver de este DT">
+    <nav className="hub" aria-label={L('Qué quieres ver de este DT', 'What you want to see about this coach')}>
       {MODES.map((m, i) => (
         <button key={m.k} className={`hub-card hub-${m.k}`} style={{ ['--mc' as string]: m.color, ['--i' as string]: i }} onClick={() => go(m.subs[0][0])}>
           <span className="hub-art" aria-hidden>{ART[m.k]}</span>

@@ -1,6 +1,7 @@
 /* ================================================================ CÓRNERS 3D */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, pct, type Any } from './lib'
+import { L } from './settings'
 import './styles/bp.css'
 
 /* Córners en 3D (datos: pipeline/corners.py, todos los córners normalizados como si se cobraran
@@ -61,7 +62,7 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
 
   useEffect(() => {
     setData(null); setErr(null)
-    getJSON(dataUrl(`corners_${art.id}.json`)).then(setData).catch(() => setErr('Aún no hay datos de córners 3D para este DT.'))
+    getJSON(dataUrl(`corners_${art.id}.json`)).then(setData).catch(() => setErr(L('Aún no hay datos de córners 3D para este DT.', 'No 3D corner data for this coach yet.')))
     getJSON(dataUrl('corners_liga.json')).then(setLiga).catch(() => {})
   }, [art.id])
   useEffect(() => { setSim(null); setHover(null) }, [side, lado, art.id])
@@ -115,7 +116,7 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
     if (!E.length) return
     const e = E[Math.floor(Math.random() * E.length)]
     const goal = e[3] > 0 && Math.random() < e[3]
-    const txt = e[5] ? 'Córner en corto' : e[3] > 0 ? (goal ? '¡GOL!' : `Remate sin gol · xG ${fmt(e[3], 2)}`) : e[2] === 1 ? 'Primer contacto propio, sin remate' : 'Despeja el rival'
+    const txt = e[5] ? L('Córner en corto', 'Short corner') : e[3] > 0 ? (goal ? L('¡GOL!', 'GOAL!') : `${L('Remate sin gol', 'Shot, no goal')} · xG ${fmt(e[3], 2)}`) : e[2] === 1 ? L('Primer contacto propio, sin remate', 'First contact won, no shot') : L('Despeja el rival', 'Cleared by the opponent')
     setHover(null)
     setSim({ e, t0: performance.now(), goal, txt })
   }
@@ -291,27 +292,27 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
   }
 
   if (err) return <div className="card note">{err}</div>
-  if (!D || !grid || !V) return <div className="card note">Cargando córners…</div>
+  if (!D || !grid || !V) return <div className="card note">{L('Cargando córners…', 'Loading corners…')}</div>
   const LK = liga?.favor?.kpis?.[lado]
   const avg = (A: number[][], k: number, f = (v: number) => v) => A.length ? A.reduce((s, e) => s + f(e[k]), 0) / A.length : NaN
   const xgPer = avg(E, 3), fcOwn = avg(E.filter(e => e[2] >= 0), 2), rem = avg(E, 3, v => (v > 0 ? 1 : 0))
   const simDone = sim && performance.now() - sim.t0 > 1850
   const Q = V.quien || {}
   const quienClub: string | null = D.quien_club ?? null
-  const donde = quienClub ? `en ${quienClub}` : 'en toda su carrera'
+  const donde = quienClub ? L(`en ${quienClub}`, `at ${quienClub}`) : L('en toda su carrera', 'across his whole career')
   const good = side === 'favor' ? 1 : -1
   const nCorners = lado === 'ambos' ? D.n : V.n
-  const ladoTxt = lado === 'izq' ? 'desde la izquierda' : lado === 'der' ? 'desde la derecha' : ''
+  const ladoTxt = lado === 'izq' ? L('desde la izquierda', 'from the left') : lado === 'der' ? L('desde la derecha', 'from the right') : ''
 
   // tooltip
   let tip: { title: string; info: Any; foot: string } | null = null
   if (hover) {
-    if (hover.kind === 'cob') tip = { title: 'Cobrador', info: Q.cob, foot: `Quién cobra sus córners ${ladoTxt ? ladoTxt + ' ' : ''}${donde}.` }
-    else if (hover.kind === 'gk') tip = { title: 'Su portero', info: Q.gk, foot: `Porteros que intervienen en córners rivales ${donde}.` }
+    if (hover.kind === 'cob') tip = { title: L('Cobrador', 'Corner taker'), info: Q.cob, foot: L(`Quién cobra sus córners ${ladoTxt ? ladoTxt + ' ' : ''}${donde}.`, `Who takes his corners ${ladoTxt ? ladoTxt + ' ' : ''}${donde}.`) }
+    else if (hover.kind === 'gk') tip = { title: L('Su portero', 'His goalkeeper'), info: Q.gk, foot: L(`Porteros que intervienen en córners rivales ${donde}.`, `Goalkeepers involved in opponent corners ${donde}.`) }
     else tip = {
-      title: hover.kind === 'att' ? 'Atacante de su equipo' : 'Defensor de su equipo',
+      title: hover.kind === 'att' ? L('Atacante de su equipo', 'His attacker') : L('Defensor de su equipo', 'His defender'),
       info: Q[hover.kind]?.[hover.i],
-      foot: `Quién suele aparecer en esta zona: primera acción de cada jugador tras el córner, ${donde}.`,
+      foot: L(`Quién suele aparecer en esta zona: primera acción de cada jugador tras el córner, ${donde}.`, `Who usually turns up in this zone: each player's first action after the corner, ${donde}.`),
     }
   }
   const stageW = canvas.current?.clientWidth ?? 600
@@ -320,39 +321,39 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
   const DIF = (v: number, l: number | undefined | null, dir: number) => {
     if (l == null || !Number.isFinite(v)) return null
     const rel = l ? (v - l) / Math.abs(l) : 0
-    if (Math.abs(rel) < 0.03) return <span className="bp-arrow eq" title="Como la liga">≈</span>
+    if (Math.abs(rel) < 0.03) return <span className="bp-arrow eq" title={L('Como la liga', 'In line with the league')}>≈</span>
     const up = v > l, ok = dir === 0 ? null : (up ? dir > 0 : dir < 0)
-    return <span className={`bp-arrow ${ok == null ? 'eq' : ok ? 'up' : 'down'}`} title={up ? 'Más que la liga' : 'Menos que la liga'}>{up ? '▲' : '▼'}</span>
+    return <span className={`bp-arrow ${ok == null ? 'eq' : ok ? 'up' : 'down'}`} title={up ? L('Más que la liga', 'Above the league') : L('Menos que la liga', 'Below the league')}>{up ? '▲' : '▼'}</span>
   }
 
   return (
     <div className="c3d">
       <div className="c3d-ctrl">
-        <div className="seg sm" role="group" aria-label="Córners a favor o en contra">
-          <button aria-pressed={side === 'favor'} onClick={() => onSide('favor')}>A favor</button>
-          <button aria-pressed={side === 'contra'} onClick={() => onSide('contra')}>En contra</button>
+        <div className="seg sm" role="group" aria-label={L('Córners a favor o en contra', 'Attacking or defending corners')}>
+          <button aria-pressed={side === 'favor'} onClick={() => onSide('favor')}>{L('A favor', 'Attacking')}</button>
+          <button aria-pressed={side === 'contra'} onClick={() => onSide('contra')}>{L('En contra', 'Defending')}</button>
         </div>
-        <div className="seg sm" role="group" aria-label="Lado desde el que se cobra el córner">
-          <button aria-pressed={lado === 'ambos'} onClick={() => setLado('ambos')}>Ambos</button>
-          <button aria-pressed={lado === 'izq'} onClick={() => setLado('izq')}>Desde la izquierda</button>
-          <button aria-pressed={lado === 'der'} onClick={() => setLado('der')}>Desde la derecha</button>
+        <div className="seg sm" role="group" aria-label={L('Lado desde el que se cobra el córner', 'Side the corner is taken from')}>
+          <button aria-pressed={lado === 'ambos'} onClick={() => setLado('ambos')}>{L('Ambos', 'Both')}</button>
+          <button aria-pressed={lado === 'izq'} onClick={() => setLado('izq')}>{L('Desde la izquierda', 'From the left')}</button>
+          <button aria-pressed={lado === 'der'} onClick={() => setLado('der')}>{L('Desde la derecha', 'From the right')}</button>
         </div>
-        <label className="smap-activos" htmlFor="c3d-players"><input id="c3d-players" type="checkbox" checked={showPlayers} onChange={e => setShowPlayers(e.target.checked)} /> Jugadores (360)</label>
-        <button className="btn c3d-play" onClick={runOne}>▶ Simular un córner</button>
+        <label className="smap-activos" htmlFor="c3d-players"><input id="c3d-players" type="checkbox" checked={showPlayers} onChange={e => setShowPlayers(e.target.checked)} /> {L('Jugadores (360)', 'Players (360)')}</label>
+        <button className="btn c3d-play" onClick={runOne}>▶ {L('Simular un córner', 'Simulate a corner')}</button>
       </div>
       <div className="c3d-main">
         <div className="c3d-stage">
           <div className="c3d-sizer" />
           <canvas ref={canvas} className={`c3d-canvas${hover ? ' hot' : ''}`} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
             onPointerCancel={() => { drag.current = null }} onPointerLeave={e => { if (e.pointerType === 'mouse' && !drag.current) setHover(null) }}
-            aria-label={`Córners ${side === 'favor' ? 'a favor' : 'en contra'} ${ladoTxt} en 3D: altura = volumen de envíos, color = xG`} />
+            aria-label={L(`Córners ${side === 'favor' ? 'a favor' : 'en contra'} ${ladoTxt} en 3D: altura = volumen de envíos, color = xG`, `${side === 'favor' ? 'Attacking' : 'Defending'} corners ${ladoTxt} in 3D: height = delivery volume, colour = xG`)} />
           <div className="c3d-key" aria-hidden="true">
-            <div className="c3d-key-row"><span className="c3d-key-bars"><i style={{ height: 6 }} /><i style={{ height: 11 }} /><i style={{ height: 16 }} /></span>Altura: cuántos envíos caen ahí</div>
+            <div className="c3d-key-row"><span className="c3d-key-bars"><i style={{ height: 6 }} /><i style={{ height: 11 }} /><i style={{ height: 16 }} /></span>{L('Altura: cuántos envíos caen ahí', 'Height: how many deliveries land there')}</div>
             <div className="c3d-key-row c3d-key-scale"><span>xG</span><i style={{ background: `linear-gradient(90deg, ${xgColor(0)}, ${xgColor(0.33)}, ${xgColor(0.66)}, ${xgColor(1)})` }} /><span>{fmt(grid.maxX, 2)}+</span></div>
             {showPlayers && <div className="c3d-key-row c3d-key-dots">
-              <span><i style={{ background: tc }} />Su equipo</span>
-              <span><i style={{ background: rivalC }} />Rival</span>
-              {side === 'favor' && <span><i style={{ background: gkRival }} />Portero rival</span>}
+              <span><i style={{ background: tc }} />{L('Su equipo', 'His team')}</span>
+              <span><i style={{ background: rivalC }} />{L('Rival', 'Opponent')}</span>
+              {side === 'favor' && <span><i style={{ background: gkRival }} />{L('Portero rival', 'Opposing GK')}</span>}
             </div>}
           </div>
           {tip && (
@@ -362,27 +363,27 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
                 <ul>{tip.info.top.map(([id, nom, p]: [number, string, number]) => (
                   <li key={id}><span className="c3d-tip-n">{jugadorCorto(id, nom)}</span><span className="c3d-tip-bar"><i style={{ width: `${p}%`, background: tc }} /></span><b>{p}%</b></li>
                 ))}</ul>
-              ) : <div className="c3d-tip-empty">Sin acciones registradas en esta zona.</div>}
-              <div className="c3d-tip-f">{tip.foot}{tip.info?.n ? ` ${tip.info.n} ${tip.info.n === 1 ? 'acción' : hover?.kind === 'cob' ? 'córners' : 'acciones'}.` : ''}{tip.info?.n != null && tip.info.n < 5 && hover?.kind !== 'cob' ? ' Pocos datos.' : ''}</div>
+              ) : <div className="c3d-tip-empty">{L('Sin acciones registradas en esta zona.', 'No recorded actions in this zone.')}</div>}
+              <div className="c3d-tip-f">{tip.foot}{tip.info?.n ? ` ${tip.info.n} ${tip.info.n === 1 ? L('acción', 'action') : hover?.kind === 'cob' ? L('córners', 'corners') : L('acciones', 'actions')}.` : ''}{tip.info?.n != null && tip.info.n < 5 && hover?.kind !== 'cob' ? L(' Pocos datos.', ' Small sample.') : ''}</div>
             </div>
           )}
           {simDone && <div key={sim!.t0} className={`c3d-result${sim!.goal ? ' gol' : ''}`}>{sim!.txt}</div>}
-          <div className="c3d-hint note">Arrastra para girar · pasa el cursor sobre su equipo</div>
+          <div className="c3d-hint note">{L('Arrastra para girar · pasa el cursor sobre su equipo', 'Drag to rotate · hover over his team')}</div>
         </div>
         <aside className="c3d-side">
           <div>
-            <div className="h3">{side === 'favor' ? 'Sus córners' : 'Córners del rival contra su equipo'}</div>
-            <div className="note">{ladoTxt ? `Sólo los cobrados ${ladoTxt}` : 'Izquierda y derecha juntos'} · comparado con la liga</div>
+            <div className="h3">{side === 'favor' ? L('Sus córners', 'His corners') : L('Córners del rival contra su equipo', 'Opponent corners against his team')}</div>
+            <div className="note">{ladoTxt ? L(`Sólo los cobrados ${ladoTxt}`, `Only those taken ${ladoTxt}`) : L('Izquierda y derecha juntos', 'Left and right combined')} · {L('comparado con la liga', 'compared with the league')}</div>
           </div>
           <div className="c3d-kpis">
-            <div><span className="note">Córners</span><b>{nCorners}</b><span className="note">{fmt(nCorners / Math.max(1, D.partidos), 1)} por partido</span></div>
-            <div><span className="note">xG por córner</span><b>{fmt(xgPer, 3)} {DIF(xgPer, LK?.xg, good)}</b><span className="note">liga {fmt(LK?.xg ?? NaN, 3)}</span></div>
-            <div><span className="note">Terminan en remate</span><b>{pct(100 * rem)} {DIF(rem, LK?.remate, good)}</b><span className="note">liga {pct(LK ? 100 * LK.remate : null)}</span></div>
-            <div><span className="note">{side === 'favor' ? 'Primer contacto propio' : 'Primer contacto del rival'}</span><b>{pct(100 * fcOwn)} {DIF(fcOwn, LK?.fc, good)}</b><span className="note">liga {pct(LK?.fc != null ? 100 * LK.fc : null)}</span></div>
+            <div><span className="note">{L('Córners', 'Corners')}</span><b>{nCorners}</b><span className="note">{fmt(nCorners / Math.max(1, D.partidos), 1)} {L('por partido', 'per match')}</span></div>
+            <div><span className="note">{L('xG por córner', 'xG per corner')}</span><b>{fmt(xgPer, 3)} {DIF(xgPer, LK?.xg, good)}</b><span className="note">{L('liga', 'league')} {fmt(LK?.xg ?? NaN, 3)}</span></div>
+            <div><span className="note">{L('Terminan en remate', 'End in a shot')}</span><b>{pct(100 * rem)} {DIF(rem, LK?.remate, good)}</b><span className="note">{L('liga', 'league')} {pct(LK ? 100 * LK.remate : null)}</span></div>
+            <div><span className="note">{side === 'favor' ? L('Primer contacto propio', 'First contact won') : L('Primer contacto del rival', 'Opponent first contact')}</span><b>{pct(100 * fcOwn)} {DIF(fcOwn, LK?.fc, good)}</b><span className="note">{L('liga', 'league')} {pct(LK?.fc != null ? 100 * LK.fc : null)}</span></div>
           </div>
           {side === 'favor' && Q.cob?.top?.length > 0 && (
             <div className="c3d-who">
-              <div className="note">Quién los cobra {donde}</div>
+              <div className="note">{L('Quién los cobra', 'Who takes them')} {donde}</div>
               {Q.cob.top.map(([id, nom, p]: [number, string, number]) => (
                 <div key={id} className="c3d-who-row"><span>{jugadorCorto(id, nom)}</span><span className="c3d-tip-bar"><i style={{ width: `${p}%`, background: tc }} /></span><b>{p}%</b></div>
               ))}
@@ -390,16 +391,16 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
           )}
           {side === 'contra' && Q.gk?.top?.length > 0 && (
             <div className="c3d-who">
-              <div className="note">Su portero en estos córners {donde}</div>
+              <div className="note">{L('Su portero en estos córners', 'His goalkeeper on these corners')} {donde}</div>
               {Q.gk.top.map(([id, nom, p]: [number, string, number]) => (
                 <div key={id} className="c3d-who-row"><span>{jugadorCorto(id, nom)}</span><span className="c3d-tip-bar"><i style={{ width: `${p}%`, background: tc }} /></span><b>{p}%</b></div>
               ))}
             </div>
           )}
-          <div className="note c3d-hover-hint">Pasa el cursor (o toca) sobre un jugador de su equipo para ver quién suele ocupar esa zona.</div>
+          <div className="note c3d-hover-hint">{L('Pasa el cursor (o toca) sobre un jugador de su equipo para ver quién suele ocupar esa zona.', 'Hover over (or tap) one of his players to see who usually fills that zone.')}</div>
           <div className="note c3d-foot">
-            {grid.tot} envíos al área (sin contar cortos). Jugadores: posición típica al momento del envío en {V.n360} córners con fotograma 360.
-            {lado === 'ambos' ? ' Todos se muestran como cobrados desde la izquierda.' : ''}
+            {grid.tot} {L('envíos al área (sin contar cortos). Jugadores: posición típica al momento del envío en', 'deliveries into the box (short corners excluded). Players: typical position at the moment of delivery across')} {V.n360} {L('córners con fotograma 360.', 'corners with a 360 freeze frame.')}
+            {lado === 'ambos' ? L(' Todos se muestran como cobrados desde la izquierda.', ' All shown as if taken from the left.') : ''}
           </div>
         </aside>
       </div>

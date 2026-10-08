@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Any = any
 import boot from './boot.json'
+import { L, LOCALE } from './settings'
+import { posAbbr } from './i18n/data'
 
 /** Nombres y apellidos verificados (pipeline/names.py + config/nombres_manual.json). */
 const NOMBRES: Record<string, { nombres: string; apellidos: string; corto: string }> = (boot as any).nombres || {}
@@ -15,7 +17,7 @@ const cache = new Map<string, Promise<Any>>()
 export function getJSON(url: string): Promise<Any> {
   if (!cache.has(url)) {
     cache.set(url, fetch(url).then(async r => {
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || `Error ${r.status} al cargar ${url}`)
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || L(`Error ${r.status} al cargar ${url}`, `Error ${r.status} loading ${url}`))
       return r.json()
     }))
   }
@@ -23,17 +25,17 @@ export function getJSON(url: string): Promise<Any> {
 }
 
 export const COMP = [
-  { key: 'coach', label: 'DT', color: 'var(--c-dt)' },
-  { key: 'player', label: 'Plantilla', color: 'var(--c-plantilla)' },
+  { key: 'coach', label: L('DT', 'Coach'), color: 'var(--c-dt)' },
+  { key: 'player', label: L('Plantilla', 'Squad'), color: 'var(--c-plantilla)' },
   { key: 'club', label: 'Club', color: 'var(--c-club)' },
-  { key: 'opp', label: 'Rival', color: 'var(--c-rival)' },
-  { key: 'ctx', label: 'Contexto', color: 'var(--c-ctx)' },
+  { key: 'opp', label: L('Rival', 'Opponent'), color: 'var(--c-rival)' },
+  { key: 'ctx', label: L('Contexto', 'Context'), color: 'var(--c-ctx)' },
 ] as const
 
 export function fmt(x: number | null | undefined, d = 1): string {
   if (x === null || x === undefined || Number.isNaN(x)) return '—'
   if (d === 1 && Math.abs(x) < 1 && x !== 0) d = 2
-  return x.toLocaleString('es-MX', { minimumFractionDigits: d, maximumFractionDigits: d })
+  return x.toLocaleString(LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d })
 }
 export const sig = (x: number | null | undefined) =>
   x === null || x === undefined ? '—' : `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(2)}σ`
@@ -86,7 +88,7 @@ const POS_TAG: Record<string, [string, 'por' | 'def' | 'med' | 'del']> = {
 }
 export function posTag(pos: string | null | undefined): { abbr: string; group: string } {
   const t = pos ? POS_TAG[pos] : undefined
-  return t ? { abbr: t[0], group: t[1] } : { abbr: '—', group: 'none' }
+  return t ? { abbr: posAbbr(t[0]), group: t[1] } : { abbr: '—', group: 'none' }
 }
 export const initials = (n: string) => { const p = n.split(' '); return (p[0][0] + (p.length >= 4 ? p[p.length - 2][0] : p[p.length - 1][0])).toUpperCase() }
 

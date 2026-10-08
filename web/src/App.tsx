@@ -69,34 +69,34 @@ export default function App() {
     if (!glob) return []
     const list = glob.dts.filter((d: Any) => (!activos || media.dts?.[d.id]?.vigente) && (d.nombre.toLowerCase().includes(q.toLowerCase()) || shortName(d.nombre).toLowerCase().includes(q.toLowerCase()) || d.clubes.some((c: Any) => c.club.toLowerCase().includes(q.toLowerCase()))))
     return [
-      ['Dirigieron 2+ clubes · mejor identificados', list.filter((d: Any) => d.clubes.length >= 2)],
-      ['Un solo club', list.filter((d: Any) => d.clubes.length < 2)],
+      [L('Dirigieron 2+ clubes · mejor identificados', 'Coached 2+ clubs · best identified'), list.filter((d: Any) => d.clubes.length >= 2)],
+      [L('Un solo club', 'One club only'), list.filter((d: Any) => d.clubes.length < 2)],
     ] as [string, Any[]][]
   }, [glob, q, activos, media])
 
-  if (err) return <div className="empty"><h2 className="h2">No se pudieron cargar los resultados</h2><p>{err}</p><p className="note">Faltan los archivos de datos: corre <code>python -m pipeline.export_static</code> y vuelve a compilar la web.</p></div>
-  if (!glob) return <div className="empty">Cargando modelo…</div>
+  if (err) return <div className="empty"><h2 className="h2">{L('No se pudieron cargar los resultados', 'Couldn\'t load the results')}</h2><p>{err}</p><p className="note">{L('Faltan los archivos de datos: corre ', 'The data files are missing: run ')}<code>python -m pipeline.export_static</code>{L(' y vuelve a compilar la web.', ' and rebuild the site.')}</p></div>
+  if (!glob) return <div className="empty">{L('Cargando modelo…', 'Loading model…')}</div>
 
   return (
     <div className={`shell${sideOpen ? ' side-open' : ''}${coachId === null ? ' on-map' : ''}`}>
-      <button className="burger" aria-label={sideOpen ? 'Cerrar menú' : 'Abrir menú de entrenadores'} aria-expanded={sideOpen} onClick={() => setSideOpen(o => !o)}>
+      <button className="burger" aria-label={sideOpen ? L('Cerrar menú', 'Close menu') : L('Abrir menú de entrenadores', 'Open coaches menu')} aria-expanded={sideOpen} onClick={() => setSideOpen(o => !o)}>
         <span /><span /><span />
       </button>
       <SettingsMenu />
       {sideOpen && <div className="scrim" onClick={() => setSideOpen(false)} />}
       <aside className="side" aria-hidden={!sideOpen}>
-        <button className="map-link" onClick={goMap}>◎ Mapa de estilos</button>
+        <button className="map-link" onClick={goMap}>◎ {L('Mapa de estilos', 'Style map')}</button>
         <h1 className="brand"><Logo kind={SETTINGS.logo} size={30} /><small>{L('Qué parte del estilo es del DT y qué parte de su plantilla.', 'How much of the style is the coach and how much is the squad.')} Liga MX {glob.muestra.temporadas[0]}–{glob.muestra.temporadas.at(-1)}, {glob.muestra.partidos.toLocaleString(LOCALE)} {L('partidos', 'matches')}.</small></h1>
-        <input className="search" placeholder="Buscar DT o club" value={q} onChange={e => setQ(e.target.value)} aria-label="Buscar DT o club" />
-        <label className="toggle-activos" htmlFor="solo-activos"><input id="solo-activos" type="checkbox" checked={activos} onChange={e => setActivos(e.target.checked)} /> Solo DTs activos <span className="note">({nActivos} con club actual)</span></label>
+        <input className="search" placeholder={L('Buscar DT o club', 'Search coach or club')} value={q} onChange={e => setQ(e.target.value)} aria-label={L('Buscar DT o club', 'Search coach or club')} />
+        <label className="toggle-activos" htmlFor="solo-activos"><input id="solo-activos" type="checkbox" checked={activos} onChange={e => setActivos(e.target.checked)} /> {L('Solo DTs activos', 'Active coaches only')} <span className="note">({nActivos} {L('con club actual', 'at a club now')})</span></label>
         {groups.map(([title, items]) => items.length ? (
           <div key={title}>
             <div className="coach-group">{title}</div>
             {items.map((d: Any) => (
               <button key={d.id} className="coach-btn" aria-current={d.id === coachId} onClick={() => openCoach(d.id)}>
                 <span className="coach-name side-row">{(media.dts[d.id]?.club) && <ClubLogo club={media.dts[d.id].club} media={media} size={16} />}{shortName(d.nombre)}</span>
-                <span className="coach-idx" title="Índice de identificabilidad (0–100)">{fmt(d.identificabilidad, 0)}</span>
-                <span className="coach-meta">{d.clubes.map((c: Any) => c.club).join(' → ')} · {d.partidos} p.</span>
+                <span className="coach-idx" title={L('Índice de identificabilidad (0–100)', 'Identifiability index (0–100)')}>{fmt(d.identificabilidad, 0)}</span>
+                <span className="coach-meta">{d.clubes.map((c: Any) => c.club).join(' → ')} · {d.partidos} {L('p.', 'matches')}</span>
               </button>
             ))}
           </div>
@@ -108,12 +108,12 @@ export default function App() {
             <section className="landing">
               <header className="landing-head">
                 <h1 className="landing-title"><Logo kind={SETTINGS.logo} size={40} /></h1>
-                <p className="landing-sub">Cada burbuja es un DT de Liga MX. Cerca = ideas de juego parecidas, <b>ya descontada su plantilla</b>. Toca una para abrir su perfil.</p>
+                <p className="landing-sub">{L('Cada burbuja es un DT de Liga MX. Cerca = ideas de juego parecidas, ', 'Each bubble is a Liga MX coach. Closer = similar ideas about the game, ')}<b>{L('ya descontada su plantilla', 'squad already factored out')}</b>{L('. Toca una para abrir su perfil.', '. Tap one to open his profile.')}</p>
               </header>
               <StyleMap mapa={mapa} media={media} kpis={glob.kpis} onPick={openCoach} activos={activos} setActivos={setActivos} />
             </section>
-          ) : <div className="empty">Cargando mapa…</div>
-        ) : !art ? <div className="empty">Cargando DT…</div> : (
+          ) : <div className="empty">{L('Cargando mapa…', 'Loading map…')}</div>
+        ) : !art ? <div className="empty">{L('Cargando DT…', 'Loading coach…')}</div> : (
           <>
             <CoachBar art={art} media={media} tab={tab} setTab={setTab} />
             {tab === 'hub' ? (
@@ -122,25 +122,25 @@ export default function App() {
                   <div className="hero-top">
                     <CoachPhoto name={art.nombre} src={media.dts[art.id]?.foto} />
                     <div style={{ minWidth: 0 }}>
-                      <div className="eyebrow">Historia de un entrenador a través de los datos</div>
+                      <div className="eyebrow">{L('Historia de un entrenador a través de los datos', 'A coach\'s story, told through data')}</div>
                       <h2 className="coach-title">{(() => { const nm = nombreDT(art.id, art.nombre); return nm ? <><span className="light">{nm.nombres}</span> <span className="surname">{nm.apellidos}</span></> : art.nombre })()}</h2>
                       {media.dts[art.id]?.club && (
                         <div className="current-club">
-                          <span className={media.dts[art.id].vigente ? 'badge-live' : 'badge-past'}>{media.dts[art.id].vigente ? 'Club actual' : 'Último club'}</span>
+                          <span className={media.dts[art.id].vigente ? 'badge-live' : 'badge-past'}>{media.dts[art.id].vigente ? L('Club actual', 'Current club') : L('Último club', 'Last club')}</span>
                           <ClubName club={media.dts[art.id].club} media={media} size={22} />
-                          <span className="note">· último partido registrado {media.dts[art.id].ultimo_partido}</span>
+                          <span className="note">· {L('último partido registrado', 'last recorded match')} {media.dts[art.id].ultimo_partido}</span>
                         </div>
                       )}
                     </div>
                   </div>
                   <div className="spells" style={{ marginTop: 14, marginBottom: 0 }}>
-                    {art.etapas.map((e: Any) => <span key={e.club} className="spell"><ClubName club={e.club} media={media} size={16} /> · <b>{e.partidos}</b> p. · {e.desde.slice(0, 4)}–{e.hasta.slice(0, 4)}</span>)}
-                    <span className="spell">Identificabilidad <b>{fmt(art.identificabilidad.indice, 0)}</b>/100</span>
-                    {art.partidos_total < 10 && <span className="spell warn" title="Con menos de 10 partidos el modelo encoge su estilo hacia el promedio de la liga">⚠ Solo {art.partidos_total} partidos: perfil preliminar</span>}
+                    {art.etapas.map((e: Any) => <span key={e.club} className="spell"><ClubName club={e.club} media={media} size={16} /> · <b>{e.partidos}</b> {L('p.', 'matches')} · {e.desde.slice(0, 4)}–{e.hasta.slice(0, 4)}</span>)}
+                    <span className="spell">{L('Identificabilidad', 'Identifiability')} <b>{fmt(art.identificabilidad.indice, 0)}</b>/100</span>
+                    {art.partidos_total < 10 && <span className="spell warn" title={L('Con menos de 10 partidos el modelo encoge su estilo hacia el promedio de la liga', 'With fewer than 10 matches the model shrinks his style toward the league average')}>⚠ {L(`Solo ${art.partidos_total} partidos: perfil preliminar`, `Only ${art.partidos_total} matches: preliminary profile`)}</span>}
                   </div>
                 </header>
                 <section className="panel hub-panel">
-                  <h3 className="hub-lead">¿Qué quieres saber de {shortName(art.nombre)}?</h3>
+                  <h3 className="hub-lead">{L(`¿Qué quieres saber de ${shortName(art.nombre)}?`, `What do you want to know about ${shortName(art.nombre)}?`)}</h3>
                   <Hub art={art} media={media} mapa={mapa} go={setTab} />
                 </section>
               </>
@@ -189,15 +189,15 @@ function CoachBar({ art, media, tab, setTab }: { art: Any; media: Any; tab: View
   return (
     <div className="coachbar" style={{ ['--mc' as string]: hub ? 'var(--ink-3)' : mode.color, ['--mt' as string]: inkOn(mode.color) }}>
       <div className="cb-row">
-        <button className="cb-id" onClick={() => setTab('hub')} title="Volver al menú de este DT">
+        <button className="cb-id" onClick={() => setTab('hub')} title={L('Volver al menú de este DT', 'Back to this coach\'s menu')}>
           <CoachPhoto name={art.nombre} src={media.dts[art.id]?.foto} size={40} />
           <span className="cb-who">
             <span className="cb-name">{nm ? <><span className="light">{nm.nombres.split(' ')[0]}</span> {nm.apellidos}</> : art.nombre}</span>
-            <span className="cb-club">{club && <ClubLogo club={club} media={media} size={14} />}{club ?? ''}{art.partidos_total ? ` · ${art.partidos_total} p.` : ''}</span>
+            <span className="cb-club">{club && <ClubLogo club={club} media={media} size={14} />}{club ?? ''}{art.partidos_total ? ` · ${art.partidos_total} ${L('p.', 'matches')}` : ''}</span>
           </span>
         </button>
-        <nav ref={modesRef} className={`cb-modes${over.l ? ' ov-l' : ''}${over.r ? ' ov-r' : ''}`} aria-label="Modos">
-          <button className="cb-mode cb-hubbtn" aria-pressed={hub} onClick={() => setTab('hub')}>Menú</button>
+        <nav ref={modesRef} className={`cb-modes${over.l ? ' ov-l' : ''}${over.r ? ' ov-r' : ''}`} aria-label={L('Modos', 'Modes')}>
+          <button className="cb-mode cb-hubbtn" aria-pressed={hub} onClick={() => setTab('hub')}>{L('Menú', 'Menu')}</button>
           {MODES.map(m => (
             <button key={m.k} className="cb-mode" style={{ ['--pc' as string]: m.color, ['--pt' as string]: inkOn(m.color) }} aria-pressed={!hub && mode.k === m.k} onClick={() => setTab(m.subs[0][0])}>
               <i aria-hidden />{m.name}

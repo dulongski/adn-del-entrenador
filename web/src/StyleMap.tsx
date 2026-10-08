@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { asset, initials, shortName, sig, type Any } from './lib'
 import MapSearch, { searchCoaches } from './MapSearch'
+import { L } from './settings'
+import { famLabel, kpiLabel, mapLabel } from './i18n/data'
 
 /* Paleta categórica validada (orden fijo), aplicada a las familias de estilo con opacidad baja. */
 const HUES = ['var(--c-dt)', 'var(--c-plantilla)', 'var(--c-club)', 'var(--c-rival)', 'var(--c-ctx)', '#008300']
@@ -40,7 +42,7 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
   useEffect(() => save('mapa.mode', mode), [mode])
   useEffect(() => save('mapa.vars', vars), [vars])
 
-  const label = (k: string) => (kpis[k]?.etiqueta || k).replace(/\s*\(.*?\)\s*/g, ' ').trim()
+  const label = (k: string) => (kpis[k]?.etiqueta ? kpiLabel(k, kpis[k].etiqueta) : k).replace(/\s*\(.*?\)\s*/g, ' ').trim()
   // coordenadas crudas según el modo
   const coords = useMemo(() => {
     const P: Any[] = mapa.puntos
@@ -50,10 +52,12 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
     const s = raw.map(soft)
     return P.map((_, i) => [s[0][i], s[1][i], s[2][i]] as [number, number, number])
   }, [mapa, mode, vars])
-  const axes: { x: Axis; y: Axis; z: Axis } = mode === 'pca' ? mapa.ejes : {
-    x: { negativo: `menos ${label(vars.x).toLowerCase()}`, positivo: `más ${label(vars.x).toLowerCase()}` },
-    y: { negativo: `menos ${label(vars.y).toLowerCase()}`, positivo: `más ${label(vars.y).toLowerCase()}` },
-    z: { negativo: `menos ${label(vars.z).toLowerCase()}`, positivo: `más ${label(vars.z).toLowerCase()}` },
+  // en inglés se baja la inicial salvo siglas (xG, PPDA, OBV…)
+  const lowEn = (s: string) => (s.length > 1 && /[A-Z]/.test(s[1]) ? s : s.charAt(0).toLowerCase() + s.slice(1))
+  const ax = (k: string): Axis => ({ negativo: L(`menos ${label(k).toLowerCase()}`, `less ${lowEn(label(k))}`), positivo: L(`más ${label(k).toLowerCase()}`, `more ${lowEn(label(k))}`) })
+  const pcaAx = (a: Axis): Axis => ({ negativo: mapLabel(a.negativo), positivo: mapLabel(a.positivo) })
+  const axes: { x: Axis; y: Axis; z: Axis } = mode === 'pca' ? { x: pcaAx(mapa.ejes.x), y: pcaAx(mapa.ejes.y), z: pcaAx(mapa.ejes.z) } : {
+    x: ax(vars.x), y: ax(vars.y), z: ax(vars.z),
   }
   const varAxes = (dim === '3d' ? ['x', 'y', 'z'] : ['x', 'y']) as ('x' | 'y' | 'z')[]
   const families = ['Construcción', 'Progresión', 'Ocasiones', 'Presión', 'Organización defensiva', 'Transiciones', 'Dominio', 'Balón parado']
@@ -70,13 +74,13 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
       <MapSearch mapa={mapa} media={media} onPick={onPick} q={q} setQ={setQ} setPulse={setPulse} hueOf={g => HUES[g % HUES.length]} />
 
       <div className="smap-ctrl" onPointerDown={e => e.stopPropagation()}>
-        <div className="seg sm" role="group" aria-label="Dimensiones">
+        <div className="seg sm" role="group" aria-label={L('Dimensiones', 'Dimensions')}>
           <button aria-pressed={dim === '2d'} onClick={() => setDim('2d')}>2D</button>
           <button aria-pressed={dim === '3d'} onClick={() => setDim('3d')}>3D</button>
         </div>
-        <div className="seg sm" role="group" aria-label="Qué define los ejes">
-          <button aria-pressed={mode === 'pca'} onClick={() => setMode('pca')}>Ejes PCA</button>
-          <button aria-pressed={mode === 'vars'} onClick={() => setMode('vars')}>Elegir variables</button>
+        <div className="seg sm" role="group" aria-label={L('Qué define los ejes', 'What defines the axes')}>
+          <button aria-pressed={mode === 'pca'} onClick={() => setMode('pca')}>{L('Ejes PCA', 'PCA axes')}</button>
+          <button aria-pressed={mode === 'vars'} onClick={() => setMode('vars')}>{L('Elegir variables', 'Pick variables')}</button>
         </div>
         {mode === 'vars' && (
           <div className="smap-vars">
@@ -85,28 +89,28 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
                 <select id={`var-${a}`} value={vars[a]} onChange={e => setVars(v => ({ ...v, [a]: e.target.value }))}>
                   {families.map(f => {
                     const ks = avail.filter(k => kpis[k]?.familia === f)
-                    return ks.length ? <optgroup key={f} label={f}>{ks.map(k => <option key={k} value={k}>{label(k)}</option>)}</optgroup> : null
+                    return ks.length ? <optgroup key={f} label={famLabel(f)}>{ks.map(k => <option key={k} value={k}>{label(k)}</option>)}</optgroup> : null
                   })}
                 </select>
               </label>
             ))}
-            <div className="note">Efecto propio del DT en σ (sin plantilla, club ni rival).</div>
+            <div className="note">{L('Efecto propio del DT en σ (sin plantilla, club ni rival).', 'The coach\'s own effect in σ (no squad, club or opponent).')}</div>
           </div>
         )}
         {setActivos && (
-          <label className="smap-activos" htmlFor="map-activos"><input id="map-activos" type="checkbox" checked={activos} onChange={e => setActivos(e.target.checked)} /> Solo DTs activos</label>
+          <label className="smap-activos" htmlFor="map-activos"><input id="map-activos" type="checkbox" checked={activos} onChange={e => setActivos(e.target.checked)} /> {L('Solo DTs activos', 'Active coaches only')}</label>
         )}
-        {mode === 'pca' && <div className="note">{dim === '3d' ? `3 componentes · ${Math.round(100 * (mapa.varianza_total_3d ?? 0))}% de la variación` : `2 componentes · ${Math.round(100 * mapa.varianza_total)}% de la variación`}</div>}
+        {mode === 'pca' && <div className="note">{dim === '3d' ? L(`3 componentes · ${Math.round(100 * (mapa.varianza_total_3d ?? 0))}% de la variación`, `3 components · ${Math.round(100 * (mapa.varianza_total_3d ?? 0))}% of the variation`) : L(`2 componentes · ${Math.round(100 * mapa.varianza_total)}% de la variación`, `2 components · ${Math.round(100 * mapa.varianza_total)}% of the variation`)}</div>}
       </div>
 
       <div className={`smap-legend${legendOpen ? '' : ' closed'}`} onPointerDown={e => e.stopPropagation()}>
         <button className="smap-legend-head" onClick={() => setLegendOpen(o => !o)} aria-expanded={legendOpen}>
           {!legendOpen && <span className="dots">{mapa.grupos.map((g: Any) => <i key={g.id} style={{ background: HUES[g.id % HUES.length] }} />)}</span>}
-          Familias {legendOpen ? '▾' : '▸'}
+          {L('Familias', 'Families')} {legendOpen ? '▾' : '▸'}
         </button>
         {legendOpen && mapa.grupos.map((g: Any) => (
-          <button key={g.id} className="smap-chip" aria-pressed={focus === g.id} onClick={() => setFocus(f => (f === g.id ? null : g.id))} title="Resaltar esta familia">
-            <i style={{ background: HUES[g.id % HUES.length] }} />{g.nombre} <span className="note">{g.n}</span>
+          <button key={g.id} className="smap-chip" aria-pressed={focus === g.id} onClick={() => setFocus(f => (f === g.id ? null : g.id))} title={L('Resaltar esta familia', 'Highlight this family')}>
+            <i style={{ background: HUES[g.id % HUES.length] }} />{mapLabel(g.nombre)} <span className="note">{g.n}</span>
           </button>
         ))}
       </div>
@@ -114,11 +118,11 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
       {hover && (
         <div className="tip" style={{ left: Math.min(hover.x + 14, window.innerWidth - 310), top: hover.y + 14 }}>
           <b>{hover.d.nombre}</b><br />
-          {hover.d.clubes.join(' → ')} · {hover.d.partidos} partidos<br />
-          <span style={{ opacity: 0.8 }}>{mapa.grupos[hover.d.grupo]?.nombre}</span>
+          {hover.d.clubes.join(' → ')} · {hover.d.partidos} {L('partidos', 'matches')}<br />
+          <span style={{ opacity: 0.8 }}>{mapLabel(mapa.grupos[hover.d.grupo]?.nombre ?? '')}</span>
           {mode === 'vars'
             ? varAxes.map(a => <div key={a}>{a.toUpperCase()} · {label(vars[a])}: <b>{sig(hover.d.alpha[vars[a]])}</b></div>)
-            : hover.d.rasgos?.length ? <div style={{ opacity: 0.8 }}>{hover.d.rasgos.join(', ')}</div> : null}
+            : hover.d.rasgos?.length ? <div style={{ opacity: 0.8 }}>{hover.d.rasgos.map(mapLabel).join(', ')}</div> : null}
         </div>
       )}
     </div>
@@ -135,7 +139,7 @@ function Bubble({ d, media, r, style, dim, cls, showName, nameSize, onPick, setH
   const logo = asset(media.clubes?.[club]?.logo)
   return (
     <button className={`bub${cls ? ` ${cls}` : ''}${dim ? ' dim' : ''}`} style={{ ...style, '--hue': HUES[d.grupo % HUES.length] } as CSSProperties}
-      aria-label={`${d.nombre}, ${d.partidos} partidos. Abrir perfil`}
+      aria-label={L(`${d.nombre}, ${d.partidos} partidos. Abrir perfil`, `${d.nombre}, ${d.partidos} matches. Open profile`)}
       onClick={() => { if (!dragged.current) onPick(d.id) }}
       onMouseMove={e => setHover({ d, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHover(null)}
       onFocus={e => { const b = e.currentTarget.getBoundingClientRect(); setHover({ d, x: b.right, y: b.bottom }) }} onBlur={() => setHover(null)}>
@@ -265,7 +269,7 @@ function Map2D({ mapa, media, coords, axes, focus, setHover, onPick, groupLabels
     <div className="smap" ref={ref} {...handlers} style={{ backgroundSize: `${grid}px ${grid}px`, backgroundPosition: `${view.x}px ${view.y}px` }}>
       <div className="smap-world" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})` }}>
         {blobs.map((b: Any) => <div key={b.id} className={`smap-blob${focus !== null && focus !== b.id ? ' dim' : ''}`} style={{ left: b.mx - b.rad, top: b.my - b.rad, width: b.rad * 2, height: b.rad * 2, '--hue': HUES[b.id % HUES.length] } as CSSProperties} />)}
-        {groupLabels && blobs.map((b: Any) => <div key={`l${b.id}`} className="smap-glabel" style={{ left: b.mx, top: Math.max(W < 600 ? 270 : 165, b.my - b.rad * 0.72), color: HUES[b.id % HUES.length], opacity: focus !== null && focus !== b.id ? 0.25 : 1 }}>{b.nombre}</div>)}
+        {groupLabels && blobs.map((b: Any) => <div key={`l${b.id}`} className="smap-glabel" style={{ left: b.mx, top: Math.max(W < 600 ? 270 : 165, b.my - b.rad * 0.72), color: HUES[b.id % HUES.length], opacity: focus !== null && focus !== b.id ? 0.25 : 1 }}>{mapLabel(b.nombre)}</div>)}
         {nodes.filter(n => !hidden.has(n.d.id)).map(n => {
           const float = reduce ? {} : { '--dx': `${(hash(n.d.id) - 0.5) * 28}px`, '--dy': `${(hash(n.d.id + 7) - 0.5) * 28}px`, '--dur': `${4.5 + hash(n.d.id + 3) * 4}s`, '--delay': `${-hash(n.d.id + 11) * 8}s` }
           return <Bubble key={n.d.id} d={n.d} media={media} r={n.r} dim={(focus !== null && focus !== n.d.grupo) || (match !== null && !match.has(n.d.id))} cls={pulse === n.d.id ? 'pulse' : match?.has(n.d.id) ? 'hit' : undefined} onPick={onPick} setHover={setHover} dragged={dragged}
@@ -278,9 +282,9 @@ function Map2D({ mapa, media, coords, axes, focus, setHover, onPick, groupLabels
       <div className="smap-axis ax-top">↑ {axes.y.positivo}</div>
       <div className="smap-axis ax-bottom">↓ {axes.y.negativo}</div>
       <div className="smap-zoom" onPointerDown={e => e.stopPropagation()}>
-        <button onClick={() => zoomAt(1.4, W / 2, H / 2)} aria-label="Acercar">+</button>
-        <button onClick={() => zoomAt(1 / 1.4, W / 2, H / 2)} aria-label="Alejar">−</button>
-        <button onClick={() => setView({ k: 1, x: 0, y: 0 })} aria-label="Restablecer vista">⤢</button>
+        <button onClick={() => zoomAt(1.4, W / 2, H / 2)} aria-label={L('Acercar', 'Zoom in')}>+</button>
+        <button onClick={() => zoomAt(1 / 1.4, W / 2, H / 2)} aria-label={L('Alejar', 'Zoom out')}>−</button>
+        <button onClick={() => setView({ k: 1, x: 0, y: 0 })} aria-label={L('Restablecer vista', 'Reset view')}>⤢</button>
       </div>
     </div>
   )
@@ -372,12 +376,12 @@ function Map3D({ mapa, media, coords, axes, focus, setHover, onPick, hidden, mat
         <div key={e.a} className="g3-label" style={{ left: e.p.x, top: e.p.y }}><b>{e.a}</b> {e.t}</div>
       ))}
       <div className="smap-zoom" onPointerDown={ev => ev.stopPropagation()}>
-        <button onClick={() => setK(v => Math.min(4, v * 1.3))} aria-label="Acercar">+</button>
-        <button onClick={() => setK(v => Math.max(0.5, v / 1.3))} aria-label="Alejar">−</button>
-        <button onClick={() => { setK(1); setRot({ yaw: -0.6, pitch: 0.35 }) }} aria-label="Restablecer vista">⤢</button>
-        {!reduce && <button onClick={() => setSpin(s => !s)} aria-label={spin ? 'Pausar giro' : 'Reanudar giro'} title={spin ? 'Pausar giro' : 'Reanudar giro'}>{spin ? '❚❚' : '▶'}</button>}
+        <button onClick={() => setK(v => Math.min(4, v * 1.3))} aria-label={L('Acercar', 'Zoom in')}>+</button>
+        <button onClick={() => setK(v => Math.max(0.5, v / 1.3))} aria-label={L('Alejar', 'Zoom out')}>−</button>
+        <button onClick={() => { setK(1); setRot({ yaw: -0.6, pitch: 0.35 }) }} aria-label={L('Restablecer vista', 'Reset view')}>⤢</button>
+        {!reduce && <button onClick={() => setSpin(s => !s)} aria-label={spin ? L('Pausar giro', 'Pause rotation') : L('Reanudar giro', 'Resume rotation')} title={spin ? L('Pausar giro', 'Pause rotation') : L('Reanudar giro', 'Resume rotation')}>{spin ? '❚❚' : '▶'}</button>}
       </div>
-      <div className="g3-hint note">Arrastra para girar · pellizca o usa la rueda para acercar</div>
+      <div className="g3-hint note">{L('Arrastra para girar · pellizca o usa la rueda para acercar', 'Drag to rotate · pinch or scroll to zoom')}</div>
     </div>
   )
 }

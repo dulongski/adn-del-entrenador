@@ -498,3 +498,4 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
   .msearch-box { height: 46px; } .msearch-fam, .msearch-kbd { display: none; } .msearch-row { grid-template-columns: auto 1fr auto; } }
 @media (prefers-reduced-motion: reduce) { .msearch-box::before { animation: none; } }
 @media (max-width: 700px) { .smap-zoom { display: none !important; } }
+@media (max-width: 700px) { .smap-axis.ax-top { white-space: nowrap; font-size: 10.5px; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; } }

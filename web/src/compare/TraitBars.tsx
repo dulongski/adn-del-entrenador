@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react'
 import Dist, { rankOf, toValues } from '../Dist'
 import { fmt, type Any } from '../lib'
 import { apellido, rawFormat, signed } from './util'
+import { L } from '../settings'
 
 export type Row = { k: string; a: number; b: number; d: number }
 type Side = { id: number; name: string; color: string }
@@ -9,12 +10,12 @@ type Side = { id: number; name: string; color: string }
 /** Campanas de un rasgo: estilo propio (α) o lo que se vio en sus partidos (valor crudo). */
 export function TraitBell({ dd, k, A, B, modo, compact = false, height = 84 }: { dd: Any; k: string; A: Side; B: Side; modo: 'a' | 'v'; compact?: boolean; height?: number }) {
   const kp = dd?.kpis?.[k]
-  if (!kp) return <p className="note">Cargando la distribución…</p>
+  if (!kp) return <p className="note">{L('Cargando la distribución…', 'Loading the distribution…')}</p>
   const marks = [{ id: A.id, color: A.color, label: apellido(A.name) }, { id: B.id, color: B.color, label: apellido(B.name) }]
   if (modo === 'a') {
-    return <Dist values={toValues(kp.a)} marks={marks} refV={0} refLabel="promedio" format={v => signed(v)} low="menos" high="más" height={height} compact={compact} />
+    return <Dist values={toValues(kp.a)} marks={marks} refV={0} refLabel={L('promedio', 'average')} format={v => signed(v)} low={L('menos', 'less')} high={L('más', 'more')} height={height} compact={compact} />
   }
-  return <Dist values={toValues(kp.v)} marks={marks} refV={kp.liga} refLabel="liga" format={rawFormat(kp.etiqueta, kp.liga)} low="menos" high="más" height={height} compact={compact} />
+  return <Dist values={toValues(kp.v)} marks={marks} refV={kp.liga} refLabel={L('liga', 'league')} format={rawFormat(kp.etiqueta, kp.liga)} low={L('menos', 'less')} high={L('más', 'more')} height={height} compact={compact} />
 }
 
 /** Frase corta: dónde queda cada uno entre todos los DTs. */
@@ -22,7 +23,7 @@ function rankLine(dd: Any, k: string, A: Side, B: Side, modo: 'a' | 'v') {
   const m = dd?.kpis?.[k]?.[modo]
   if (!m) return null
   const vals = toValues(m)
-  const one = (s: Side) => { const v = m[String(s.id)]; if (v == null) return null; const r = rankOf(vals, v); return `${apellido(s.name)} supera a ${r.below} de ${r.n - 1}` }
+  const one = (s: Side) => { const v = m[String(s.id)]; if (v == null) return null; const r = rankOf(vals, v); return L(`${apellido(s.name)} supera a ${r.below} de ${r.n - 1}`, `${apellido(s.name)} is above ${r.below} of ${r.n - 1}`) }
   return [one(A), one(B)].filter(Boolean).join(' · ')
 }
 
@@ -40,9 +41,9 @@ export default function TraitBars({ rows, lab, A, B, dd }: { rows: Row[]; lab: (
       <div className="vs-tb-row vs-tb-axis" aria-hidden>
         <span className="vs-tb-lab" />
         <span className="vs-tb-track">
-          {ticks.map(t => <span key={t} className="vs-tb-tick" style={{ left: `${P(t)}%` }}>{t === 0 ? <><span className="vs-tb-wide">DT promedio</span><span className="vs-tb-narrow">0</span></> : signed(t, 0)}</span>)}
+          {ticks.map(t => <span key={t} className="vs-tb-tick" style={{ left: `${P(t)}%` }}>{t === 0 ? <><span className="vs-tb-wide">{L('DT promedio', 'Average coach')}</span><span className="vs-tb-narrow">0</span></> : signed(t, 0)}</span>)}
         </span>
-        <span className="vs-tb-nums vs-tb-nh"><span title={A.name}><i style={{ background: A.color }} /><span className="vs-tb-wide">{apellido(A.name)}</span></span><span title={B.name}><i style={{ background: B.color }} /><span className="vs-tb-wide">{apellido(B.name)}</span></span><span><span className="vs-tb-wide">Brecha</span><span className="vs-tb-narrow">Dif.</span></span></span>
+        <span className="vs-tb-nums vs-tb-nh"><span title={A.name}><i style={{ background: A.color }} /><span className="vs-tb-wide">{apellido(A.name)}</span></span><span title={B.name}><i style={{ background: B.color }} /><span className="vs-tb-wide">{apellido(B.name)}</span></span><span><span className="vs-tb-wide">{L('Brecha', 'Gap')}</span><span className="vs-tb-narrow">{L('Dif.', 'Gap')}</span></span></span>
       </div>
       {rows.map(o => {
         const isOpen = open === o.k
@@ -64,12 +65,12 @@ export default function TraitBars({ rows, lab, A, B, dd }: { rows: Row[]; lab: (
             {isOpen && (
               <div className="vs-tb-open">
                 <div>
-                  <div className="vs-tb-bt">Su sello propio <span className="note">(sin el efecto de la plantilla)</span></div>
+                  <div className="vs-tb-bt">{L('Su sello propio', 'His own stamp')} <span className="note">{L('(sin el efecto de la plantilla)', '(squad effect removed)')}</span></div>
                   <TraitBell dd={dd} k={o.k} A={A} B={B} modo="a" />
                   <div className="note">{rankLine(dd, o.k, A, B, 'a')}</div>
                 </div>
                 <div>
-                  <div className="vs-tb-bt">Lo que se vio en sus partidos <span className="note">(con su plantilla)</span></div>
+                  <div className="vs-tb-bt">{L('Lo que se vio en sus partidos', 'What his matches showed')} <span className="note">{L('(con su plantilla)', '(with his squad)')}</span></div>
                   <TraitBell dd={dd} k={o.k} A={A} B={B} modo="v" />
                   <div className="note">{rankLine(dd, o.k, A, B, 'v')}</div>
                 </div>
@@ -89,12 +90,12 @@ export function DistGrid({ rows, lab, A, B, dd }: { rows: Row[]; lab: (k: string
     <div className="card">
       <div className="vs-head">
         <div>
-          <div className="h3" style={{ margin: 0 }}>Dónde quedan entre todos los DTs</div>
-          <p className="note" style={{ margin: '2px 0 0' }}>Cada punto gris es un DT de la liga. Pasa el cursor para ver quién es.</p>
+          <div className="h3" style={{ margin: 0 }}>{L('Dónde quedan entre todos los DTs', 'Where they sit among all coaches')}</div>
+          <p className="note" style={{ margin: '2px 0 0' }}>{L('Cada punto gris es un DT de la liga. Pasa el cursor para ver quién es.', 'Each grey dot is a league coach. Hover to see who.')}</p>
         </div>
         <div className="seg" style={{ margin: 0 }}>
-          <button aria-pressed={modo === 'a'} onClick={() => setModo('a')}>Sello propio</button>
-          <button aria-pressed={modo === 'v'} onClick={() => setModo('v')}>En sus partidos</button>
+          <button aria-pressed={modo === 'a'} onClick={() => setModo('a')}>{L('Sello propio', 'Own stamp')}</button>
+          <button aria-pressed={modo === 'v'} onClick={() => setModo('v')}>{L('En sus partidos', 'In his matches')}</button>
         </div>
       </div>
       <div className="vs-dg">
@@ -107,8 +108,8 @@ export function DistGrid({ rows, lab, A, B, dd }: { rows: Row[]; lab: (k: string
       </div>
       <p className="note" style={{ margin: '8px 0 0' }}>
         {modo === 'a'
-          ? 'Sello propio: cuánto empuja el DT ese rasgo por encima o por debajo del DT promedio, ya descontado lo que aportan sus jugadores, el club y los rivales.'
-          : 'En sus partidos: el valor tal cual en los partidos que dirigió; la línea punteada es el promedio de la liga.'}
+          ? L('Sello propio: cuánto empuja el DT ese rasgo por encima o por debajo del DT promedio, ya descontado lo que aportan sus jugadores, el club y los rivales.', 'Own stamp: how far the coach pushes that trait above or below the average coach, after stripping out what his players, the club and opponents bring.')
+          : L('En sus partidos: el valor tal cual en los partidos que dirigió; la línea punteada es el promedio de la liga.', 'In his matches: the raw value in the matches he coached; the dotted line is the league average.')}
       </p>
     </div>
   )

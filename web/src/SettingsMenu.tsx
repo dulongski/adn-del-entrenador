@@ -3,7 +3,7 @@ import { FONTS, L, PALETTES, SETTINGS, saveSettings, type Font, type Lang, type 
 import './styles/settings.css'
 
 // el selector de idioma se muestra cuando la traducción al inglés esté completa
-const SHOW_LANG = false
+const SHOW_LANG = true
 
 /* Menú de ajustes (engrane): paleta, tipografía, idioma y logo. Cada cambio se guarda y recarga la página. */
 export default function SettingsMenu() {

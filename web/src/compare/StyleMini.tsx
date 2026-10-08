@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ClubLogo } from '../charts'
 import { shortName, type Any } from '../lib'
 import { apellido, famHue, useWidth } from './util'
+import { L } from '../settings'
+import { mapLabel } from '../i18n/data'
 
 /** Mapa de estilos reducido: ejes con su significado, hover sobre cualquier DT y clic para elegirlo como rival. */
 export default function StyleMini({ mapa, media, A, B, ca, cb, onPick }: { mapa: Any; media: Any; A: Any; B: Any; ca: string; cb: string; onPick: (id: number) => void }) {
@@ -24,7 +26,7 @@ export default function StyleMini({ mapa, media, A, B, ca, cb, onPick }: { mapa:
   return (
     <div className="vs-sm" ref={ref}>
       {W > 0 && (
-        <svg width={W} height={H} role="img" aria-label={`Mapa de estilos: ${A.nombre} y ${B.nombre}`} onMouseLeave={() => setHov(null)}>
+        <svg width={W} height={H} role="img" aria-label={L(`Mapa de estilos: ${A.nombre} y ${B.nombre}`, `Style map: ${A.nombre} and ${B.nombre}`)} onMouseLeave={() => setHov(null)}>
           <defs>
             <marker id="vs-sm-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M0 0 L10 5 L0 10 z" fill="var(--ink-3)" />
@@ -32,10 +34,10 @@ export default function StyleMini({ mapa, media, A, B, ca, cb, onPick }: { mapa:
           </defs>
           <line x1={6} x2={W - 6} y1={cy0} y2={cy0} stroke="var(--ink-3)" strokeOpacity={0.45} markerStart="url(#vs-sm-arr)" markerEnd="url(#vs-sm-arr)" />
           <line x1={cx0} x2={cx0} y1={top - 4} y2={bottom + 4} stroke="var(--ink-3)" strokeOpacity={0.45} markerStart="url(#vs-sm-arr)" markerEnd="url(#vs-sm-arr)" />
-          <text className="vs-sm-ax" x={cx0} y={12} textAnchor="middle">↑ {e.y.positivo}</text>
-          <text className="vs-sm-ax" x={cx0} y={bottom + 18} textAnchor="middle">↓ {e.y.negativo}</text>
-          <text className="vs-sm-ax" x={W - 4} y={H - (narrow ? 18 : 4)} textAnchor="end">{e.x.positivo} →</text>
-          <text className="vs-sm-ax" x={4} y={H - 4}>← {e.x.negativo}</text>
+          <text className="vs-sm-ax" x={cx0} y={12} textAnchor="middle">↑ {mapLabel(e.y.positivo)}</text>
+          <text className="vs-sm-ax" x={cx0} y={bottom + 18} textAnchor="middle">↓ {mapLabel(e.y.negativo)}</text>
+          <text className="vs-sm-ax" x={W - 4} y={H - (narrow ? 18 : 4)} textAnchor="end">{mapLabel(e.x.positivo)} →</text>
+          <text className="vs-sm-ax" x={4} y={H - 4}>← {mapLabel(e.x.negativo)}</text>
           <line x1={X(A.x)} y1={Y(A.y)} x2={X(B.x)} y2={Y(B.y)} stroke="var(--ink-2)" strokeWidth={1.5} strokeDasharray="5 4" />
           {mapa.puntos.filter((p: Any) => p.id !== A.id && p.id !== B.id).map((p: Any) => (
             <g key={p.id} className="vs-sm-pt" onMouseEnter={() => setHov(p.id)} onClick={() => onPick(p.id)}>
@@ -61,7 +63,7 @@ export default function StyleMini({ mapa, media, A, B, ca, cb, onPick }: { mapa:
       {hp && (
         <div className="vs-sm-tip" style={{ left: Math.min(W - 8, Math.max(8, X(hp.x))), top: Y(hp.y) - 12, transform: `translate(${X(hp.x) < 110 ? '0' : X(hp.x) > W - 110 ? '-100%' : '-50%'}, -100%)` }}>
           {club(hp) && <ClubLogo club={club(hp)} media={media} size={18} />}
-          <span><b>{shortName(hp.nombre)}</b><span className="vs-sm-tip-s">{mapa.grupos.find((g: Any) => g.id === hp.grupo)?.nombre} · clic para comparar</span></span>
+          <span><b>{shortName(hp.nombre)}</b><span className="vs-sm-tip-s">{mapLabel(mapa.grupos.find((g: Any) => g.id === hp.grupo)?.nombre ?? '')} · {L('clic para comparar', 'click to compare')}</span></span>
         </div>
       )}
     </div>

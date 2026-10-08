@@ -342,6 +342,7 @@ def main(coach_filter=None, fast=False, n_boot=30, solo_extra=False):
                           "gf": int(r.gf), "gc": int(r.gc), "temporada": r.season} for r in mym.itertuples()],
         }
         art["narrativa"] = narrative.build(art, glob)
+        art["narrativa_en"] = narrative.build(art, glob, "en")
         json.dump(jsonable(art), open(ART / f"dt_{int(c)}.json", "w"), ensure_ascii=False)
         log(f"  {name}: {time.time() - t0:.1f}s")
     from pipeline.models import stylemap

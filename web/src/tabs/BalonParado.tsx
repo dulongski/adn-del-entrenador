@@ -1,24 +1,25 @@
 import { useState } from 'react'
 import { clubColor, fmt, type Any } from '../lib'
 import Corners3D, { type Side } from '../Corners3D'
+import { L } from '../settings'
 import '../styles/bp.css'
 
 /* Indicadores de balón parado: el lado elegido (a favor / en contra, el mismo del 3D) contra la liga.
    dir = qué es bueno para SU equipo: 1 = más es mejor, -1 = menos es mejor, 0 = estilo (sin juicio). */
 type Row = { k: string; fav: string; con: string; u: string; d: number; dirF: number; dirC: number; val?: (b: Any, s: Side) => number | null }
 const ROWS: Row[] = [
-  { k: 'corners_por_partido', fav: 'Córners por partido', con: 'Córners del rival por partido', u: '', d: 1, dirF: 1, dirC: -1 },
-  { k: 'corner_xg', fav: 'xG por córner', con: 'xG por córner del rival', u: '', d: 3, dirF: 1, dirC: -1 },
-  { k: 'corner_remate_pct', fav: 'Córners que terminan en remate', con: 'Córners rivales que terminan en remate', u: '%', d: 0, dirF: 1, dirC: -1 },
-  { k: 'corner_primer_contacto_pct', fav: 'Primer contacto propio', con: 'Primer contacto del rival', u: '%', d: 0, dirF: 1, dirC: -1 },
-  { k: 'corner_corto_pct', fav: 'Córner en corto', con: 'Córners rivales en corto', u: '%', d: 0, dirF: 0, dirC: 0 },
-  { k: 'atacantes_area_360', fav: 'Atacantes en el área', con: 'Atacantes rivales en el área', u: '', d: 1, dirF: 0, dirC: 0 },
-  { k: 'defensores_area_360', fav: 'Defensores rivales en el área', con: 'Sus defensores en el área', u: '', d: 1, dirF: 0, dirC: 0 },
-  { k: 'tl_por_partido', fav: 'Tiros libres en campo rival por partido', con: 'Tiros libres del rival en su campo por partido', u: '', d: 1, dirF: 1, dirC: -1 },
-  { k: 'tl_xg', fav: 'xG por tiro libre', con: 'xG por tiro libre del rival', u: '', d: 3, dirF: 1, dirC: -1 },
-  { k: 'tl_remate_pct', fav: 'Tiros libres que terminan en remate', con: 'Tiros libres rivales que terminan en remate', u: '%', d: 0, dirF: 1, dirC: -1 },
-  { k: 'banda_peligrosa_por_partido', fav: 'Saques de banda en el último tercio por partido', con: 'Saques de banda del rival en su último tercio', u: '', d: 1, dirF: 1, dirC: -1 },
-  { k: 'xg_total_por_partido', fav: 'xG de balón parado por partido', con: 'xG de balón parado recibido por partido', u: '', d: 2, dirF: 1, dirC: -1 },
+  { k: 'corners_por_partido', fav: L('Córners por partido', 'Corners per match'), con: L('Córners del rival por partido', 'Opponent corners per match'), u: '', d: 1, dirF: 1, dirC: -1 },
+  { k: 'corner_xg', fav: L('xG por córner', 'xG per corner'), con: L('xG por córner del rival', 'Opponent xG per corner'), u: '', d: 3, dirF: 1, dirC: -1 },
+  { k: 'corner_remate_pct', fav: L('Córners que terminan en remate', 'Corners ending in a shot'), con: L('Córners rivales que terminan en remate', 'Opponent corners ending in a shot'), u: '%', d: 0, dirF: 1, dirC: -1 },
+  { k: 'corner_primer_contacto_pct', fav: L('Primer contacto propio', 'First contact won'), con: L('Primer contacto del rival', 'Opponent first contact'), u: '%', d: 0, dirF: 1, dirC: -1 },
+  { k: 'corner_corto_pct', fav: L('Córner en corto', 'Short corners'), con: L('Córners rivales en corto', 'Opponent short corners'), u: '%', d: 0, dirF: 0, dirC: 0 },
+  { k: 'atacantes_area_360', fav: L('Atacantes en el área', 'Attackers in the box'), con: L('Atacantes rivales en el área', 'Opponent attackers in the box'), u: '', d: 1, dirF: 0, dirC: 0 },
+  { k: 'defensores_area_360', fav: L('Defensores rivales en el área', 'Opponent defenders in the box'), con: L('Sus defensores en el área', 'His defenders in the box'), u: '', d: 1, dirF: 0, dirC: 0 },
+  { k: 'tl_por_partido', fav: L('Tiros libres en campo rival por partido', 'Free kicks in the opponent half per match'), con: L('Tiros libres del rival en su campo por partido', 'Opponent free kicks in his half per match'), u: '', d: 1, dirF: 1, dirC: -1 },
+  { k: 'tl_xg', fav: L('xG por tiro libre', 'xG per free kick'), con: L('xG por tiro libre del rival', 'Opponent xG per free kick'), u: '', d: 3, dirF: 1, dirC: -1 },
+  { k: 'tl_remate_pct', fav: L('Tiros libres que terminan en remate', 'Free kicks ending in a shot'), con: L('Tiros libres rivales que terminan en remate', 'Opponent free kicks ending in a shot'), u: '%', d: 0, dirF: 1, dirC: -1 },
+  { k: 'banda_peligrosa_por_partido', fav: L('Saques de banda en el último tercio por partido', 'Final-third throw-ins per match'), con: L('Saques de banda del rival en su último tercio', 'Opponent throw-ins in his final third'), u: '', d: 1, dirF: 1, dirC: -1 },
+  { k: 'xg_total_por_partido', fav: L('xG de balón parado por partido', 'Set-piece xG per match'), con: L('xG de balón parado recibido por partido', 'Set-piece xG conceded per match'), u: '', d: 2, dirF: 1, dirC: -1 },
 ]
 
 function Card({ r, side, v, l, color }: { r: Row; side: Side; v: number | null; l: number | null; color: string }) {
@@ -29,15 +30,15 @@ function Card({ r, side, v, l, color }: { r: Row; side: Side; v: number | null; 
   const up = diff > 0
   const cls = same ? 'eq' : dir === 0 ? 'eq' : (up ? dir > 0 : dir < 0) ? 'up' : 'down'
   const dd = r.u === '%' ? 1 : r.d
-  const chipTxt = same ? '≈ liga' : `${up ? '▲' : '▼'} ${fmt(Math.abs(diff), dd)}${r.u === '%' ? ' pts' : ''}`
-  const title = same ? 'Como la liga' : `${up ? 'Más' : 'Menos'} que la liga${dir === 0 ? ' (cuestión de estilo)' : cls === 'up' ? ', bueno para su equipo' : ', malo para su equipo'}`
+  const chipTxt = same ? L('≈ liga', '≈ league') : `${up ? '▲' : '▼'} ${fmt(Math.abs(diff), dd)}${r.u === '%' ? ' pts' : ''}`
+  const title = same ? L('Como la liga', 'In line with the league') : L(`${up ? 'Más' : 'Menos'} que la liga${dir === 0 ? ' (cuestión de estilo)' : cls === 'up' ? ', bueno para su equipo' : ', malo para su equipo'}`, `${up ? 'Above' : 'Below'} the league${dir === 0 ? ' (a matter of style)' : cls === 'up' ? ', good for his team' : ', bad for his team'}`)
   const max = has ? Math.max(v!, l!) * 1.35 || 1 : 1
   return (
     <div className="bp-card">
       <div className="bp-card-l">{side === 'favor' ? r.fav : r.con}</div>
       <div className="bp-card-v"><b>{fmt(v, r.d)}{r.u}</b>{has && <span className={`bp-chip ${cls}`} title={title}>{chipTxt}</span>}</div>
       {has && <div className="bp-meter" aria-hidden="true"><i style={{ width: `${(100 * v!) / max}%`, background: color }} /><s style={{ left: `${(100 * l!) / max}%` }} /></div>}
-      <div className="bp-card-liga"><span>liga {fmt(l, r.d)}{r.u}</span>{dir === 0 && <span>estilo</span>}</div>
+      <div className="bp-card-liga"><span>{L('liga', 'league')} {fmt(l, r.d)}{r.u}</span>{dir === 0 && <span>{L('estilo', 'style')}</span>}</div>
     </div>
   )
 }
@@ -51,22 +52,22 @@ export function BalonParado({ art, media }: { art: Any; media?: Any }) {
   const color = clubColor(club, media)
   return (
     <div>
-      <h3 className="h2">Balón parado</h3>
+      <h3 className="h2">{L('Balón parado', 'Set pieces')}</h3>
       <Corners3D art={art} media={media} side={side} onSide={setSide} />
       <section className="bp-ind">
         <div className="bp-ind-head">
-          <div className="h3">{side === 'favor' ? 'Todo su balón parado a favor' : 'Todo el balón parado que recibe'} · contra la liga</div>
-          <div className="seg sm" role="group" aria-label="Indicadores a favor o en contra">
-            <button aria-pressed={side === 'favor'} onClick={() => setSide('favor')}>A favor</button>
-            <button aria-pressed={side === 'contra'} onClick={() => setSide('contra')}>En contra</button>
+          <div className="h3">{side === 'favor' ? L('Todo su balón parado a favor', 'All his attacking set pieces') : L('Todo el balón parado que recibe', 'All the set pieces he concedes')} · {L('contra la liga', 'vs. the league')}</div>
+          <div className="seg sm" role="group" aria-label={L('Indicadores a favor o en contra', 'Attacking or defending indicators')}>
+            <button aria-pressed={side === 'favor'} onClick={() => setSide('favor')}>{L('A favor', 'Attacking')}</button>
+            <button aria-pressed={side === 'contra'} onClick={() => setSide('contra')}>{L('En contra', 'Defending')}</button>
           </div>
         </div>
         <div className="bp-grid">
           {ROWS.map(r => <Card key={r.k} r={r} side={side} v={S[r.k] ?? null} l={l[r.k] ?? null} color={color} />)}
         </div>
         <div className="note">
-          Flecha <span className="bp-arrow up">verde</span>: mejor que la liga para su equipo. <span className="bp-arrow down">Roja</span>: peor. Gris: cuestión de estilo o casi igual a la liga.
-          {' '}Jugadores en el área: promedio en los fotogramas 360. Goles de balón parado a favor / en contra: {o.goles ?? 0} / {d.goles ?? 0}.
+          {L('Flecha ', '')}<span className="bp-arrow up">{L('verde', 'Green')}</span>{L(': mejor que la liga para su equipo. ', ' arrow: better than the league for his team. ')}<span className="bp-arrow down">{L('Roja', 'Red')}</span>{L(': peor. Gris: cuestión de estilo o casi igual a la liga.', ': worse. Grey: a matter of style, or close to the league.')}
+          {' '}{L('Jugadores en el área: promedio en los fotogramas 360. Goles de balón parado a favor / en contra: ', 'Players in the box: average across 360 freeze frames. Set-piece goals scored / conceded: ')}{o.goles ?? 0} / {d.goles ?? 0}.
         </div>
       </section>
     </div>

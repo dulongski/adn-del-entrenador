@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { asset, COMP, divColor, fmt, initials, posTag, sig, type Any } from './lib'
+import { L } from './settings'
+import { posLabel } from './i18n/data'
 
 /* ------------------------------------------------------------ tooltip */
 export function useTip() {
@@ -37,7 +39,7 @@ export function Pitch({ children, labels, half = false, vertical = false, w = '1
 }
 
 /** Rejilla 12x8 sobre la cancha. mode 'div' = diferencia vs liga; 'seq' = magnitud (en el color del club). */
-export function HeatGrid({ grid, mode = 'seq', label, unit = 'por partido', color = 'var(--c-dt)', vertical = false }: { grid: number[][]; mode?: 'seq' | 'div'; label: string; unit?: string; color?: string; vertical?: boolean }) {
+export function HeatGrid({ grid, mode = 'seq', label, unit = L('por partido', 'per match'), color = 'var(--c-dt)', vertical = false }: { grid: number[][]; mode?: 'seq' | 'div'; label: string; unit?: string; color?: string; vertical?: boolean }) {
   const tip = useTip()
   const nx = grid.length, ny = grid[0]?.length || 8
   const flat = grid.flat()
@@ -46,7 +48,7 @@ export function HeatGrid({ grid, mode = 'seq', label, unit = 'por partido', colo
   const [lx, ly] = pitchXY(118, 1, vertical)
   return (
     <div>
-      <Pitch vertical={vertical} labels={vertical ? undefined : <text x={vertical ? 40 : lx} y={vertical ? -0.5 : ly - 1.4} fontSize={3} textAnchor={vertical ? 'middle' : 'end'} fill="var(--ink-3)">{vertical ? 'ataque ↑' : 'ataque →'}</text>}>
+      <Pitch vertical={vertical} labels={vertical ? undefined : <text x={vertical ? 40 : lx} y={vertical ? -0.5 : ly - 1.4} fontSize={3} textAnchor={vertical ? 'middle' : 'end'} fill="var(--ink-3)">{vertical ? L('ataque ↑', 'attack ↑') : L('ataque →', 'attack →')}</text>}>
         {grid.map((col, i) => col.map((v, j) => (
           <rect key={`${i}-${j}`} x={i * 120 / nx + 0.25} y={j * 80 / ny + 0.25} width={120 / nx - 0.5} height={80 / ny - 0.5}
             fill={mode === 'div' ? divColor(v, max) : seq(v)} opacity={0.92} rx={0.4}
@@ -65,16 +67,16 @@ export function HeatGrid({ grid, mode = 'seq', label, unit = 'por partido', colo
       </Pitch>
       {mode === 'div' && (
         <div className="legend" style={{ marginTop: 6 }}>
-          <span><i style={{ background: 'var(--div-neg)' }} />menos que la liga</span>
-          <span><i style={{ background: 'var(--div-mid)', border: '1px solid var(--rule)' }} />igual</span>
-          <span><i style={{ background: 'var(--div-pos)' }} />más que la liga</span>
+          <span><i style={{ background: 'var(--div-neg)' }} />{L('menos que la liga', 'less than the league')}</span>
+          <span><i style={{ background: 'var(--div-mid)', border: '1px solid var(--rule)' }} />{L('igual', 'same')}</span>
+          <span><i style={{ background: 'var(--div-pos)' }} />{L('más que la liga', 'more than the league')}</span>
         </div>
       )}
       {mode === 'seq' && (
         <div className="legend" style={{ marginTop: 6 }}>
-          <span>pocas</span>
+          <span>{L('pocas', 'few')}</span>
           <span style={{ display: 'inline-block', width: 90, height: 10, borderRadius: 3, border: '1px solid var(--rule)', background: `linear-gradient(90deg, ${seq(0)}, ${seq(max)})` }} />
-          <span>muchas ({fmt(max, 1)} {unit})</span>
+          <span>{L('muchas', 'many')} ({fmt(max, 1)} {unit})</span>
         </div>
       )}
       {tip.el}
@@ -89,15 +91,18 @@ export function Legend({ items = COMP as readonly { key: string; label: string; 
 
 /** Desglose legible del prisma: una fila por fuente, barras divergentes desde el promedio de la liga.
  *  Primera fila = lo que se ve en sus partidos; las demás reparten ese valor entre quien lo empuja. */
-const PD_LABEL: Record<string, string> = { obs: 'Lo que se ve', coach: 'Él (DT)', player: 'Sus jugadores', club: 'El club', opp: 'Los rivales', ctx: 'El contexto' }
+const PD_LABEL: Record<string, string> = {
+  obs: L('Lo que se ve', 'What we see'), coach: L('Él (DT)', 'Him (coach)'), player: L('Sus jugadores', 'His players'),
+  club: L('El club', 'The club'), opp: L('Los rivales', 'The opponents'), ctx: L('El contexto', 'The context'),
+}
 export function PrismDetail({ row }: { row: Any }) {
   const rows = [{ key: 'obs', color: 'var(--ink)', v: row.observado as number },
     ...COMP.map(c => ({ key: c.key, color: c.color, v: (row[c.key] ?? 0) as number }))]
   const scale = Math.max(1, ...rows.map(r => Math.abs(r.v))) * 1.05
   const pctX = (v: number) => 50 + (v / scale) * 50
   return (
-    <div className="pd" title="Valores en desviaciones estándar entre equipos (σ). 0 = promedio de la liga.">
-      <div className="pd-axis"><span>← lo baja</span><span>liga</span><span>lo sube →</span></div>
+    <div className="pd" title={L('Valores en desviaciones estándar entre equipos (σ). 0 = promedio de la liga.', 'Values in standard deviations across teams (σ). 0 = league average.')}>
+      <div className="pd-axis"><span>{L('← lo baja', '← pushes it down')}</span><span>{L('liga', 'league')}</span><span>{L('lo sube →', 'pushes it up →')}</span></div>
       {rows.map((r, i) => (
         <div key={r.key} className={`pd-row${i === 0 ? ' pd-obs' : ''}`}>
           <span className="pd-lbl">{i === 0 ? PD_LABEL.obs : <><i style={{ background: r.color }} />{PD_LABEL[r.key] ?? r.key}</>}</span>
@@ -114,7 +119,10 @@ export function PrismDetail({ row }: { row: Any }) {
 
 /** Frase en lenguaje llano que explica el prisma (sin cifras técnicas). */
 const PS_WHO: Record<string, string> = { player: 'sus jugadores', club: 'el club', opp: 'los rivales', ctx: 'el contexto de los partidos' }
+const PS_WHO_EN: Record<string, string> = { player: 'his players', club: 'the club', opp: 'the opponents', ctx: 'the match context' }
+const PS_PLURAL_EN = new Set(['player', 'opp'])
 export function prismSentence(row: Any, etiqueta: string): string {
+  if (L('es', 'en') === 'en') return prismSentenceEn(row, etiqueta)
   const obs = row.observado as number, dt = row.coach as number
   const others = COMP.filter(c => c.key !== 'coach').map(c => ({ who: PS_WHO[c.key] ?? c.label.toLowerCase(), v: (row[c.key] ?? 0) as number }))
     .sort((a, b) => Math.abs(b.v) - Math.abs(a.v))
@@ -132,6 +140,25 @@ export function prismSentence(row: Any, etiqueta: string): string {
   if (Math.sign(dt) === Math.sign(top.v)) return `${base} Él lo empuja ${hacia(dt)}, y ${top.who} todavía más.`
   return `${base} Él lo empuja ${hacia(dt)}, pero ${top.who} ${/^(sus|los) /.test(top.who) ? 'pesan' : 'pesa'} más ${hacia(top.v)}.`
 }
+function prismSentenceEn(row: Any, etiqueta: string): string {
+  const obs = row.observado as number, dt = row.coach as number
+  const others = COMP.filter(c => c.key !== 'coach').map(c => ({ who: PS_WHO_EN[c.key] ?? c.label.toLowerCase(), pl: PS_PLURAL_EN.has(c.key), v: (row[c.key] ?? 0) as number }))
+    .sort((a, b) => Math.abs(b.v) - Math.abs(a.v))
+  const top = others[0]
+  const raw = etiqueta.split(' (')[0]
+  const lo = raw.length > 1 && raw[1] === raw[1].toUpperCase() && raw[1] !== raw[1].toLowerCase() ? raw : raw.charAt(0).toLowerCase() + raw.slice(1)
+  const howMuch = (v: number) => (Math.abs(v) < 0.5 ? 'slightly ' : Math.abs(v) >= 1 ? 'well ' : '')
+  const where = Math.abs(obs) < 0.15 ? 'sits right at the league average' : `sits ${howMuch(obs)}${obs > 0 ? 'above' : 'below'} the league average`
+  const base = `In his matches, “${lo}” ${where}.`
+  const dir = (v: number) => (v > 0 ? 'up' : 'down')
+  if (Math.abs(dt) < 0.08 && Math.abs(top.v) < 0.15) return `${base} Neither he nor his players move it much.`
+  if (Math.sign(obs) !== Math.sign(dt) && Math.abs(obs) >= 0.15 && Math.abs(top.v) > Math.abs(dt)) {
+    return `${base} That isn't his doing: it's driven mainly by ${top.who}. Left to himself, he pulls the other way.`
+  }
+  if (Math.abs(dt) >= Math.abs(top.v)) return `${base} He's the one pushing it ${dir(dt)} the most, ahead of ${top.who}.`
+  if (Math.sign(dt) === Math.sign(top.v)) return `${base} He pushes it ${dir(dt)}, and ${top.who} ${top.pl ? 'push' : 'pushes'} it even further.`
+  return `${base} He pushes it ${dir(dt)}, but ${top.who} ${top.pl ? 'pull' : 'pulls'} it ${dir(top.v)} harder.`
+}
 
 /* ------------------------------------------------------------ huella con IC */
 export function DotCI({ v, se, pctl, scale = 2.5, h = 20 }: { v: number; se?: number | null; pctl?: number | null; scale?: number; h?: number }) {
@@ -141,7 +168,7 @@ export function DotCI({ v, se, pctl, scale = 2.5, h = 20 }: { v: number; se?: nu
   const strong = se ? Math.abs(v) / se >= 2 : Math.abs(v) >= 0.5
   return (
     <svg viewBox={`0 0 ${W} ${h}`} style={{ width: '100%', height: h, display: 'block' }}
-      onMouseMove={e => tip.show(e, <>Efecto DT {sig(v)}{se ? <> ± {fmt(1.96 * se, 2)} (IC 95%)</> : null}{pctl != null ? <><br />percentil {fmt(pctl, 0)} entre DTs</> : null}</>)} onMouseLeave={tip.hide}>
+      onMouseMove={e => tip.show(e, <>{L('Efecto DT', 'Coach effect')} {sig(v)}{se ? <> ± {fmt(1.96 * se, 2)} ({L('IC 95%', '95% CI')})</> : null}{pctl != null ? <><br />{L(`percentil ${fmt(pctl, 0)} entre DTs`, `${fmt(pctl, 0)}th percentile among coaches`)}</> : null}</>)} onMouseLeave={tip.hide}>
       {[-2, -1, 1, 2].map(t => <line key={t} x1={c(t)} x2={c(t)} y1={4} y2={h - 4} stroke="var(--rule)" />)}
       <line x1={mid} x2={mid} y1={1} y2={h - 1} stroke="var(--ink-3)" />
       {se ? <line x1={c(v - 1.96 * se)} x2={c(v + 1.96 * se)} y1={h / 2} y2={h / 2} stroke="var(--c-dt)" strokeWidth={2} strokeLinecap="round" opacity={0.55} /> : null}
@@ -158,7 +185,7 @@ export function MiniLines({ rows, xKey, series, h = 140, yLabel }: {
   const tip = useTip()
   const W = 320, P = { l: 34, r: 10, t: 10, b: 26 }
   const vals = rows.flatMap(r => series.map(s => r[s.key])).filter((v: Any) => v !== null && v !== undefined) as number[]
-  if (!vals.length) return <div className="note">Sin datos suficientes.</div>
+  if (!vals.length) return <div className="note">{L('Sin datos suficientes.', 'Not enough data.')}</div>
   let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals)
   if (hi - lo < 0.5) { hi += 0.25; lo -= 0.25 }
   const x = (i: number) => P.l + (rows.length === 1 ? 0.5 : i / (rows.length - 1)) * (W - P.l - P.r)
@@ -177,7 +204,7 @@ export function MiniLines({ rows, xKey, series, h = 140, yLabel }: {
             <polyline points={pts.map(p => p.join(',')).join(' ')} fill="none" stroke={s.color} strokeWidth={2} strokeDasharray={s.dash} strokeLinejoin="round" />
             {rows.map((r, i) => r[s.key] === null || r[s.key] === undefined ? null :
               <circle key={i} cx={x(i)} cy={y(r[s.key])} r={4} fill={s.dash ? 'var(--surface)' : s.color} stroke={s.color} strokeWidth={2}
-                onMouseMove={e => tip.show(e, <><b>{s.label}</b> · {r[xKey]}<br />{sig(r[s.key])}{r.n_dt !== undefined && !s.dash ? <><br />{r.n_dt} segmentos</> : null}</>)} onMouseLeave={tip.hide} />)}
+                onMouseMove={e => tip.show(e, <><b>{s.label}</b> · {r[xKey]}<br />{sig(r[s.key])}{r.n_dt !== undefined && !s.dash ? <><br />{r.n_dt} {L('segmentos', 'segments')}</> : null}</>)} onMouseLeave={tip.hide} />)}
           </g>
         )
       })}
@@ -203,19 +230,19 @@ export function HBar({ items, max, color = 'var(--c-dt)', unit = '', compare }: 
           <span className="mono" style={{ fontSize: 12, textAlign: 'right' }}>{fmt(it.v)}{unit}</span>
         </div>
       ))}
-      {compare && <div className="note">Línea negra: {compare}</div>}
+      {compare && <div className="note">{L('Línea negra', 'Black line')}: {compare}</div>}
     </div>
   )
 }
 
-export function How({ children, title = '¿Cómo se calcula?' }: { children: ReactNode; title?: string }) {
+export function How({ children, title = L('¿Cómo se calcula?', 'How is it calculated?') }: { children: ReactNode; title?: string }) {
   return <details className="how"><summary>{title}</summary><div>{children}</div></details>
 }
 
 /* ------------------------------------------------------------ identidad visual */
 export function PosTag({ pos }: { pos: string }) {
   const t = posTag(pos)
-  return <span className={`pos pos-${t.group}`} title={pos}>{t.abbr}</span>
+  return <span className={`pos pos-${t.group}`} title={posLabel(pos)}>{t.abbr}</span>
 }
 
 export function ClubLogo({ club, media, size = 18 }: { club: string; media: Any; size?: number }) {
@@ -233,7 +260,7 @@ export function CoachPhoto({ name, src, size = 112 }: { name: string; src?: stri
   const [bad, setBad] = useState(false)
   return (
     <span className="coach-photo" style={{ width: size, height: size }}>
-      {src && !bad ? <img src={asset(src)!} alt={`Foto de ${name}`} onError={() => setBad(true)} /> : <span className="coach-initials" style={{ fontSize: size * 0.36 }}>{initials(name)}</span>}
+      {src && !bad ? <img src={asset(src)!} alt={L(`Foto de ${name}`, `Photo of ${name}`)} onError={() => setBad(true)} /> : <span className="coach-initials" style={{ fontSize: size * 0.36 }}>{initials(name)}</span>}
     </span>
   )
 }

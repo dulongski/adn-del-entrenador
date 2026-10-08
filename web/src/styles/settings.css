@@ -32,4 +32,7 @@
 .cfg-lang { margin: 0; }
 .cfg-logos { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .cfg-logo { justify-content: center; padding: 8px 4px; }
-@media (max-width: 700px) { .cfg-panel { left: 0; top: 52px; width: calc(100vw - 28px); } }
+@media (max-width: 700px) {
+  .cfg { top: auto; bottom: 16px; left: 14px; }
+  .cfg-panel { top: auto; bottom: 52px; left: 0; width: calc(100vw - 28px); max-height: calc(100vh - 120px); }
+}

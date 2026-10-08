@@ -85,3 +85,6 @@
 /* lista de arquetipos: reparte la altura de la tarjeta de la animación */
 .arq .arq-list { display: flex; flex-direction: column; }
 .arq .arq-list .arq-row { flex: 1 1 auto; max-height: 64px; }
+/* motores del contexto: tres columnas en escritorio, apiladas en el teléfono */
+.ctx-drv { display: grid; grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) minmax(120px, 190px); gap: 10px; align-items: center; margin: 6px 0; }
+@media (max-width: 620px) { .ctx-drv { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); } .ctx-drv > :last-child { grid-column: 1 / -1; } }

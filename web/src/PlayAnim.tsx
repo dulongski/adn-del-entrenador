@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { jugadorCorto, type Any } from './lib'
 import { ClubLogo, Pitch } from './charts'
 import './styles/juego.css'
+import { L, LANG, LOCALE } from './settings'
 
 /** Etiqueta mínima: apodo de una palabra o apellido (con partículas: «de la Rosa»). */
 export function apellidoCorto(n: string) {
@@ -12,12 +13,19 @@ export function apellidoCorto(n: string) {
   return t.slice(i).join(' ')
 }
 
-export const RES_ES: Record<string, string> = {
+export const RES_ES: Record<string, string> = LANG === 'en' ? {
+  Goal: 'Goal', Saved: 'Saved', 'Saved to Post': 'Saved onto the post', 'Saved Off Target': 'Saved', Post: 'Hit the post',
+  'Off T': 'Off target', Wayward: 'Way off target', Blocked: 'Blocked',
+} : {
   Goal: 'Gol', Saved: 'Atajado', 'Saved to Post': 'Atajado al poste', 'Saved Off Target': 'Atajado', Post: 'Al poste',
   'Off T': 'Desviado', Wayward: 'Muy desviado', Blocked: 'Bloqueado',
 }
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
-export const fecha = (d: string) => { const [y, m, dd] = d.split('-'); return `${+dd} ${MESES[+m - 1]} ${y}` }
+export const fecha = (d: string) => {
+  const [y, m, dd] = d.split('-')
+  if (LANG === 'en') return new Date(+y, +m - 1, +dd).toLocaleDateString(LOCALE, { month: 'short', day: 'numeric', year: 'numeric' })
+  return `${+dd} ${MESES[+m - 1]} ${y}`
+}
 
 export function useReducedMotion() {
   const q = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
@@ -161,18 +169,18 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
   const onBall = steps[ci]?.t === 'Pass' && time > steps[ci].s ? null : steps[ci]?.a
   const fin = meta?.fin as string | undefined
   const resName = meta?.res != null && meta.res >= 0 ? ['Goal', 'Saved', 'Saved to Post', 'Saved Off Target', 'Post', 'Off T', 'Wayward', 'Blocked'][meta.res] : null
-  const endLabel = fin === 'gol' ? '¡Gol!' : fin === 'tiro' ? `Tiro · ${(resName && RES_ES[resName]) || 'sin gol'}` : fin === 'perdida' ? 'Pérdida' : 'Fin de la jugada'
+  const endLabel = fin === 'gol' ? L('¡Gol!', 'Goal!') : fin === 'tiro' ? `${L('Tiro', 'Shot')} · ${(resName && RES_ES[resName]) || L('sin gol', 'no goal')}` : fin === 'perdida' ? L('Pérdida', 'Ball lost') : L('Fin de la jugada', 'End of the move')
 
-  const nm = (p: number | null) => (p != null && names[p]) || 'un compañero'
+  const nm = (p: number | null) => (p != null && names[p]) || L('un compañero', 'a teammate')
   const caption = (() => {
     if (!steps.length) return ''
-    if (finished && done) { const n = steps.filter(x => x.t !== 'Gap').length; return `${n} ${n === 1 ? 'acción' : 'acciones'} · ${endLabel}` }
+    if (finished && done) { const n = steps.filter(x => x.t !== 'Gap').length; return `${n} ${n === 1 ? L('acción', 'action') : L('acciones', 'actions')} · ${endLabel}` }
     const st = steps[ci]
-    if (time < st.s && ci === 0) return `Arranca ${nm(st.a)}`
-    if (st.t === 'Pass') return st.ok ? `Pase de ${nm(st.a)}${st.r != null ? ` a ${nm(st.r)}` : ''}` : `Pase de ${nm(st.a)}, no llega`
-    if (st.t === 'Carry') return `Conduce ${nm(st.a)}`
-    if (st.t === 'Gap') return `El balón le llega a ${nm(st.r)}`
-    return `Remata ${nm(st.a)}${time >= st.e ? ` · ${endLabel}` : ''}`
+    if (time < st.s && ci === 0) return L(`Arranca ${nm(st.a)}`, `${nm(st.a)} starts it`)
+    if (st.t === 'Pass') return st.ok ? L(`Pase de ${nm(st.a)}${st.r != null ? ` a ${nm(st.r)}` : ''}`, `${nm(st.a)} passes${st.r != null ? ` to ${nm(st.r)}` : ''}`) : L(`Pase de ${nm(st.a)}, no llega`, `${nm(st.a)}'s pass doesn't connect`)
+    if (st.t === 'Carry') return L(`Conduce ${nm(st.a)}`, `${nm(st.a)} carries it`)
+    if (st.t === 'Gap') return L(`El balón le llega a ${nm(st.r)}`, `The ball reaches ${nm(st.r)}`)
+    return `${L(`Remata ${nm(st.a)}`, `${nm(st.a)} shoots`)}${time >= st.e ? ` · ${endLabel}` : ''}`
   })()
 
   const mk = `pa-ar-${uid}`
@@ -209,7 +217,7 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
           <span className="pa-vs">vs</span>
           <ClubLogo club={partido[1]} media={media} size={18} />
           <b>{partido[1]}</b>
-          <span className="note">{partido[2] ? 'local' : 'visita'} · {fecha(partido[0])}{meta?.min != null ? ` · min ${meta.min + 1}'` : ''} · terminó {partido[3]}-{partido[4]}</span>
+          <span className="note">{partido[2] ? L('local', 'home') : L('visita', 'away')} · {fecha(partido[0])}{meta?.min != null ? ` · min ${meta.min + 1}'` : ''} · {L('terminó', 'final')} {partido[3]}-{partido[4]}</span>
         </div>
       )}
       <Pitch labels={<>
@@ -219,7 +227,7 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
           return <text key={p} x={lx} y={ly} fontSize={FS} fontWeight={600} textAnchor={an} fill="var(--ink)" opacity={o}
             className="pa-label">{names[p]}</text>
         })}
-        {steps.length > 0 && time >= 0 && <text x={steps[0].x} y={steps[0].y - R - 1.2} fontSize={FS * 0.85} textAnchor="middle" fill="var(--ink-2)" className="pa-label">inicio</text>}
+        {steps.length > 0 && time >= 0 && <text x={steps[0].x} y={steps[0].y - R - 1.2} fontSize={FS * 0.85} textAnchor="middle" fill="var(--ink-2)" className="pa-label">{L('inicio', 'start')}</text>}
         {finished && last && (
           <text x={Math.max(10, Math.min(last.ex, 110))} y={Math.hypot(last.ex - steps[0].x, last.ey - steps[0].y) < 12 || last.ey < 9 ? Math.min(78, last.ey + R + FS * 2.3) : last.ey - R - FS * 0.6} fontSize={fin === 'gol' ? FS * 1.45 : FS * 1.1} fontWeight={800} textAnchor="middle"
             fill={fin === 'gol' ? color : 'var(--ink)'} className="pa-label pa-end">{endLabel}</text>
@@ -260,18 +268,18 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
         {ball && !(finished && done && fin === 'perdida') && <circle cx={ball[0]} cy={ball[1]} r={R * 0.47} fill="#fff" stroke="#111" strokeWidth={0.3} />}
       </Pitch>
       <div className="pa-bar">
-        <button className="pa-btn" onClick={toggle} aria-label={playing ? 'Pausar' : done ? 'Ver de nuevo' : 'Reproducir'}>
+        <button className="pa-btn" onClick={toggle} aria-label={playing ? L('Pausar', 'Pause') : done ? L('Ver de nuevo', 'Watch again') : L('Reproducir', 'Play')}>
           {playing ? <svg viewBox="0 0 10 10" width="12" height="12"><rect x="1.5" y="1" width="2.5" height="8" fill="currentColor" /><rect x="6" y="1" width="2.5" height="8" fill="currentColor" /></svg>
             : done ? <svg viewBox="0 0 10 10" width="13" height="13"><path d="M5 1.2a3.8 3.8 0 1 1-3.6 2.6" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="M0.6 1.2 L1.6 4.4 L4.4 2.8z" fill="currentColor" /></svg>
               : <svg viewBox="0 0 10 10" width="12" height="12"><path d="M2 1 L9 5 L2 9z" fill="currentColor" /></svg>}
         </button>
-        <div className="pa-track" role="slider" aria-label="Progreso de la jugada" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(time / total * 100)} tabIndex={0}
+        <div className="pa-track" role="slider" aria-label={L('Progreso de la jugada', 'Play progress')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(time / total * 100)} tabIndex={0}
           onClick={e => { const r = e.currentTarget.getBoundingClientRect(); setTime(clamp01((e.clientX - r.left) / r.width) * total) }}
           onKeyDown={e => { if (e.key === 'ArrowRight') setTime(t => Math.min(total, t + 400)); if (e.key === 'ArrowLeft') setTime(t => Math.max(0, t - 400)) }}>
           {steps.map((st, i) => <i key={i} style={{ left: `${st.s / total * 100}%` }} />)}
           <span style={{ width: `${time / total * 100}%`, background: color }} />
         </div>
-        {!done && time > 0 && <button className="pa-btn ghost" onClick={replay} aria-label="Reiniciar">↺</button>}
+        {!done && time > 0 && <button className="pa-btn ghost" onClick={replay} aria-label={L('Reiniciar', 'Restart')}>↺</button>}
         <span className="pa-cap" aria-live="polite">{caption}</span>
       </div>
     </div>

@@ -1,5 +1,7 @@
 import { ClubLogo, Pitch, pitchXY, PosTag } from '../charts'
 import { clubColor, fmt, jugadorCorto, posTag, type Any } from '../lib'
+import { L } from '../settings'
+import { posLabel } from '../i18n/data'
 
 /* Once típico sobre una cancha vertical + selector de club. Datos: web/public/data/jugadores_<id>.json
    (pipeline/jugadores_extra.py). Coordenadas StatsBomb: x hacia el arco rival (0-120), y 0 = banda izquierda. */
@@ -47,7 +49,7 @@ export function OncePitch({ sel, club, media }: { sel: Any; club: string | null;
             const nm = jugadorCorto(p.id, p.nombre)
             return (
               <g key={p.id}>
-                <title>{`${p.nombre} · ${p.posicion} · titular ${p.tit} de ${sel.partidos_dibujo} veces con este dibujo`}</title>
+                <title>{L(`${p.nombre} · ${p.posicion} · titular ${p.tit} de ${sel.partidos_dibujo} veces con este dibujo`, `${p.nombre} · ${posLabel(p.posicion)} · started ${p.tit} of ${sel.partidos_dibujo} times in this formation`)}</title>
                 <circle cx={sx} cy={sy} r={4.1} fill={GROUP_COLOR[g]} stroke="var(--surface)" strokeWidth={0.7} opacity={0.55 + 0.45 * p.tit / maxTit} />
                 <text x={sx} y={sy + 1.2} fontSize={2.9} fontWeight={800} textAnchor="middle" fill={g === 'def' ? '#1b1400' : '#fff'} style={{ fontFamily: 'var(--display)' }}>{posTag(p.posicion).abbr}</text>
                 <text x={sx} y={sy + 7.6} fontSize={3.2} fontWeight={700} textAnchor="middle" fill="#fff" stroke="rgba(0,0,0,.55)" strokeWidth={0.8} paintOrder="stroke">{nm.length > 16 ? nm.split(' ').slice(-1)[0] : nm}</text>
@@ -58,7 +60,7 @@ export function OncePitch({ sel, club, media }: { sel: Any; club: string | null;
       } />
       <div className="jg-pitch-cap">
         {club ? <ClubLogo club={club} media={media} size={22} /> : null}
-        <span><b>{dibujo(sel.dibujo)}</b> · el once que más se repitió con ese dibujo</span>
+        <span><b>{dibujo(sel.dibujo)}</b> · {L('el once que más se repitió con ese dibujo', 'his most repeated XI in that formation')}</span>
       </div>
     </div>
   )
@@ -68,15 +70,15 @@ export function ClubSwitch({ clubes, value, set, media, partidos, carrera }: {
   clubes: string[]; value: string; set: (c: string) => void; media: Any; partidos: Record<string, number>; carrera: number
 }) {
   return (
-    <div className="jg-switch" role="group" aria-label="Elegir club">
+    <div className="jg-switch" role="group" aria-label={L('Elegir club', 'Choose club')}>
       {clubes.map(c => (
         <button key={c} aria-pressed={value === c} onClick={() => set(c)} style={{ ['--cc' as string]: clubColor(c, media) }}>
-          <ClubLogo club={c} media={media} size={18} /><span>{c}</span><small>{partidos[c]} p.</small>
+          <ClubLogo club={c} media={media} size={18} /><span>{c}</span><small>{partidos[c]} {L('p.', 'MP')}</small>
         </button>
       ))}
       {clubes.length > 1 && (
         <button aria-pressed={value === CARRERA} onClick={() => set(CARRERA)}>
-          <span>Toda su carrera</span><small>{carrera} p.</small>
+          <span>{L('Toda su carrera', 'Whole career')}</span><small>{carrera} {L('p.', 'MP')}</small>
         </button>
       )}
     </div>
@@ -93,9 +95,9 @@ export function FormList({ forms, total, color }: { forms: Record<string, number
     <div className="jg-forms">
       {all.map(([f, v], i) => (
         <div key={f} className="jg-form-row">
-          <span className={i === 0 ? 'jg-form-name top' : 'jg-form-name'}>{f === 'otros' ? 'Otros' : dibujo(f)}</span>
+          <span className={i === 0 ? 'jg-form-name top' : 'jg-form-name'}>{f === 'otros' ? L('Otros', 'Other') : dibujo(f)}</span>
           <span className="jg-form-bar"><i style={{ width: `${(100 * v) / max}%`, background: i === 0 ? color : 'var(--ink-3)' }} /></span>
-          <span className="jg-form-val">{fmt((100 * v) / total, 0)}%<small> · {v} p.</small></span>
+          <span className="jg-form-val">{fmt((100 * v) / total, 0)}%<small> · {v} {L('p.', 'MP')}</small></span>
         </div>
       ))}
     </div>
@@ -109,11 +111,11 @@ export function OnceList({ sel, color }: { sel: Any; color: string }) {
   return (
     <div className="jg-xi" style={{ gridTemplateRows: `repeat(${Math.ceil(pts.length / 2)}, auto)` }}>
       {pts.map(p => (
-        <div key={p.id} className="jg-xi-row" title={`${p.nombre}: titular ${p.tit} de ${n} partidos con ${dibujo(sel.dibujo)}`}>
+        <div key={p.id} className="jg-xi-row" title={L(`${p.nombre}: titular ${p.tit} de ${n} partidos con ${dibujo(sel.dibujo)}`, `${p.nombre}: started ${p.tit} of ${n} matches in the ${dibujo(sel.dibujo)}`)}>
           <PosTag pos={p.posicion} />
           <span className="jg-xi-name">{jugadorCorto(p.id, p.nombre)}</span>
           <span className="jg-form-bar"><i style={{ width: `${(100 * p.tit) / n}%`, background: color }} /></span>
-          <span className="jg-form-val">{p.tit}<small> de {n}</small></span>
+          <span className="jg-form-val">{p.tit}<small> {L('de', 'of')} {n}</small></span>
         </div>
       ))}
     </div>

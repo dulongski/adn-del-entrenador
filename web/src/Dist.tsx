@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import boot from './boot.json'
 import { dataUrl, fmt, getJSON, shortName, type Any } from './lib'
+import { L } from './settings'
 
 /* Distribución entre DTs ("campana"): densidad espejada de los 70+ DTs para un indicador, cada DT
    como un punto (pasa el cursor para ver quién es), la línea de la liga y el/los DT(s) resaltados.
@@ -29,7 +30,7 @@ export function rankOf(values: { v: number }[], v: number) {
 
 export type Mark = { id: number | string; color: string; label?: string }
 
-export default function Dist({ values, marks, refV = 0, refLabel = 'liga', format = (v: number) => fmt(v, 2), low = 'menos', high = 'más',
+export default function Dist({ values, marks, refV = 0, refLabel = L('liga', 'league'), format = (v: number) => fmt(v, 2), low = L('menos', 'less'), high = L('más', 'more'),
   height = 96, compact = false }: {
   values: { id: number | string; v: number }[]; marks: Mark[]; refV?: number | null; refLabel?: string; format?: (v: number) => string
   low?: string; high?: string; height?: number; compact?: boolean

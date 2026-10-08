@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ClubLogo, CoachPhoto } from './charts'
 import { shortName, type Any } from './lib'
+import { L } from './settings'
+import { mapLabel } from './i18n/data'
 
 /* Buscador de la portada: por DT o por club (actual o pasado). Mientras escribes, el mapa atenúa a
    quien no coincide; al pasar por un resultado su burbuja se resalta. ↑↓ para moverte, Enter abre,
@@ -33,6 +35,7 @@ export default function MapSearch({ mapa, media, onPick, q, setQ, setPulse, hueO
   const input = useRef<HTMLInputElement>(null)
   const res = useMemo(() => searchCoaches(mapa, media, q) ?? [], [mapa, media, q])
   const fam = (g: number) => mapa.grupos.find((x: Any) => x.id === g)?.nombre ?? ''
+  const famL = (g: number) => mapLabel(fam(g))
   useEffect(() => { setSel(0) }, [q])
   useEffect(() => { setPulse(open && res[sel] ? res[sel].p.id : null) }, [sel, res, open, setPulse])
   useEffect(() => {
@@ -50,7 +53,7 @@ export default function MapSearch({ mapa, media, onPick, q, setQ, setPulse, hueO
     <div className={`msearch${open && q ? ' open' : ''}`} onPointerDown={e => e.stopPropagation()} onWheel={e => e.stopPropagation()}>
       <div className="msearch-box">
         <svg className="msearch-ic" viewBox="0 0 24 24" aria-hidden><circle cx="10.5" cy="10.5" r="6.5" /><line x1="15.5" y1="15.5" x2="21" y2="21" /></svg>
-        <input ref={input} value={q} placeholder="Busca un entrenador o un club…" aria-label="Buscar entrenador o club"
+        <input ref={input} value={q} placeholder={L('Busca un entrenador o un club…', 'Search for a coach or a club…')} aria-label={L('Buscar entrenador o club', 'Search coach or club')}
           role="combobox" aria-expanded={open && !!q} aria-controls="msearch-list" aria-autocomplete="list"
           onChange={e => { setQ(e.target.value); setOpen(true) }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 120)}
           onKeyDown={e => {
@@ -59,12 +62,12 @@ export default function MapSearch({ mapa, media, onPick, q, setQ, setPulse, hueO
             else if (e.key === 'Enter' && shown[sel]) go(shown[sel].p.id)
             else if (e.key === 'Escape') { setQ(''); input.current?.blur() }
           }} />
-        {q ? <button className="msearch-x" aria-label="Limpiar búsqueda" onClick={() => { setQ(''); input.current?.focus() }}>×</button>
+        {q ? <button className="msearch-x" aria-label={L('Limpiar búsqueda', 'Clear search')} onClick={() => { setQ(''); input.current?.focus() }}>×</button>
           : <kbd className="msearch-kbd" aria-hidden>/</kbd>}
       </div>
       {open && q && (
         <ul className="msearch-list" id="msearch-list" role="listbox">
-          {shown.length === 0 && <li className="msearch-empty">Ningún DT ni club coincide con «{q}».</li>}
+          {shown.length === 0 && <li className="msearch-empty">{L(`Ningún DT ni club coincide con «${q}».`, `No coach or club matches “${q}”.`)}</li>}
           {shown.map((r, i) => {
             const m = media.dts?.[r.p.id] ?? {}
             return (
@@ -74,21 +77,21 @@ export default function MapSearch({ mapa, media, onPick, q, setQ, setPulse, hueO
                   <span className="msearch-who">
                     <b>{shortName(r.p.nombre)}</b>
                     <span className="msearch-meta">
-                      {r.now && <><ClubLogo club={r.now} media={media} size={14} /> {m.vigente ? r.now : `último club: ${r.now}`}</>}
-                      {r.clubHit && r.clubHit !== r.now && <span className="msearch-past">· dirigió a {r.clubHit}</span>}
-                      <span>· {r.p.partidos} partidos</span>
+                      {r.now && <><ClubLogo club={r.now} media={media} size={14} /> {m.vigente ? r.now : L(`último club: ${r.now}`, `last club: ${r.now}`)}</>}
+                      {r.clubHit && r.clubHit !== r.now && <span className="msearch-past">· {L('dirigió a', 'coached')} {r.clubHit}</span>}
+                      <span>· {r.p.partidos} {L('partidos', 'matches')}</span>
                     </span>
                   </span>
-                  <span className="msearch-fam" style={{ ['--hue' as string]: hueOf(r.p.grupo) }}><i />{fam(r.p.grupo)}</span>
-                  {m.vigente && <span className="msearch-live">activo</span>}
+                  <span className="msearch-fam" style={{ ['--hue' as string]: hueOf(r.p.grupo) }}><i />{famL(r.p.grupo)}</span>
+                  {m.vigente && <span className="msearch-live">{L('activo', 'active')}</span>}
                 </button>
               </li>
             )
           })}
-          {res.length > shown.length && <li className="msearch-more">{res.length - shown.length} más resaltados en el mapa</li>}
+          {res.length > shown.length && <li className="msearch-more">{L(`${res.length - shown.length} más resaltados en el mapa`, `${res.length - shown.length} more highlighted on the map`)}</li>}
         </ul>
       )}
-      {q && !open && <div className="msearch-count">{res.length} {res.length === 1 ? 'coincidencia' : 'coincidencias'} en el mapa</div>}
+      {q && !open && <div className="msearch-count">{res.length} {res.length === 1 ? L('coincidencia', 'match') : L('coincidencias', 'matches')} {L('en el mapa', 'on the map')}</div>}
     </div>
   )
 }

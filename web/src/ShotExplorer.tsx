@@ -3,9 +3,10 @@ import { fmt, jugadorCorto, type Any } from './lib'
 import { ClubLogo, Pitch, useTip } from './charts'
 import { fecha, RES_ES } from './PlayAnim'
 import './styles/juego.css'
+import { L } from './settings'
 
-const CUERPO_ES: Record<string, string> = { 'Right Foot': 'pierna derecha', 'Left Foot': 'pierna izquierda', Head: 'cabeza', Other: 'otra parte' }
-const TIPO_ES: Record<string, string> = { Penalty: 'penal', 'Free Kick': 'tiro libre directo', Corner: 'córner directo' }
+const CUERPO_ES: Record<string, string> = { 'Right Foot': L('pierna derecha', 'right foot'), 'Left Foot': L('pierna izquierda', 'left foot'), Head: L('cabeza', 'header'), Other: L('otra parte', 'other') }
+const TIPO_ES: Record<string, string> = { Penalty: L('penal', 'penalty'), 'Free Kick': L('tiro libre directo', 'direct free kick'), Corner: L('córner directo', 'direct from a corner') }
 
 export type Shot = {
   i: number; x: number; y: number; ex: number | null; ey: number | null; ez: number | null; xg: number; res: string; cuerpo: string | null; tipo: string
@@ -30,7 +31,7 @@ function ShotTip({ s, media }: { s: Shot; media: Any }) {
     <div className="st-tip">
       <div><b>{s.jugador}</b> · min {s.min + 1}'</div>
       <div className="st-tip-row"><ClubLogo club={s.p[1]} media={media} size={16} /><span>vs {s.p[1]}</span></div>
-      <div>{fecha(s.p[0])} · {s.p[2] ? 'local' : 'visita'} · terminó {s.p[3]}-{s.p[4]}</div>
+      <div>{fecha(s.p[0])} · {s.p[2] ? L('local', 'home') : L('visita', 'away')} · {L('terminó', 'final')} {s.p[3]}-{s.p[4]}</div>
       <div><b>{RES_ES[s.res] ?? s.res}</b> · xG {fmt(s.xg, 2)}{s.cuerpo ? ` · ${CUERPO_ES[s.cuerpo]}` : ''}{TIPO_ES[s.tipo] ? ` · ${TIPO_ES[s.tipo]}` : ''}</div>
     </div>
   )
@@ -58,14 +59,14 @@ export function ShotExplorer({ shots, color, media }: { shots: Shot[]; color: st
     <div className="st">
       <div className="st-top">
         <div className="seg sm" role="group">
-          <button aria-pressed={filtro === 'todos'} onClick={() => setFiltro('todos')}>Todos ({shots.length})</button>
-          <button aria-pressed={filtro === 'goles'} onClick={() => setFiltro('goles')}>Goles ({goles})</button>
+          <button aria-pressed={filtro === 'todos'} onClick={() => setFiltro('todos')}>{L('Todos', 'All')} ({shots.length})</button>
+          <button aria-pressed={filtro === 'goles'} onClick={() => setFiltro('goles')}>{L('Goles', 'Goals')} ({goles})</button>
         </div>
         {ranked.length > 0 && (
           <div className="carousel sm">
-            <button onClick={() => setK((k - 1 + ranked.length) % ranked.length)} aria-label="Tiro anterior">‹</button>
+            <button onClick={() => setK((k - 1 + ranked.length) % ranked.length)} aria-label={L('Tiro anterior', 'Previous shot')}>‹</button>
             <span className="mono">{k + 1}/{ranked.length}</span>
-            <button onClick={() => setK((k + 1) % ranked.length)} aria-label="Tiro siguiente">›</button>
+            <button onClick={() => setK((k + 1) % ranked.length)} aria-label={L('Tiro siguiente', 'Next shot')}>›</button>
           </div>
         )}
       </div>
@@ -92,11 +93,11 @@ export function ShotExplorer({ shots, color, media }: { shots: Shot[]; color: st
           <div className="st-info">
             <div className="st-who"><b>{sel.jugador}</b><span className={`st-res${sel.gol ? ' gol' : ''}`} style={sel.gol ? { background: color } : undefined}>{RES_ES[sel.res] ?? sel.res}</span></div>
             <div className="st-row"><ClubLogo club={sel.p[1]} media={media} size={16} /><span>vs {sel.p[1]}</span></div>
-            <div className="note">{fecha(sel.p[0])} · {sel.p[2] ? 'local' : 'visita'} · min {sel.min + 1}'{sel.gp != null ? ` · iban ${sel.gp}-${sel.gr}` : ''} · terminó {sel.p[3]}-{sel.p[4]}</div>
+            <div className="note">{fecha(sel.p[0])} · {sel.p[2] ? L('local', 'home') : L('visita', 'away')} · min {sel.min + 1}'{sel.gp != null ? ` · ${L('iban', 'score was')} ${sel.gp}-${sel.gr}` : ''} · {L('terminó', 'final')} {sel.p[3]}-{sel.p[4]}</div>
             <div className="note">xG {fmt(sel.xg, 2)}{sel.cuerpo ? ` · ${CUERPO_ES[sel.cuerpo]}` : ''}{TIPO_ES[sel.tipo] ? ` · ${TIPO_ES[sel.tipo]}` : ''}</div>
           </div>
           <div className="st-goal-wrap">
-          <svg className="st-goal" viewBox="0 19 120 37" role="img" aria-label="Dónde terminó el tiro en la portería">
+          <svg className="st-goal" viewBox="0 19 120 37" role="img" aria-label={L('Dónde terminó el tiro en la portería', 'Where the shot ended up in the goal')}>
             <line x1={0} x2={120} y1={52} y2={52} stroke="var(--ink-3)" strokeWidth={0.6} />
             <rect x={gx(G.y0)} y={gy(G.h)} width={gx(G.y1) - gx(G.y0)} height={gy(0) - gy(G.h)} fill="color-mix(in oklab, var(--pitch) 70%, transparent)" />
             <g stroke="var(--ink-3)" strokeWidth={0.2} opacity={0.6}>
@@ -110,15 +111,15 @@ export function ShotExplorer({ shots, color, media }: { shots: Shot[]; color: st
             {onFrame(sel) ? (
               <circle cx={gx(Math.max(G.y0 - 4.2, Math.min(G.y1 + 4.2, sel.ey!)))} cy={gy(Math.min(4.2, sel.ez!))} r={2.6} fill={sel.gol ? color : 'var(--surface)'} stroke="var(--ink)" strokeWidth={0.7} />
             ) : (
-              <text x={60} y={30} fontSize={5.5} textAnchor="middle" fill="var(--ink-3)">{sel.res === 'Blocked' ? 'bloqueado antes de llegar' : 'lejos de la portería'}</text>
+              <text x={60} y={30} fontSize={5.5} textAnchor="middle" fill="var(--ink-3)">{sel.res === 'Blocked' ? L('bloqueado antes de llegar', 'blocked before reaching goal') : L('lejos de la portería', 'wide of the goal')}</text>
             )}
           </svg>
           </div>
         </div>
-      ) : <div className="note">Sin tiros en este club.</div>}
+      ) : <div className="note">{L('Sin tiros en este club.', 'No shots at this club.')}</div>}
       {ranked.length > 1 && (
         <div className="st-next">
-          <span className="jg-ctrl-label">Siguientes en la lista</span>
+          <span className="jg-ctrl-label">{L('Siguientes en la lista', 'Next on the list')}</span>
           {[1, 2].map(d => k + d).filter(i => i < ranked.length).map(i => {
             const s = ranked[i]
             return (
@@ -132,7 +133,7 @@ export function ShotExplorer({ shots, color, media }: { shots: Shot[]; color: st
           })}
         </div>
       )}
-      <div className="note st-foot">{fmt(goles, 0)} goles con {fmt(xg, 1)} xG (goles esperados). Tamaño = xG, relleno = gol. Abajo, la portería vista desde el tirador (tenues: sus otros goles). ‹ › va de la ocasión más clara a la menos clara.</div>
+      <div className="note st-foot">{L(`${fmt(goles, 0)} goles con ${fmt(xg, 1)} xG (goles esperados). Tamaño = xG, relleno = gol. Abajo, la portería vista desde el tirador (tenues: sus otros goles). ‹ › va de la ocasión más clara a la menos clara.`, `${fmt(goles, 0)} ${goles === 1 ? 'goal' : 'goals'} from ${fmt(xg, 1)} xG (expected goals). Size = xG, filled = goal. Below, the goal as the shooter sees it (faded: his other goals). ‹ › runs from the clearest chance to the least clear.`)}</div>
       {tip.el}
     </div>
   )
