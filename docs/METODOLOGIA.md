@@ -44,7 +44,7 @@ Las coordenadas son las de StatsBomb: cancha de 120×80 yardas y el equipo que e
 | **Stint** | Intervalo del partido sin cambios en los 22 jugadores en cancha ni en el marcador. |
 | **Segmento** | Stints consecutivos unidos hasta sumar ≥ 5 minutos. Es la **unidad del modelo**: las covariables (exposición de jugadores, estado del marcador) se ponderan por tiempo. |
 
-**Coherencia interna.** Cada uno de los 35 indicadores es un cociente *numerador/denominador* de contadores calculados por (stint, equipo). Cualquier agregación, sea segmento, partido, temporada o DT, se calcula igual: Σnum / Σden. Así un número del informe, uno del gráfico y uno del modelo siempre coinciden.
+**Coherencia interna.** Cada uno de los 34 indicadores es un cociente *numerador/denominador* de contadores calculados por (stint, equipo). Cualquier agregación, sea segmento, partido, temporada o DT, se calcula igual: Σnum / Σden. Así un número del informe, uno del gráfico y uno del modelo siempre coinciden.
 
 **Supuestos explícitos:**
 - El DT de cada partido es el que registra StatsBomb.
@@ -52,7 +52,7 @@ Las coordenadas son las de StatsBomb: cancha de 120×80 yardas y el equipo que e
 - El 360 solo se usa en los partidos que lo tienen: los indicadores 360 tienen denominador 0 donde no hay datos y el modelo los pondera en consecuencia.
 - Los segmentos de menos de 5 minutos se unen al siguiente.
 
-## 4. Vector de estilo (35 indicadores + 8 jugadas tipo)
+## 4. Vector de estilo (34 indicadores + 8 jugadas tipo)
 
 Familias según las fases que pide el reto (5.1): **Construcción** (posesión, salida corta del portero, pase largo, construcción exitosa, pases por posesión, tempo), **Progresión** (verticalidad, acciones progresivas, progresión por conducción y por banda, cambios de orientación, entradas al último tercio), **Ocasiones** (xG/90, xG por tiro, tiros/90, llegada al área, centros, OBV/90), **Presión** (PPDA, altura de presión, presión alta, intensidad, contrapresión, recuperaciones altas), **Organización defensiva** (altura de acciones defensivas, línea 360, longitud del bloque 360, duración de las posesiones rivales, xG en contra), **Transiciones** (transiciones rápidas, % del xG que nace de transiciones, transiciones concedidas), **Dominio** (field tilt) y **Balón parado** (xG/90).
 
@@ -86,7 +86,7 @@ Simulamos una liga de 10 clubes y 4 temporadas en la que **cada DT ficha jugador
 Para cada DT que dirigió ≥ 2 clubes (con ≥ 8 partidos en cada uno):
 1. Se retiran de la muestra sus partidos en el club B.
 2. Se reajusta toda la descomposición sin esos partidos, para que no haya fuga de información.
-3. Se promedia el vector de estilo (35 indicadores, en σ) de los partidos ocultos, en dos versiones: **crudo** y **ajustado** (z menos club, jugadores, rival y contexto, usando los coeficientes del ajuste sin la etapa).
+3. Se promedia el vector de estilo (34 indicadores, en σ) de los partidos ocultos, en dos versiones: **crudo** y **ajustado** (z menos club, jugadores, rival y contexto, usando los coeficientes del ajuste sin la etapa).
 4. Se correlaciona ese perfil con el perfil medio de cada DT candidato (≥ 12 partidos) en el resto de la liga y se registra **en qué puesto queda el DT verdadero**. Para el DT oculto, su perfil sale solo de sus *otros* clubes.
 5. **Azar:** con K candidatos, el puesto esperado es (K+1)/2 y la probabilidad de quedar en el top 5 es 5/K. Una prueba de signo contrasta cuántas etapas quedan en la mitad superior.
 

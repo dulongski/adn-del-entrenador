@@ -1,14 +1,14 @@
 /* Método: nota técnica con forma de artículo. Texto bilingüe con L(); números de boot.json
    (global + mapa) y de whatif.json (validación de «Llévalo a otro club»). */
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import boot from '../boot.json'
 import Info from '../Info'
 import { dataUrl, fmt, getJSON, type Any } from '../lib'
 import { L, LOCALE } from '../settings'
-import { archLabel, famLabel, kpiDesc, kpiLabel } from '../i18n/data'
+import { archLabel, famLabel, kpiDesc, kpiLabel, mapLabel } from '../i18n/data'
 import {
-  ArchBars, BLOCKS, C, ConfoundFig, Fig, IdentHist, IdentPanels, IdentWeights, LambdaBars, LevelCompare,
-  MobilityNet, PitchGeometry, ShareLegend, SumSketch, SynthBars, TransferHist, VarianceChart, blockName,
+  ArchBars, C, ConfoundFig, Fig, IdentHist, IdentPanels, IdentWeights, LambdaBars, LevelCompare,
+  MapMini, MobilityNet, PitchGeometry, ShareLegend, SumSketch, SynthBars, TransferHist, VarianceChart, blockName,
 } from '../metodo/figs'
 import '../styles/metodo.css'
 
@@ -34,6 +34,12 @@ function Sec({ id, num, title, children, accent }: { id: string; num?: number; t
       {children}
     </section>
   )
+}
+
+/** Nombre de indicador con su «i» pegada a la última palabra (no se queda sola en otra línea). */
+function KpiName({ name, desc }: { name: string; desc: string }) {
+  const i = name.lastIndexOf(' ')
+  return <span>{i > 0 ? name.slice(0, i + 1) : ''}<span className="mt-nowrap">{i > 0 ? name.slice(i + 1) : name} <Info>{desc}</Info></span></span>
 }
 
 /** Un término de la ecuación, coloreado con su componente. */
@@ -71,8 +77,7 @@ export function Metodo({ glob }: { glob: Any }) {
 
   // índice con seguimiento de sección
   const [active, setActive] = useState<string>(SECS[0][0])
-  const root = useRef<HTMLDivElement>(null)
-  useEffect(() => {
+    useEffect(() => {
     const els = SECS.map(([id]) => document.getElementById(id)).filter(Boolean) as HTMLElement[]
     const io = new IntersectionObserver(es => {
       const vis = es.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
@@ -121,7 +126,7 @@ export function Metodo({ glob }: { glob: Any }) {
     {
       k: 'residual', name: L('Lo que no explicamos', 'What we do not explain'),
       plain: L('Todo lo demás: la suerte, el plan de ese día, el árbitro, lo que los datos no ven.', "Everything else: luck, that day's game plan, the referee, what the data cannot see."),
-      tech: L('Error del tramo. En un solo tramo es grande (Figura 7); al juntar una temporada se promedia y casi desaparece.', 'Segment-level error. It is large for a single segment (Figure 7); over a season it averages out and mostly disappears.'),
+      tech: L('Error del tramo. En un solo tramo es grande (Figura 6); al juntar una temporada se promedia y casi desaparece.', 'Segment-level error. It is large for a single segment (Figure 6); over a season it averages out and mostly disappears.'),
     },
   ]
 
@@ -149,6 +154,7 @@ export function Metodo({ glob }: { glob: Any }) {
       what: L('La portada. Ubica a cada entrenador según su huella propia (los α), así que dos puntos cercanos son dos entrenadores con ideas parecidas, ya descontadas sus plantillas.', 'The home page. It places each coach by his own fingerprint (the α values), so two nearby points are two coaches with similar ideas, with their squads already discounted.'),
       how: L(`PCA sobre los ${mapa.kpis.length} α estandarizados entre entrenadores. Los dos primeros ejes explican el ${pct(mapa.varianza_total)} de la variación y los tres primeros el ${pct(mapa.varianza_total_3d)}. Las familias salen de k-means en el plano, con K entre 4 y 6 elegido por silueta.`, `PCA on the ${mapa.kpis.length} α values standardized across coaches. The first two axes explain ${pct(mapa.varianza_total)} of the variation and the first three ${pct(mapa.varianza_total_3d)}. Families come from k-means on the plane, with K between 4 and 6 chosen by silhouette.`),
       key: [`K = ${mapa.k}`, `${L('silueta', 'silhouette')} ${fmt(mapa.silueta, 2)}`, 'PCA + k-means'],
+      fig: <MapMini mapa={mapa} label={mapLabel} />,
     },
     {
       t: L('Contexto y motores', 'Context and drivers'), acc: 'var(--c-ctx)',
@@ -195,7 +201,7 @@ export function Metodo({ glob }: { glob: Any }) {
   ]
 
   return (
-    <div className="mt" ref={root}>
+    <div className="mt">
       <nav className="mt-toc" aria-label={L('Contenido', 'Contents')}>
         <div className="mt-toc-h">{L('Contenido', 'Contents')}</div>
         {SECS.map(([id, t], i) => (
@@ -208,7 +214,7 @@ export function Metodo({ glob }: { glob: Any }) {
       <article className="mt-paper">
         {/* ------------------------------------------------------------ cabecera */}
         <header className="mt-head">
-          <div className="mt-eyebrow">{L('Nota metodológica', 'Methods note')} · ADN del Entrenador · ISAC 2026</div>
+          <div className="mt-eyebrow">{L('Nota metodológica', 'Methods note')} · Coach DNA · ISAC 2026</div>
           <h1 className="mt-title">{L('Cómo separamos al entrenador de su plantilla', 'How we separate the coach from his squad')}</h1>
           <p className="mt-byline">{L(`Liga MX, temporadas ${seasons[0]} a ${seasons[seasons.length - 1]}. Datos de eventos y 360 de StatsBomb.`, `Liga MX, seasons ${seasons[0]} to ${seasons[seasons.length - 1]}. StatsBomb event and 360 data.`)}</p>
           <dl className="mt-facts">
@@ -220,6 +226,7 @@ export function Metodo({ glob }: { glob: Any }) {
 
         {/* ------------------------------------------------------------ resumen */}
         <section id="mt-abstract" className="mt-abstract">
+          <div className="mt-abstract-txt">
           <div className="mt-abstract-k">{L('Resumen', 'Abstract')}</div>
           <p>
             <b>{L('Pregunta. ', 'Question. ')}</b>{L('¿Qué parte del estilo de juego de un equipo pone el entrenador y qué parte ponen sus jugadores? ', "How much of a team's playing style comes from its coach and how much from its players? ")}
@@ -227,6 +234,12 @@ export function Metodo({ glob }: { glob: Any }) {
             <b>{L('Resultado. ', 'Result. ')}</b>{L(`Entre equipos-temporada, el entrenador explica en promedio el ${pct(V.coach)} de las diferencias de estilo y los jugadores el ${pct(V.player)}. Cuando ocultamos la etapa de un entrenador en un club y le pedimos al modelo que lo reconozca solo por cómo jugó su equipo, el entrenador verdadero queda en la mitad superior de ${K} candidatos en ${R.ajustado.mitad_superior} de ${R.etapas} etapas (por azar serían ${R.etapas / 2}; ${pSign}).`, `Across team-seasons, the coach explains on average ${pct(V.coach)} of the differences in style and the players ${pct(V.player)}. When we hide a coach's spell at one club and ask the model to recognize him only from how his team played, the true coach lands in the top half of ${K} candidates in ${R.ajustado.mitad_superior} of ${R.etapas} spells (chance would give ${R.etapas / 2}; ${pSign}).`)}
           </p>
           <p className="mt-kw"><b>{L('Palabras clave', 'Keywords')}:</b> {L('efectos fijos, modelo AKM, regresión ridge, estilo de juego, efecto del entrenador, Liga MX', 'fixed effects, AKM model, ridge regression, playing style, coach effect, Liga MX')}</p>
+          </div>
+          <dl className="mt-keys">
+            <div style={{ ['--acc' as string]: 'var(--c-dt)' }}><dt>{L('de las diferencias de estilo entre equipos se debe al entrenador', 'of the style differences between teams is due to the coach')}</dt><dd>{pct(V.coach)}</dd></div>
+            <div style={{ ['--acc' as string]: 'var(--c-plantilla)' }}><dt>{L('etapas ocultas en las que el modelo pone al entrenador verdadero en la mitad superior', 'hidden spells where the model ranks the true coach in the top half')}</dt><dd>{R.ajustado.mitad_superior}/{R.etapas}</dd></div>
+            <div style={{ ['--acc' as string]: 'var(--c-club)' }}><dt>{L('correlación con el efecto verdadero en una liga simulada con confusión', 'correlation with the true effect in a simulated league with confounding')}</dt><dd>0.95</dd></div>
+          </dl>
         </section>
 
         {/* ------------------------------------------------------------ 1 */}
@@ -252,23 +265,23 @@ export function Metodo({ glob }: { glob: Any }) {
               <p>{L('En el fútbol, ', 'In football, ')}<b>Muehlheusser {L('et al.', 'et al.')} (2018)</b>{L(' aplicaron AKM a la Bundesliga: los entrenadores alemanes cambian a menudo de club, y eso permite medir cuántos puntos aporta cada uno aparte de la calidad de su club. También encontraron que el entrenador cambia el estilo de juego. ', ' applied AKM to the Bundesliga: German coaches change clubs often, which makes it possible to measure how many points each one adds beyond the quality of his club. They also found that the coach changes the playing style. ')}<b>Peeters, Szymanski {L('y', 'and')} Terviö (2022)</b>{L(' usaron la misma lógica con cuatro décadas de entrenadores en Inglaterra. Antes, ', ' used the same logic with four decades of coaches in England. Earlier, ')}<b>Dawson, Dobson {L('y', 'and')} Gerrard (2000)</b>{L(' habían medido la eficiencia de los entrenadores con fronteras de producción, y ', ' had measured coaching efficiency with production frontiers, and ')}<b>Bridgewater, Kahn {L('y', 'and')} Goodall (2011)</b>{L(' mostraron que lo que aporta un entrenador depende del talento de su plantilla.', ' showed that what a coach adds depends on the talent of his squad.')}</p>
               <p>{L('Estos trabajos miden ', 'These studies measure ')}<b>{L('resultados', 'results')}</b>{L('. Nosotros usamos la misma idea para medir ', '. We use the same idea to measure ')}<b>{L('estilo', 'style')}</b>{L(', y le añadimos los jugadores en cancha para aprovechar también la rotación.', ', and add the players on the pitch so that rotation is used too.')}</p>
             </div>
-            <aside className="mt-callout" style={{ ['--acc' as string]: 'var(--c-club)' }}>
-              <div className="mt-callout-k">{L('Qué significa «identificar»', 'What "identification" means')}</div>
-              <p>{L('Un efecto está identificado cuando los datos traen suficientes comparaciones para separarlo de los demás. Si un entrenador hubiera dirigido siempre al mismo club con los mismos once jugadores, ningún método podría decir qué parte es suya: los datos serían idénticos con cualquier reparto.', 'An effect is identified when the data contain enough comparisons to separate it from the others. If a coach had always managed the same club with the same eleven players, no method could say which part is his: the data would look identical under any split.')}</p>
-              <p>{L('Lo que lo hace posible son los cambios. Hay tres tipos, y el modelo usa los tres a la vez:', 'What makes it possible is change. There are three kinds, and the model uses all three at once:')}</p>
-            </aside>
-          </div>
-          <IdentPanels />
-          <div className="mt-two mt-two-net">
+            <div>
             <Fig n={2} title={L(`Red de movilidad de la muestra. Cada línea une a un entrenador con un club que dirigió; el grosor crece con los partidos. ${movers} de ${glob.dts.length} entrenadores con perfil dirigieron más de un club, y esas líneas conectan casi todos los clubes en una sola red.`, `Mobility network of the sample. Each line joins a coach to a club he managed; thickness grows with matches. ${movers} of ${glob.dts.length} profiled coaches managed more than one club, and those lines tie almost every club into a single network.`)} note={L('Pasa el cursor por un punto para ver el nombre.', 'Hover a dot to see the name.')}>
               <MobilityNet dts={glob.dts} />
             </Fig>
-            <div className="mt-prose">
+            <div className="mt-prose mt-after-fig">
               <h3 className="mt-h3">{L('Por qué importa la red', 'Why the network matters')}</h3>
               <p>{L('Un entrenador que dirigió dos clubes enlaza esos dos clubes. Si otro entrenador pasó por uno de ellos y por un tercero, el tercero queda enlazado también. Mientras más conectada la red, más comparaciones hay entre entrenadores que nunca coincidieron en un mismo club.', 'A coach who managed two clubs links those two clubs. If another coach passed through one of them and a third, the third is linked too. The more connected the network, the more comparisons exist between coaches who never shared a club.')}</p>
               <p>{L('Los puntos grises son entrenadores con un solo club. Para ellos solo quedan dos fuentes: jugadores que también jugaron con otros entrenadores, y la rotación. Por eso su huella es menos segura, y la app lo avisa con el índice de identificabilidad (sección 5.4).', 'Grey dots are coaches with a single club. For them only two sources remain: players who also played under other coaches, and rotation. That is why their fingerprint is less certain, and the app flags it with the identifiability index (section 5.4).')}</p>
             </div>
+            </div>
           </div>
+          <aside className="mt-callout mt-callout-wide" style={{ ['--acc' as string]: 'var(--c-club)' }}>
+              <div className="mt-callout-k">{L('Qué significa «identificar»', 'What "identification" means')}</div>
+              <p>{L('Un efecto está identificado cuando los datos traen suficientes comparaciones para separarlo de los demás. Si un entrenador hubiera dirigido siempre al mismo club con los mismos once jugadores, ningún método podría decir qué parte es suya: los datos serían idénticos con cualquier reparto.', 'An effect is identified when the data contain enough comparisons to separate it from the others. If a coach had always managed the same club with the same eleven players, no method could say which part is his: the data would look identical under any split.')}</p>
+              <p>{L('Lo que lo hace posible son los cambios. Hay tres tipos, y el modelo usa los tres a la vez:', 'What makes it possible is change. There are three kinds, and the model uses all three at once:')}</p>
+            </aside>
+          <IdentPanels />
         </Sec>
 
         {/* ------------------------------------------------------------ 3 */}
@@ -324,10 +337,12 @@ export function Metodo({ glob }: { glob: Any }) {
               <li><b>{L('Ridge: encoger hacia la media.', 'Ridge: shrink toward the average.')}</b> {L('Sin freno, un entrenador con diez partidos podría recibir un efecto enorme por pura suerte. La penalización ridge (Hoerl y Kennard, 1970) hace que cada pieza arranque en cero, que es la media de la liga, y solo se aleje si muchos tramos lo piden. Se minimiza', 'Left unchecked, a coach with ten matches could get a huge effect by pure luck. The ridge penalty (Hoerl and Kennard, 1970) makes every piece start at zero, the league average, and move away only when many segments call for it. We minimize')}
                 <span className="mt-math">Σ<sub>s</sub> w<sub>s</sub>(z<sub>s</sub> − ẑ<sub>s</sub>)² + Σ<sub>b</sub> λ<sub>b</sub>‖θ<sub>b</sub>‖²</span>
                 {L('con una λ por bloque. Una λ más grande exige más evidencia.', 'with one λ per block. A larger λ demands more evidence.')}</li>
+            </ol>
+            <div>
+            <ol className="mt-steps" style={{ counterReset: 'st 3' }}>
               <li><b>{L('Las λ se eligen por validación cruzada.', 'The λ values are chosen by cross-validation.')}</b> {L('Tres pliegues agrupados por partido (un partido nunca está a la vez en entrenamiento y prueba), sobre 8 indicadores y una rejilla de valores. El error es casi plano cerca del óptimo. Las λ elegidas encogen más a los jugadores que al entrenador; en la parte que los datos no logran separar, eso le da la señal a la plantilla. Es una elección conservadora: al entrenador solo se le atribuye lo que los datos respaldan.', 'Three folds grouped by match (a match is never in training and test at once), on 8 indicators and a grid of values. The error is nearly flat near the optimum. The chosen λ values shrink players more than the coach; in the part the data cannot separate, that hands the signal to the squad. It is a conservative choice: the coach is only credited with what the data support.')}</li>
               <li><b>{L('Incertidumbre por bootstrap.', 'Uncertainty by bootstrap.')}</b> {L('Se remuestrean partidos completos 30 veces y se reajusta todo. La dispersión de α entre réplicas da su error estándar y su intervalo de confianza del 95%. Se remuestrea por partido, y no por tramo, porque los tramos de un mismo partido se parecen entre sí.', 'Whole matches are resampled 30 times and everything is refit. The spread of α across replicates gives its standard error and 95% confidence interval. We resample matches rather than segments because segments of the same match resemble each other.')}</li>
             </ol>
-            <div>
               <Fig n={4} title={L('Penalización ridge por bloque, elegida por validación cruzada (escala logarítmica). Más larga = más evidencia exigida antes de alejarse de la media.', 'Ridge penalty by block, chosen by cross-validation (log scale). Longer = more evidence required before moving away from the average.')}>
                 <LambdaBars lam={lam} />
               </Fig>
@@ -338,16 +353,18 @@ export function Metodo({ glob }: { glob: Any }) {
         {/* ------------------------------------------------------------ 4 */}
         <Sec id="mt-s4" num={4} title={L('Qué medimos', 'What we measure')} accent="var(--c-rival)">
           <div className="mt-two">
-            <div className="mt-prose">
-              <p>{L('Todas las definiciones y umbrales viven en un solo archivo (', 'Every definition and threshold lives in a single file (')}<code>config/framework.yaml</code>{L('). Cada indicador, gráfico y modelo de la app sale de esos mismos objetos. Las coordenadas son las de StatsBomb: una cancha de 120 × 80 yardas en la que el equipo que actúa ataca siempre hacia la derecha.', '). Every indicator, chart and model in the app is built from those same objects. Coordinates are StatsBomb\'s: a 120 × 80 yard pitch on which the acting team always attacks to the right.')}</p>
-              <p>{L('Cada indicador es un cociente entre dos contadores por stint, un numerador y un denominador. Para pasar a partido, temporada o entrenador se suman numeradores y denominadores por separado (Σnum / Σden) en vez de promediar cocientes. Por eso un mismo número coincide en el informe, en los gráficos y en el modelo.', 'Every indicator is a ratio of two per-stint counters, a numerator and a denominator. To move to match, season or coach level, numerators and denominators are summed separately (Σnum / Σden) instead of averaging ratios. That is why a number matches across the report, the charts and the model.')}</p>
+            <div>
+              <div className="mt-prose">
+                <p>{L('Todas las definiciones y umbrales viven en un solo archivo (', 'Every definition and threshold lives in a single file (')}<code>config/framework.yaml</code>{L('). Cada indicador, gráfico y modelo de la app sale de esos mismos objetos. Las coordenadas son las de StatsBomb: una cancha de 120 × 80 yardas en la que el equipo que actúa ataca siempre hacia la derecha.', '). Every indicator, chart and model in the app is built from those same objects. Coordinates are StatsBomb\'s: a 120 × 80 yard pitch on which the acting team always attacks to the right.')}</p>
+                <p>{L('Cada indicador es un cociente entre dos contadores por stint, un numerador y un denominador. Para pasar a partido, temporada o entrenador se suman numeradores y denominadores por separado (Σnum / Σden) en vez de promediar cocientes. Por eso un mismo número coincide en el informe, en los gráficos y en el modelo.', 'Every indicator is a ratio of two per-stint counters, a numerator and a denominator. To move to match, season or coach level, numerators and denominators are summed separately (Σnum / Σden) instead of averaging ratios. That is why a number matches across the report, the charts and the model.')}</p>
+              </div>
+              <div className="mt-objs">
+                {objects.map(([t, d]) => <div key={t} className="mt-obj"><div className="mt-obj-t">{t}</div><p>{d}</p></div>)}
+              </div>
             </div>
             <Fig n={5} title={L('Los umbrales del marco sobre la cancha. Las líneas verticales son los cortes que usan los indicadores; el área sombreada a la derecha es el último tercio.', 'The framework thresholds on the pitch. Vertical lines are the cut-offs the indicators use; the shaded area on the right is the final third.')}>
               <PitchGeometry F={F} />
             </Fig>
-          </div>
-          <div className="mt-objs">
-            {objects.map(([t, d]) => <div key={t} className="mt-obj"><div className="mt-obj-t">{t}</div><p>{d}</p></div>)}
           </div>
 
           <h3 className="mt-h3 mt-h3-gap">{L(`Los ${nKpi} indicadores`, `The ${nKpi} indicators`)} <Info wide>{L(`Las familias siguen las fases del juego y el catálogo de estilos de Fernández-Navarro et al. (2016). Los ${nKpi - nBase} indicadores de «Jugadas tipo» son la frecuencia de cada tipo de posesión (sección 6). Junto a cada indicador va su media en la liga ± la desviación típica entre equipos-temporada, que es la unidad σ de toda la app.`, `Families follow the phases of play and the style catalogue of Fernández-Navarro et al. (2016). The ${nKpi - nBase} "Possession types" indicators are the frequency of each possession type (section 6). Next to each indicator is its league mean ± the standard deviation across team-seasons, which is the σ unit used throughout the app.`)}</Info></h3>
@@ -359,10 +376,10 @@ export function Metodo({ glob }: { glob: Any }) {
               const accs = ['var(--c-dt)', 'var(--c-club)', 'var(--c-ctx)', 'var(--c-plantilla)', 'var(--c-dt)', 'var(--c-rival)', 'var(--c-club)', 'var(--c-ctx)', 'var(--c-plantilla)']
               return (
                 <div key={f} className="mt-fam" style={{ ['--acc' as string]: accs[fi % accs.length] }}>
-                  <div className="mt-fam-h">{famLabel(f)} <span className="mono">{ks.length}</span></div>
+                  <div className="mt-fam-h">{f === 'Arquetipos' ? L('Jugadas tipo', 'Possession types') : famLabel(f)} <span className="mono">{ks.length}</span></div>
                   {ks.map(([k, v]) => (
                     <div key={k} className="mt-kpi">
-                      <span>{f === 'Arquetipos' ? archLabel(glob.arquetipos?.[k.replace('arq_', '')]?.nombre ?? v.etiqueta) : kpiLabel(k, v.etiqueta)} <Info>{kpiDesc(k, v.descripcion)}</Info></span>
+                      <KpiName name={f === 'Arquetipos' ? archLabel(glob.arquetipos?.[k.replace('arq_', '')]?.nombre ?? v.etiqueta) : kpiLabel(k, v.etiqueta)} desc={kpiDesc(k, v.descripcion)} />
                       {f !== 'Arquetipos' && <span className="mono mt-kpi-v">{fmt(v.media, v.media < 2 ? 2 : 1)} <small>± {fmt(v.sd, v.sd < 1 ? 2 : 1)}</small></span>}
                     </div>
                   ))}
@@ -380,17 +397,20 @@ export function Metodo({ glob }: { glob: Any }) {
               <p>{L('Para cada indicador promediamos tanto lo observado como cada pieza del modelo por equipo y temporada, y medimos qué parte de las diferencias entre equipos sigue a cada pieza:', 'For each indicator we average both the observed value and each model piece by team and season, and measure which share of the differences between teams follows each piece:')}</p>
               <span className="mt-math mt-math-c">{L('parte', 'share')}<sub>b</sub> = cov({L('pieza', 'piece')}<sub>b</sub>, {L('observado', 'observed')}) / var({L('observado', 'observed')})</span>
               <p>{L('Las partes suman 100%. Una parte puede salir negativa si esa pieza empuja en contra de las demás. Ocurre con el contexto en la posesión: los equipos que más tienen el balón pasan más tiempo ganando, y quien va ganando suele cederlo.', 'The shares add up to 100%. A share can be negative when that piece pushes against the others. It happens with context in possession: the teams that keep the ball most spend more time winning, and teams that are winning tend to give the ball up.')}</p>
+            </div>
+            <div className="mt-prose">
               <p>{L(`En promedio, el entrenador explica el ${pct(V.coach)}, los jugadores el ${pct(V.player)}, el club el ${pct(V.club)} y el rival el ${pct(V.opp)}. El entrenador pesa más en cómo se mueve el balón (${kl(top[0][0]).toLowerCase()}: ${pct(top[0][1].coach)}; ${kl(top[1][0]).toLowerCase()}: ${pct(top[1][1].coach)}) y menos en el peligro que se genera (${kl(low[1][0])}: ${pct(low[1][1].coach)}; ${kl(low[0][0])}: ${pct(low[0][1].coach)}), que depende más de la calidad de los jugadores.`, `On average, the coach explains ${pct(V.coach)}, the players ${pct(V.player)}, the club ${pct(V.club)} and the opponent ${pct(V.opp)}. The coach weighs most on how the ball moves (${kl(top[0][0]).toLowerCase()}: ${pct(top[0][1].coach)}; ${kl(top[1][0]).toLowerCase()}: ${pct(top[1][1].coach)}) and least on the danger created (${kl(low[1][0])}: ${pct(low[1][1].coach)}; ${kl(low[0][0])}: ${pct(low[0][1].coach)}), which depends more on player quality.`)}</p>
               <p>{L('Un 15% puede parecer poco. Es la parte que viaja con el entrenador a cualquier club y la que se estima con más cautela, porque el ridge la encoge. Los jugadores explican más porque son once, cambian de un equipo a otro y cada uno trae lo suyo.', 'Fifteen per cent may look small. It is the part that travels with the coach to any club and the one estimated most cautiously, because ridge shrinks it. Players explain more because there are eleven of them, they differ a lot between teams and each brings his own traits.').replace('15%', pct(V.coach)).replace('Fifteen per cent', pct(V.coach))}</p>
-              <Fig n={7} title={L('El nivel importa. En un solo tramo casi todo es ruido; al juntar una temporada el ruido se cancela y aparecen el entrenador, los jugadores y el club. Promedio de los indicadores.', 'Level matters. In a single segment almost everything is noise; over a season the noise cancels out and the coach, the players and the club appear. Average across indicators.')}>
+              <Fig n={6} title={L('El nivel importa. En un solo tramo casi todo es ruido; al juntar una temporada el ruido se cancela y aparecen el entrenador, los jugadores y el club. Promedio de los indicadores.', 'Level matters. In a single segment almost everything is noise; over a season the noise cancels out and the coach, the players and the club appear. Average across indicators.')}>
                 <LevelCompare glob={glob} />
               </Fig>
             </div>
-            <Fig n={6} className="mt-fig-var" title={L('Reparto de las diferencias de estilo entre equipos-temporada, por indicador, ordenado por la parte del entrenador (columna derecha).', 'Split of the style differences between team-seasons, by indicator, sorted by the coach share (right column).')} note={L('Pasa el cursor por una fila para ver los números.', 'Hover a row to see the numbers.')}>
+
+          </div>
+          <Fig n={7} className="mt-fig-var mt-fig-wide" title={L('Reparto de las diferencias de estilo entre equipos-temporada, por indicador, ordenado por la parte del entrenador (columna derecha).', 'Split of the style differences between team-seasons, by indicator, sorted by the coach share (right column).')} note={L('Pasa el cursor por una fila para ver los números.', 'Hover a row to see the numbers.')}>
               <ShareLegend />
               <VarianceChart glob={glob} />
             </Fig>
-          </div>
 
           <h3 className="mt-h3 mt-h3-gap"><span className="mt-subnum">5.2</span>{L('Prueba de transferencia: ¿lo reconocemos en otro club?', 'Transfer test: can we recognize him at another club?')}</h3>
           <div className="mt-two">
@@ -407,11 +427,13 @@ export function Metodo({ glob }: { glob: Any }) {
                 <div><b>{pct(R.ajustado.top5)}</b><span>{L('en el top 5', 'in the top 5')}</span><em>{L('azar', 'chance')} {pct(R.azar.top5)}</em></div>
                 <div><b>{R.ajustado.mitad_superior}/{R.etapas}</b><span>{L('en la mitad superior', 'in the top half')}</span><em>{pSign}, {L('prueba de signo', 'sign test')}</em></div>
               </div>
-              <p>{L(`Con el estilo crudo, sin descontar club ni plantilla, el puesto mediano es ${fmt(R.crudo.mediana, 1)} y quedan ${R.crudo.mitad_superior} etapas en la mitad superior. El ajuste mejora el puesto en ${R.ajustado_mejor_que_crudo} de ${R.etapas} etapas y lo deja igual en ${R.ajustado_igual}: quitar la plantilla y el club hace más reconocible al entrenador.`, `With raw style, without removing club or squad, the median rank is ${fmt(R.crudo.mediana, 1)} and ${R.crudo.mitad_superior} spells land in the top half. The adjustment improves the rank in ${R.ajustado_mejor_que_crudo} of ${R.etapas} spells and leaves it unchanged in ${R.ajustado_igual}: removing squad and club makes the coach easier to recognize.`)}</p>
             </div>
+            <div>
             <Fig n={8} title={L(`Puesto del entrenador verdadero en las ${R.etapas} etapas ocultas. Barras: estilo ajustado. Línea gris: estilo crudo. Línea discontinua: lo esperado por azar.`, `Rank of the true coach in the ${R.etapas} hidden spells. Bars: adjusted style. Grey line: raw style. Dashed line: what chance would give.`)}>
               <TransferHist tr={TR} res={R} />
             </Fig>
+              <p className="mt-after-fig">{L(`Con el estilo crudo, sin descontar club ni plantilla, el puesto mediano es ${fmt(R.crudo.mediana, 1)} y quedan ${R.crudo.mitad_superior} etapas en la mitad superior. El ajuste mejora el puesto en ${R.ajustado_mejor_que_crudo} de ${R.etapas} etapas y lo deja igual en ${R.ajustado_igual}: quitar la plantilla y el club hace más reconocible al entrenador.`, `With raw style, without removing club or squad, the median rank is ${fmt(R.crudo.mediana, 1)} and ${R.crudo.mitad_superior} spells land in the top half. The adjustment improves the rank in ${R.ajustado_mejor_que_crudo} of ${R.etapas} spells and leaves it unchanged in ${R.ajustado_igual}: removing squad and club makes the coach easier to recognize.`)}</p>
+            </div>
           </div>
 
           <div className="mt-two mt-h3-gap">
@@ -428,7 +450,7 @@ export function Metodo({ glob }: { glob: Any }) {
             <div>
               <h3 className="mt-h3"><span className="mt-subnum">5.4</span>{L('Índice de identificabilidad', 'Identifiability index')}</h3>
               <div className="mt-prose">
-                <p>{L('No todos los entrenadores se separan igual de bien de su plantilla. El índice (0 a 100) resume cuántas comparaciones útiles tiene cada uno, con tres partes que corresponden a las tres fuentes de la Figura 2:', 'Not every coach separates equally well from his squad. The index (0 to 100) sums up how many useful comparisons each one has, with three parts that match the three sources in Figure 2:')}</p>
+                <p>{L('No todos los entrenadores se separan igual de bien de su plantilla. El índice (0 a 100) resume cuántas comparaciones útiles tiene cada uno, con tres partes que corresponden a las tres fuentes de la sección 2:', 'Not every coach separates equally well from his squad. The index (0 to 100) sums up how many useful comparisons each one has, with three parts that match the three sources in section 2:')}</p>
               </div>
               <IdentWeights />
               <Fig n={10} title={L(`Distribución del índice. La mediana es ${fmt(idxMed, 0)}. Con un índice bajo, el ridge acerca la huella a la media de la liga y la app lo indica.`, `Distribution of the index. The median is ${fmt(idxMed, 0)}. With a low index, ridge pulls the fingerprint toward the league average and the app flags it.`)}>
@@ -480,5 +502,3 @@ export function Metodo({ glob }: { glob: Any }) {
   )
 }
 
-// los bloques se exportan para que el orden de colores sea el mismo en toda la pestaña
-void BLOCKS

@@ -38,7 +38,10 @@
 .cfg-logos { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .cfg-logo { justify-content: center; padding: 8px 4px; }
 @media (max-width: 700px) {
-  .cfg, .on-map .cfg { top: auto; bottom: 16px; left: 14px; }
-  .home-btn { top: auto; bottom: 66px; }
+  /* en el teléfono: dos botones chicos uno junto al otro en la esquina inferior, sin tapar texto */
+  .cfg, .on-map .cfg { top: auto; bottom: 12px; left: 12px; }
+  .home-btn { top: auto; bottom: 12px; left: 58px; }
+  .cfg-btn, .home-btn { width: 38px; height: 38px; background: color-mix(in oklab, var(--surface) 82%, transparent); backdrop-filter: blur(8px); }
+  .on-map .cfg { left: 12px; }
   .cfg-panel { top: auto; bottom: 52px; left: 0; width: calc(100vw - 28px); max-height: calc(100vh - 120px); }
 }

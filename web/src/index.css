@@ -515,3 +515,5 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 .info-pop.up::before { top: auto; bottom: -5px; }
 .info-pop b { font-weight: 700; }
 .info-pop p { margin: 0 0 6px; } .info-pop p:last-child { margin: 0; }
+
+@media (max-width: 700px) { .panel { padding-bottom: 76px !important; } }

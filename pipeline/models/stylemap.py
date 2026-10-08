@@ -136,7 +136,7 @@ def main():
     out = {"puntos": pts, "grupos": grupos, "ejes": ejes, "k": K, "silueta": float(sil),
            "varianza_total": float(pca.explained_variance_ratio_[:2].sum()),
            "varianza_total_3d": float(pca.explained_variance_ratio_.sum()), "kpis": kpis,
-           "metodo": "PCA de 2 componentes sobre la huella propia de cada DT (35 indicadores, α estandarizados entre DTs); grupos por k-means en el plano 2D (K de 4 a 6 elegido por silueta)."}
+           "metodo": "PCA de 2 componentes sobre la huella propia de cada DT (34 indicadores, α estandarizados entre DTs); grupos por k-means en el plano 2D (K de 4 a 6 elegido por silueta)."}
     json.dump(out, open(ART / "mapa.json", "w"), ensure_ascii=False, indent=1)
     print(f"K={K} silueta={sil:.2f} varianza 2D={out['varianza_total']:.0%}")
     for g in grupos:

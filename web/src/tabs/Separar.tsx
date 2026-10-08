@@ -185,12 +185,12 @@ export function Transferencia({ art, glob, media }: P) {
       <RankPlot rows={all} highlight={art.id} />
       {LANG === 'en' ? (
         <How>
-          For each hidden spell the whole model is refit without those matches, so no information leaks. The style vector (35 indicators, in σ) is averaged over the spell's matches and correlated with the mean profile of every candidate coach (≥12 matches) across the rest of the league.
+          For each hidden spell the whole model is refit without those matches, so no information leaks. The style vector (34 indicators, in σ) is averaged over the spell's matches and correlated with the mean profile of every candidate coach (≥12 matches) across the rest of the league.
           "Raw" is style as observed. "Adjusted" strips out what the model attributes to club, players, opponent and context. With K candidates, chance gives an expected rank of (K+1)/2. The sign test checks how many spells land in the top half.
         </How>
       ) : (
         <How>
-          Para cada etapa oculta se reajusta todo el modelo sin esos partidos, para que no haya fuga de información. Se promedia el vector de estilo (35 indicadores, en σ) de los partidos de la etapa y se correlaciona con el perfil medio de cada DT candidato (≥12 partidos) en el resto de la liga.
+          Para cada etapa oculta se reajusta todo el modelo sin esos partidos, para que no haya fuga de información. Se promedia el vector de estilo (34 indicadores, en σ) de los partidos de la etapa y se correlaciona con el perfil medio de cada DT candidato (≥12 partidos) en el resto de la liga.
           «Crudo» es el estilo tal como se observa. «Ajustado» le resta lo que el modelo atribuye a club, jugadores, rival y contexto. Con K candidatos, el azar da un puesto esperado de (K+1)/2. La prueba de signo contrasta cuántas etapas quedan en la mitad superior.
         </How>
       )}

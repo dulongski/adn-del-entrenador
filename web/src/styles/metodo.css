@@ -1,0 +1,263 @@
+/* Método: página con forma de artículo. Solo tokens de index.css (funciona en las 5 paletas).
+   Prosa a ~70ch; figuras y columnas dobles usan todo el ancho. */
+
+.mt { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; --acc: var(--c-dt); }
+@media (min-width: 1180px) { .mt { grid-template-columns: 172px minmax(0, 1fr); gap: 48px; } }
+
+/* ------------------------------------------------------------ índice lateral */
+.mt-toc { display: none; }
+@media (min-width: 1180px) {
+  .mt-toc { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 112px; align-self: start; padding-top: 6px; }
+}
+.mt-toc-h { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin: 0 0 8px 10px; }
+.mt-toc button { display: flex; gap: 10px; align-items: baseline; text-align: left; border: 0; background: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: 14px; color: var(--ink-3); border-left: 2px solid transparent; }
+.mt-toc button span { width: 12px; font-size: 12px; color: var(--ink-3); }
+.mt-toc button:hover { color: var(--ink); background: var(--surface); }
+.mt-toc button[aria-current='true'] { color: var(--ink); font-weight: 600; border-left-color: var(--ink); border-radius: 0 6px 6px 0; background: var(--surface); }
+
+.mt-paper { min-width: 0; }
+
+/* ------------------------------------------------------------ cabecera */
+.mt-head { padding-bottom: 26px; }
+.mt-eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+.mt-title { font-family: var(--display); font-weight: 800; font-size: clamp(36px, 4.4vw, 64px); line-height: .95; margin: 10px 0 12px; letter-spacing: -.005em; max-width: 20ch; text-wrap: balance; }
+.mt-byline { color: var(--ink-2); margin: 0 0 20px; font-size: 16px; }
+.mt-facts { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.mt-facts > div { padding: 12px 14px; border-left: 1px solid var(--rule); }
+.mt-facts > div:first-child { border-left: 0; padding-left: 0; }
+.mt-facts dt { font-size: 12px; color: var(--ink-3); order: 2; }
+.mt-facts dd { margin: 0; font-family: var(--display); font-weight: 800; font-size: 32px; line-height: 1; }
+.mt-facts > div { display: flex; flex-direction: column-reverse; gap: 4px; }
+@media (max-width: 900px) {
+  .mt-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mt-facts > div:nth-child(4) { border-left: 0; padding-left: 0; }
+  .mt-facts > div:nth-child(n+4) { border-top: 1px solid var(--rule); }
+}
+@media (max-width: 480px) { .mt-facts dd { font-size: 26px; } .mt-facts > div { padding: 10px 8px; } }
+
+/* ------------------------------------------------------------ resumen */
+.mt-abstract { background: color-mix(in oklab, var(--c-dt) 9%, var(--surface)); border: 1px solid color-mix(in oklab, var(--c-dt) 30%, var(--rule)); border-left: 5px solid var(--c-dt); border-radius: 12px; padding: 22px 28px; margin: 8px 0 8px; scroll-margin-top: 110px; }
+.mt-abstract-k { font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 18px; color: color-mix(in oklab, var(--c-dt) 70%, var(--ink)); margin-bottom: 8px; }
+.mt-abstract p { margin: 0; font-size: 17px; line-height: 1.65; max-width: 96ch; }
+.mt-abstract p b { color: var(--ink); }
+.mt-abstract .mt-kw { margin-top: 12px; font-size: 14px; color: var(--ink-2); }
+@media (max-width: 600px) { .mt-abstract { padding: 16px 18px; } .mt-abstract p { font-size: 16px; } }
+
+/* ------------------------------------------------------------ secciones */
+.mt-sec { margin-top: 64px; padding-top: 34px; border-top: 1px solid var(--rule); scroll-margin-top: 104px; }
+.mt-h2 { display: flex; align-items: center; gap: 14px; font-family: var(--display); font-weight: 800; font-size: clamp(28px, 2.6vw, 40px); text-transform: uppercase; line-height: 1; margin: 0 0 22px; letter-spacing: .005em; }
+.mt-num { display: inline-grid; place-items: center; flex: none; width: 1.25em; height: 1.25em; border-radius: 8px; background: var(--acc); color: var(--bg); font-size: .8em; }
+.mt-h3 { font-size: 19px; font-weight: 700; margin: 0 0 10px; line-height: 1.3; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.mt-h3-gap { margin-top: 48px; }
+.mt-subnum { font-family: var(--mono); font-size: 14px; color: color-mix(in oklab, var(--acc) 70%, var(--ink)); font-weight: 600; }
+.mt-lede { color: var(--ink-2); max-width: 75ch; margin: 0 0 18px; }
+
+.mt-prose { max-width: 70ch; }
+.mt-prose p { margin: 0 0 14px; font-size: 16.5px; line-height: 1.68; }
+.mt-prose b { font-weight: 650; }
+.mt-prose code, .mt-repro code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
+.mt-two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (min-width: 1100px) {
+  .mt-two { grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: 48px; }
+  .mt-two-net { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); margin-top: 36px; }
+  .mt-two-var { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .mt-two-est { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); }
+}
+.mt-two-net { margin-top: 30px; }
+
+/* ------------------------------------------------------------ figuras */
+.mt-fig { margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 18px 14px; min-width: 0; }
+.mt-prose .mt-fig { margin-top: 22px; }
+.mt-fig-body { min-width: 0; }
+.mt-fig figcaption { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--rule); font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.mt-fig figcaption b { color: var(--ink); }
+.mt-fig-note { color: var(--ink-3); }
+.mt-svg { width: 100%; height: auto; display: block; font-family: var(--body); overflow: visible; }
+.mt-pitch { max-width: 760px; margin: 0 auto; }
+
+.mt-callout { background: color-mix(in oklab, var(--acc) 9%, var(--surface)); border: 1px solid color-mix(in oklab, var(--acc) 28%, var(--rule)); border-left: 5px solid var(--acc); border-radius: 12px; padding: 18px 22px; }
+.mt-callout-k { font-family: var(--display); font-weight: 800; font-size: 22px; text-transform: uppercase; margin-bottom: 8px; color: color-mix(in oklab, var(--acc) 65%, var(--ink)); }
+.mt-callout p { margin: 0 0 10px; font-size: 16px; line-height: 1.62; }
+.mt-callout p:last-child { margin: 0; }
+
+/* tres fuentes de identificación */
+.mt-ident { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 18px; }
+.mt-ident-p { position: relative; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px 14px; }
+.mt-ident-k { position: absolute; top: 12px; right: 14px; font-family: var(--display); font-weight: 800; font-size: 22px; color: var(--ink-3); }
+.mt-ident-p svg { max-width: 320px; }
+.mt-ident-t { font-weight: 700; font-size: 16px; margin-top: 10px; }
+.mt-ident-p p { margin: 4px 0 0; font-size: 14.5px; color: var(--ink-2); line-height: 1.55; }
+
+/* red de movilidad */
+.mt-net svg { max-width: 640px; margin: 0 auto; }
+.mt-net circle { cursor: default; }
+.mt-net-legend, .mt-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+.mt-net-legend i, .mt-legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.mt-legend { margin: 0 0 12px; }
+.mt-legend i { border-radius: 3px; }
+
+/* ------------------------------------------------------------ ecuación */
+.mt-eq-wrap { margin: 40px 0 22px; padding: 28px 20px 18px; background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; }
+.mt-eq { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 6px 10px; }
+.mt-op { font-family: Georgia, 'Times New Roman', serif; font-size: 40px; line-height: 1.2; color: var(--ink-3); padding-top: 2px; }
+.mt-term { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 10px 6px; border-radius: 10px; cursor: default; transition: opacity .15s, background .15s; }
+.mt-term-sym { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 44px; line-height: 1.15; color: var(--tc); border-bottom: 4px solid var(--tc); padding: 0 4px 2px; white-space: nowrap; }
+.mt-term-sym sub { font-size: .38em; font-style: normal; font-family: var(--body); margin-left: 2px; }
+.mt-term-sym .mt-sub-j { font-size: .38em; margin-right: 4px; }
+.mt-term-lab { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: color-mix(in oklab, var(--tc) 70%, var(--ink)); }
+.mt-term.on { background: color-mix(in oklab, var(--tc) 12%, transparent); }
+.mt-term.dim { opacity: .35; }
+.mt-eq-note { text-align: center; color: var(--ink-3); font-size: 13.5px; margin-top: 16px; }
+@media (max-width: 700px) {
+  .mt-eq-wrap { padding: 18px 8px 14px; }
+  .mt-term-sym { font-size: 28px; }
+  .mt-op { font-size: 26px; }
+  .mt-term { padding: 2px 4px 4px; }
+  .mt-term-lab { font-size: 9.5px; }
+}
+
+.mt-terms { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.mt-tcard { background: var(--surface); border: 1px solid var(--rule); border-top: 4px solid var(--tc); border-radius: 12px; padding: 14px 16px; transition: box-shadow .15s, transform .15s; }
+.mt-tcard.on { box-shadow: 0 0 0 2px var(--tc); }
+.mt-tcard-k { font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: color-mix(in oklab, var(--tc) 72%, var(--ink)); }
+.mt-tcard-t { font-weight: 700; font-size: 16.5px; margin: 2px 0 6px; }
+.mt-tcard p { margin: 0 0 8px; font-size: 14.5px; line-height: 1.55; }
+.mt-tech { color: var(--ink-2); font-size: 13.5px !important; border-top: 1px dashed var(--rule); padding-top: 8px; margin-bottom: 0 !important; }
+.mt-tech b { color: var(--ink); }
+
+/* pasos numerados */
+.mt-steps { list-style: none; counter-reset: st; padding: 0; margin: 0; max-width: 74ch; }
+.mt-steps li { counter-increment: st; position: relative; padding: 0 0 16px 44px; font-size: 16px; line-height: 1.62; }
+.mt-steps li::before { content: counter(st); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in oklab, var(--acc) 18%, var(--surface)); color: color-mix(in oklab, var(--acc) 70%, var(--ink)); font-family: var(--mono); font-size: 13px; font-weight: 700; border: 1px solid color-mix(in oklab, var(--acc) 45%, var(--rule)); }
+.mt-steps-tight li { padding-bottom: 10px; font-size: 15.5px; }
+.mt-math { display: block; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 19px; margin: 10px 0; padding: 10px 14px; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; text-align: center; overflow-x: auto; white-space: nowrap; }
+.mt-math sub { font-size: .65em; }
+.mt-math-c { margin: 6px 0 16px; }
+
+/* λ */
+.mt-lam { display: grid; gap: 10px; }
+.mt-lam-row { display: grid; grid-template-columns: 96px minmax(0, 1fr) 82px; gap: 12px; align-items: center; font-size: 14px; }
+.mt-lam-track { height: 16px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.mt-lam-track span { display: block; height: 100%; border-radius: 4px; }
+.mt-lam-row b { font-size: 13px; text-align: right; }
+
+/* ------------------------------------------------------------ objetos e indicadores */
+.mt-objs { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-top: 20px; }
+.mt-obj { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+.mt-obj-t { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+.mt-obj p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+
+.mt-fams { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; align-items: start; }
+.mt-fam { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px 8px; }
+.mt-fam-h { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--display); font-weight: 800; font-size: 20px; text-transform: uppercase; padding-bottom: 6px; margin-bottom: 4px; border-bottom: 3px solid var(--acc); }
+.mt-fam-h .mono { font-size: 13px; color: var(--ink-3); font-weight: 500; }
+.mt-kpi { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--rule); font-size: 14px; line-height: 1.35; }
+.mt-kpi:last-child { border-bottom: 0; }
+.mt-kpi-v { font-size: 12.5px; white-space: nowrap; color: var(--ink-2); }
+.mt-kpi-v small { color: var(--ink-3); font-size: 11.5px; }
+
+/* ------------------------------------------------------------ reparto de varianza */
+.mt-var { font-size: 13px; }
+.mt-var-head, .mt-var-row { display: grid; grid-template-columns: minmax(120px, 210px) minmax(0, 1fr) 40px; gap: 10px; align-items: center; }
+.mt-var-axis { position: relative; height: 16px; }
+.mt-var-axis em { position: absolute; transform: translateX(-50%); font-style: normal; font-size: 10.5px; color: var(--ink-3); font-family: var(--mono); }
+.mt-var-c { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: color-mix(in oklab, var(--c-dt) 70%, var(--ink)); font-weight: 700; text-align: right; }
+.mt-var-row { padding: 2px 0; border-radius: 4px; }
+.mt-var-row:hover { background: var(--surface-2); }
+.mt-var-row > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2); }
+.mt-var-row b { text-align: right; font-size: 12px; color: color-mix(in oklab, var(--c-dt) 75%, var(--ink)); }
+.mt-var-mean { margin: 4px 0 8px; padding: 6px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.mt-var-mean > span:first-child { font-weight: 700; color: var(--ink) !important; }
+.mt-var-mean .mt-sb { height: 16px; }
+.mt-sb { position: relative; height: 12px; background: var(--surface-2); border-radius: 3px; }
+.mt-sb > span { position: absolute; top: 0; bottom: 0; }
+.mt-sb > i { position: absolute; top: -3px; bottom: -3px; width: 1.5px; background: var(--ink); opacity: .7; }
+@media (max-width: 600px) { .mt-var-head, .mt-var-row { grid-template-columns: 112px minmax(0, 1fr) 34px; gap: 6px; } .mt-var { font-size: 12px; } }
+
+/* tramo vs temporada */
+.mt-lvl { display: grid; gap: 14px; }
+.mt-lvl-l { font-size: 13.5px; color: var(--ink-2); margin-bottom: 5px; }
+.mt-lvl-bar { display: flex; height: 30px; border-radius: 6px; overflow: hidden; gap: 2px; }
+.mt-lvl-bar span { display: grid; place-items: center; min-width: 0; }
+.mt-lvl-bar em, .mt-iw-bar em { font-style: normal; font-family: var(--mono); font-size: 11.5px; font-weight: 600; background: var(--surface); color: var(--ink); padding: 0 5px; border-radius: 4px; line-height: 17px; }
+
+/* transferencia */
+.mt-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 6px 0 18px; }
+.mt-stats > div { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.mt-stats b { font-family: var(--display); font-weight: 800; font-size: 36px; line-height: 1; color: color-mix(in oklab, var(--c-dt) 80%, var(--ink)); }
+.mt-stats span { font-size: 13.5px; color: var(--ink); }
+.mt-stats em { font-style: normal; font-size: 12px; color: var(--ink-3); }
+@media (max-width: 520px) { .mt-stats { grid-template-columns: 1fr; } }
+
+/* sintética */
+.mt-syn { display: grid; gap: 10px; }
+.mt-syn-row { display: grid; grid-template-columns: minmax(110px, 200px) minmax(0, 1fr) 44px; gap: 12px; align-items: center; font-size: 14px; }
+.mt-syn-track { height: 18px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.mt-syn-track span { display: block; height: 100%; border-radius: 4px; }
+.mt-syn-row b { text-align: right; }
+.mt-syn-ax { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+
+/* identificabilidad */
+.mt-iw { margin: 6px 0 18px; }
+.mt-iw-bar { display: flex; height: 30px; border-radius: 6px; overflow: hidden; gap: 2px; }
+.mt-iw-bar > span { flex-basis: 0; display: grid; place-items: center; }
+.mt-iw-keys { display: grid; gap: 6px; margin-top: 10px; font-size: 14px; }
+.mt-iw-keys i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.mt-iw-keys span { color: var(--ink-2); }
+
+/* ------------------------------------------------------------ otros modelos */
+.mt-models { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; align-items: start; }
+.mt-model { background: var(--surface); border: 1px solid var(--rule); border-top: 4px solid var(--acc); border-radius: 12px; padding: 16px 18px; }
+.mt-model-t { font-family: var(--display); font-weight: 800; font-size: 24px; text-transform: uppercase; line-height: 1; }
+.mt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 10px; }
+.mt-chips span { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid color-mix(in oklab, var(--acc) 50%, var(--rule)); background: color-mix(in oklab, var(--acc) 10%, var(--surface)); color: var(--ink); }
+.mt-model p { margin: 0 0 8px; font-size: 14.5px; line-height: 1.55; }
+.mt-arch { display: grid; gap: 4px; margin-top: 10px; }
+.mt-arch-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 34px; gap: 8px; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+.mt-arch-track { height: 9px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.mt-arch-track span { display: block; height: 100%; background: var(--acc); border-radius: 3px; }
+.mt-arch-row b { text-align: right; font-size: 11.5px; }
+
+/* ------------------------------------------------------------ límites y referencias */
+.mt-limits { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px 28px; }
+.mt-limits li { position: relative; padding: 0 0 0 20px; font-size: 15.5px; line-height: 1.6; max-width: 70ch; }
+.mt-limits li::before { content: ''; position: absolute; left: 0; top: .6em; width: 8px; height: 8px; border-radius: 2px; background: var(--ink-3); }
+@media (max-width: 480px) { .mt-limits { grid-template-columns: 1fr; } }
+.mt-refs { padding-left: 1.6em; margin: 0; columns: 2 460px; column-gap: 48px; }
+.mt-refs li { font-size: 14px; line-height: 1.55; margin-bottom: 10px; break-inside: avoid; padding-left: 4px; color: var(--ink-2); }
+.mt-refs li::marker { font-family: var(--mono); color: var(--ink-3); font-size: 12px; }
+.mt-refs i { color: var(--ink); }
+.mt-refs a { color: color-mix(in oklab, var(--c-dt) 75%, var(--ink)); font-size: 12.5px; white-space: nowrap; }
+.mt-repro { margin-top: 18px; font-size: 13.5px; color: var(--ink-3); }
+
+/* ------------------------------------------------------------ ajustes de composición */
+.mt-after-fig { margin-top: 26px; }
+.mt-callout-wide { margin-top: 40px; }
+.mt-callout-wide p { max-width: 92ch; }
+.mt-fig-wide { margin-top: 30px; }
+.mt-var-cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px 36px; }
+@media (min-width: 1000px) { .mt-var-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.mt-var-mean { grid-template-columns: minmax(120px, 260px) minmax(0, 1fr) 40px !important; margin-bottom: 14px; }
+.mt-stats-after { margin-top: 18px; }
+.mt-pitch-keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 18px; margin-top: 12px; font-size: 13px; color: var(--ink-2); }
+.mt-pitch-keys i { display: inline-block; width: 14px; height: 3px; margin-right: 8px; vertical-align: 3px; border-radius: 2px; }
+.mt-pitch-keys b { color: var(--ink); margin-right: 4px; font-size: 12.5px; }
+.mt-mapmini { margin-top: 12px; }
+.mt-mapmini svg { max-width: 420px; }
+.mt-term-sym { font-size: clamp(28px, 2.5vw, 46px); }
+.mt-op { font-size: clamp(24px, 2.2vw, 40px); }
+.mt-eq { gap: 6px 4px; }
+@media (min-width: 1100px) { .mt-terms { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 2400px) { .mt-terms { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
+.mt-math-c { white-space: normal; font-size: 17px; }
+.mt-nowrap { white-space: nowrap; }
+.mt-tech b.mono, .mt-tech .mono { white-space: nowrap; }
+.mt-svg-cap { max-width: 560px; margin: 0 auto; }
+.mt-abstract { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px 36px; }
+.mt-keys { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.mt-keys > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 4px; border-left: 4px solid var(--acc); padding: 4px 0 4px 14px; }
+.mt-keys dd { margin: 0; font-family: var(--display); font-weight: 800; font-size: 40px; line-height: 1; color: color-mix(in oklab, var(--acc) 78%, var(--ink)); }
+.mt-keys dt { font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
+@media (min-width: 1400px) { .mt-abstract { grid-template-columns: minmax(0, 1fr) 280px; } .mt-keys { grid-template-columns: 1fr; align-content: center; gap: 18px; border-left: 1px solid color-mix(in oklab, var(--c-dt) 30%, var(--rule)); padding-left: 30px; } }
+@media (max-width: 600px) { .mt-var-mean { grid-template-columns: 112px minmax(0, 1fr) 34px !important; } .mt-var-mean > span:first-child { white-space: normal !important; line-height: 1.25; } }

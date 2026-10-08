@@ -4201,5 +4201,5 @@
   "field_tilt",
   "xg_balon_parado_90"
  ],
- "metodo": "PCA de 2 componentes sobre la huella propia de cada DT (35 indicadores, α estandarizados entre DTs); grupos por k-means en el plano 2D (K de 4 a 6 elegido por silueta)."
+ "metodo": "PCA de 2 componentes sobre la huella propia de cada DT (34 indicadores, α estandarizados entre DTs); grupos por k-means en el plano 2D (K de 4 a 6 elegido por silueta)."
 }
