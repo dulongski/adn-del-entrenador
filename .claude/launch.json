@@ -35,6 +35,72 @@
         "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web/dist"
       ],
       "port": 5300
+    },
+    {
+      "name": "coach-dna-dev-b",
+      "runtimeExecutable": "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web/node_modules/.bin/vite",
+      "runtimeArgs": [
+        "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web",
+        "--port",
+        "5201",
+        "--strictPort"
+      ],
+      "port": 5201
+    },
+    {
+      "name": "coach-dna-dev-c",
+      "runtimeExecutable": "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web/node_modules/.bin/vite",
+      "runtimeArgs": [
+        "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web",
+        "--port",
+        "5202",
+        "--strictPort"
+      ],
+      "port": 5202
+    },
+    {
+      "name": "coach-dna-dev-d",
+      "runtimeExecutable": "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web/node_modules/.bin/vite",
+      "runtimeArgs": [
+        "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web",
+        "--port",
+        "5203",
+        "--strictPort"
+      ],
+      "port": 5203
+    },
+    {
+      "name": "coach-dna-dev-e",
+      "runtimeExecutable": "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web/node_modules/.bin/vite",
+      "runtimeArgs": [
+        "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web",
+        "--port",
+        "5204",
+        "--strictPort"
+      ],
+      "port": 5204
+    },
+    {
+      "name": "coach-dna-dev-f",
+      "runtimeExecutable": "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web/node_modules/.bin/vite",
+      "runtimeArgs": [
+        "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web",
+        "--port",
+        "5205",
+        "--strictPort"
+      ],
+      "port": 5205
+    },
+    {
+      "name": "coach-dna-dev-g",
+      "runtimeExecutable": "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web/node_modules/.bin/vite",
+      "runtimeArgs": [
+        "/Users/sdulongsalazar/Desktop/Hackathons/coach-dna/web",
+        "--port",
+        "5206",
+        "--strictPort"
+      ],
+      "port": 5206
     }
   ]
 }
