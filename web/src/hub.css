@@ -37,7 +37,7 @@
 
 /* encabezado de cada modo */
 .mode-head { border-left: 4px solid var(--mc); padding: 2px 0 2px 14px; margin-bottom: 22px; }
-.mode-q { display: block; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--mc); }
+.mode-q { display: flex; align-items: center; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--mc); }
 .mode-desc { margin: 2px 0 0; color: var(--ink-2); max-width: 72ch; }
 
 /* ===================================================== selector de modos */

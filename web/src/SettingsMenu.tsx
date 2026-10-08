@@ -5,6 +5,20 @@ import './styles/settings.css'
 // el selector de idioma se muestra cuando la traducción al inglés esté completa
 const SHOW_LANG = true
 
+/** Engrane simétrico: 8 dientes trapezoidales alrededor de un anillo, con hueco central. */
+const GEAR = (() => {
+  const n = 8, R = 10.5, r = 8, hole = 3.4, c = 12
+  const p = (a: number, rad: number) => `${(c + rad * Math.cos(a)).toFixed(3)} ${(c + rad * Math.sin(a)).toFixed(3)}`
+  const step = (Math.PI * 2) / n, tip = step * 0.22, base = step * 0.3
+  let d = ''
+  for (let i = 0; i < n; i++) {
+    const a = i * step - Math.PI / 2
+    d += `${i ? 'L' : 'M'}${p(a - base, r)} L${p(a - tip, R)} L${p(a + tip, R)} L${p(a + base, r)} `
+    d += `A ${r} ${r} 0 0 1 ${p(a + step - base, r)} `
+  }
+  return `${d}Z M${c + hole} ${c} A ${hole} ${hole} 0 1 0 ${c - hole} ${c} A ${hole} ${hole} 0 1 0 ${c + hole} ${c} Z`
+})()
+
 /* Menú de ajustes (engrane): paleta, tipografía, idioma y logo. Cada cambio se guarda y recarga la página. */
 export default function SettingsMenu() {
   const [open, setOpen] = useState(false)
@@ -20,7 +34,7 @@ export default function SettingsMenu() {
   return (
     <div className="cfg" ref={box}>
       <button className="cfg-btn" aria-label={L('Ajustes', 'Settings')} aria-expanded={open} onClick={() => setOpen(o => !o)} title={L('Ajustes: paleta, letra e idioma', 'Settings: palette, font and language')}>
-        <svg viewBox="0 0 24 24" aria-hidden><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8.2 4.6.1-1.1-.1-1.1 2-1.6-2-3.4-2.4 1a8 8 0 0 0-1.9-1.1L15.5 2h-4l-.4 2.6a8 8 0 0 0-1.9 1.1l-2.4-1-2 3.4 2 1.6-.1 1.1.1 1.1-2 1.6 2 3.4 2.4-1c.6.5 1.2.8 1.9 1.1l.4 2.6h4l.4-2.6c.7-.3 1.3-.6 1.9-1.1l2.4 1 2-3.4-2-1.6Z" /></svg>
+        <svg viewBox="0 0 24 24" aria-hidden><path d={GEAR} fillRule="evenodd" /></svg>
       </button>
       {open && (
         <div className="cfg-panel" role="dialog" aria-label={L('Ajustes', 'Settings')}>

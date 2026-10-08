@@ -5,6 +5,7 @@ import { ClubLogo, ClubName, CoachPhoto } from './charts'
 import StyleMap from './StyleMap'
 import Logo from './Logo'
 import SettingsMenu from './SettingsMenu'
+import Info from './Info'
 import { L, LOCALE, SETTINGS } from './settings'
 import WhatIf from './WhatIf'
 import { Resumen, DtVsPlantilla, Transferencia, Fases, Contexto, Jugadores, BalonParado, Simulador, Metodo } from './tabs'
@@ -18,7 +19,6 @@ function readHash() {
   const n = Number(c)
   return { c: c && Number.isFinite(n) ? n : null, t: (TAB_KEYS.includes(t as TabKey) ? t : 'hub') as View }
 }
-const wide = () => window.matchMedia('(min-width: 900px)').matches
 // en un visor embebido (p.ej. Artifact) cambiar la URL puede estar prohibido: nunca debe romper la app
 const setHash = (h: string) => { try { window.history.replaceState(null, '', h) } catch { /* sin historial */ } }
 
@@ -36,7 +36,7 @@ export default function App() {
   useEffect(() => { try { localStorage.setItem('soloActivos', activos ? '1' : '0') } catch { /* sin almacenamiento */ } }, [activos])
   const nActivos = useMemo(() => (glob?.dts || []).filter((d: Any) => media.dts?.[d.id]?.vigente).length, [glob, media])
   const mapa: Any = (boot as Any).mapa
-  const [sideOpen, setSideOpen] = useState(() => readHash().c !== null && wide())
+  const [sideOpen, setSideOpen] = useState(false)
 
   useEffect(() => {
     const onHash = () => { const h = readHash(); setCoachId(h.c); if (h.c !== null) setTabRaw(h.t); else setSideOpen(false) }
@@ -55,7 +55,7 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-  const openCoach = (id: number) => { setTabRaw('hub'); setCoachId(id); setSideOpen(wide()); window.scrollTo({ top: 0 }) }
+  const openCoach = (id: number) => { setTabRaw('hub'); setCoachId(id); setSideOpen(false); window.scrollTo({ top: 0 }) }
   const goMap = () => { setCoachId(null); setArt(null); setSideOpen(false); setHash('#mapa') }
   useEffect(() => {
     if (coachId === null) return
@@ -81,6 +81,9 @@ export default function App() {
     <div className={`shell${sideOpen ? ' side-open' : ''}${coachId === null ? ' on-map' : ''}`}>
       <button className="burger" aria-label={sideOpen ? L('Cerrar menú', 'Close menu') : L('Abrir menú de entrenadores', 'Open coaches menu')} aria-expanded={sideOpen} onClick={() => setSideOpen(o => !o)}>
         <span /><span /><span />
+      </button>
+      <button className="home-btn" aria-label={L('Ir al mapa de estilos', 'Go to the style map')} title={L('Mapa de estilos', 'Style map')} onClick={goMap}>
+        <svg viewBox="0 0 24 24" aria-hidden><circle cx="7" cy="8" r="2.4" /><circle cx="16.5" cy="6.5" r="1.8" /><circle cx="15" cy="15.5" r="2.8" /><circle cx="6.5" cy="17" r="1.6" /><path d="M7 8 L16.5 6.5 M7 8 L15 15.5 M15 15.5 L6.5 17" fill="none" strokeWidth="1.1" stroke="currentColor" opacity=".55" /></svg>
       </button>
       <SettingsMenu />
       {sideOpen && <div className="scrim" onClick={() => setSideOpen(false)} />}
@@ -147,8 +150,7 @@ export default function App() {
             ) : (
               <section className="panel" role="tabpanel" style={{ ['--mc' as string]: modeOf(tab).color }}>
                 <header className="mode-head">
-                  <span className="mode-q">{modeOf(tab).q}</span>
-                  <p className="mode-desc">{modeOf(tab).desc}</p>
+                  <span className="mode-q">{modeOf(tab).q}<Info>{modeOf(tab).desc}</Info></span>
                 </header>
                 {tab === 'resumen' && <Resumen art={art} glob={glob} media={media} go={setTab} />}
                 {tab === 'dt' && <DtVsPlantilla art={art} glob={glob} media={media} />}

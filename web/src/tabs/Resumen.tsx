@@ -36,13 +36,6 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
   const secs: Any[] = N.secciones
   return (
     <div className="rs">
-      <div className="facts rs-facts">
-        <div><span className="note">{L('Partidos analizados', 'Matches analyzed')}</span><b>{art.partidos_total}</b></div>
-        <div><span className="note">{L('Se separa de su plantilla', 'Separation from his squad')}</span><b>{fmt(art.identificabilidad.indice, 0)}<small>/100</small></b></div>
-        <div><span className="note">{L('Lo reconocen en otro club', 'Recognized at another club')}</span><b>{best ? <>{L(`${best.rank_ajustado}º`, ordEn(best.rank_ajustado))}<small>{L(` de ${best.n_clases} DTs en ${best.club}`, ` of ${best.n_clases} coaches at ${best.club}`)}</small></> : <small>{L('no aplica: un solo club', 'n/a: only one club')}</small>}</b></div>
-        <div><span className="note">{L('Se le reconoce en un partido', 'Recognizable from one match')}</span><b>{art.identidad?.lift ? <>{fmt(art.identidad.lift)}×<small>{L(' más que al azar', ' better than chance')}</small></> : '—'}</b></div>
-        <div><span className="note">{L('Puntos sumados', 'Points earned')}</span><b>{S.puntos}<small>{L(` por su juego, ${fmt(S.xpts, 0)}`, ` · his play deserved ${fmt(S.xpts, 0)}`)}</small></b></div>
-      </div>
 
       <p className="eyebrow">{L('Su ADN en pocas palabras', 'His DNA in a nutshell')}</p>
       <h3 className="h2 rs-title">{N.titular.split(': ').slice(1).join(': ') || N.titular}</h3>
@@ -78,6 +71,14 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
       <p className="lede">{L('Toca un dato con flechita para ver dónde queda entre todos los DTs.', 'Tap a stat with an arrow to see where he ranks among all coaches.')}</p>
       <div className="rs-chapters">
         {secs.map(sec => <Chapter key={sec.id} sec={sec} art={art} glob={glob} media={media} dd={dd} open={open} />)}
+      </div>
+      <h3 className="h2 rs-h">{L('Sus números', 'His numbers')}</h3>
+      <div className="facts rs-facts">
+        <div><span className="note">{L('Partidos analizados', 'Matches analyzed')}</span><b>{art.partidos_total}</b></div>
+        <div><span className="note">{L('Se separa de su plantilla', 'Separation from his squad')}</span><b>{fmt(art.identificabilidad.indice, 0)}<small>/100</small></b></div>
+        <div><span className="note">{L('Lo reconocen en otro club', 'Recognized at another club')}</span><b>{best ? <>{L(`${best.rank_ajustado}º`, ordEn(best.rank_ajustado))}<small>{L(` de ${best.n_clases} DTs en ${best.club}`, ` of ${best.n_clases} coaches at ${best.club}`)}</small></> : <small>{L('no aplica: un solo club', 'n/a: only one club')}</small>}</b></div>
+        <div><span className="note">{L('Se le reconoce en un partido', 'Recognizable from one match')}</span><b>{art.identidad?.lift ? <>{fmt(art.identidad.lift)}×<small>{L(' más que al azar', ' better than chance')}</small></> : '—'}</b></div>
+        <div><span className="note">{L('Puntos sumados', 'Points earned')}</span><b>{S.puntos}<small>{L(` por su juego, ${fmt(S.xpts, 0)}`, ` · his play deserved ${fmt(S.xpts, 0)}`)}</small></b></div>
       </div>
       <p className="note rs-foot">{L(`Todos los números salen de ${glob.muestra.partidos.toLocaleString(LOCALE)} partidos de Liga MX y un solo modelo.`,
         `Every number comes from ${glob.muestra.partidos.toLocaleString(LOCALE)} Liga MX matches and a single model.`)}
