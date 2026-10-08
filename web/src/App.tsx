@@ -214,11 +214,24 @@ function CoachBar({ art, media, tab, setTab }: { art: Any; media: Any; tab: View
           <b className="cb-mode-title">{modeTitle(mode, art)}</b>
           {mode.subs.length > 1 && (
             <div className="cb-subs" role="tablist">
-              {mode.subs.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>{l}</button>)}
+              {mode.subs.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}><SubIcon k={k} />{l}</button>)}
             </div>
           )}
         </div>
       )}
     </div>
   )
+}
+
+/** Iconos de las subpestañas: dejan claro que dentro de un modo hay varias vistas distintas. */
+function SubIcon({ k }: { k: TabKey }) {
+  const P: Partial<Record<TabKey, React.ReactNode>> = {
+    dt: <><rect x="3" y="5" width="7" height="3" rx="1" /><rect x="10" y="5" width="5" height="3" rx="1" opacity=".55" /><rect x="3" y="11" width="4" height="3" rx="1" /><rect x="7" y="11" width="9" height="3" rx="1" opacity=".55" /><rect x="3" y="17" width="10" height="3" rx="1" /><rect x="13" y="17" width="4" height="3" rx="1" opacity=".55" /></>,
+    transfer: <><path d="M4 8h13l-3-3M20 16H7l3 3" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>,
+    fases: <><rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" strokeWidth="1.8" /><path d="M12 5v14" fill="none" strokeWidth="1.8" /><circle cx="12" cy="12" r="2.6" fill="none" strokeWidth="1.8" /></>,
+    contexto: <><circle cx="12" cy="12" r="8" fill="none" strokeWidth="1.8" /><path d="M12 7v5l3.5 2" fill="none" strokeWidth="2" strokeLinecap="round" /></>,
+    sim: <><path d="M19 12a7 7 0 1 1-2.1-5" fill="none" strokeWidth="2" strokeLinecap="round" /><path d="M17.5 3.5v4h-4" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="12" r="2.2" /></>,
+    whatif: <><path d="M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3h-2a2 2 0 0 1-4 0z" fill="none" strokeWidth="1.7" strokeLinejoin="round" /></>,
+  }
+  return P[k] ? <svg className="cb-sub-ic" viewBox="0 0 24 24" aria-hidden fill="currentColor" stroke="currentColor" strokeWidth="0">{P[k]}</svg> : null
 }

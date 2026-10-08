@@ -156,3 +156,11 @@ table.t.vs-facts td.win { background: color-mix(in oklab, var(--vc) 20%, transpa
   table.t.vs-facts col:first-child { width: 36% !important; }
   table.t.vs-facts td.vs-txt { font-size: 12px; }
 }
+.vs-cp-searchrow { display: flex; gap: 10px; align-items: stretch; margin-top: 12px; }
+.vs-cp-searchrow .vs-cp-search { flex: 1; min-width: 0; }
+.vs-cp-ftoggle { flex: none; border: 1px solid var(--rule); background: var(--surface-2); color: var(--ink); border-radius: 8px; padding: 0 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.vs-cp-ftoggle:hover { border-color: var(--ink-3); }
+.vs-cp-ftoggle[aria-expanded='true'] { background: var(--ink); color: var(--surface); }
+.vs-cp-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+.vs-cp .vs-cp-controls { margin-top: 10px; }
+@media (max-width: 620px) { .vs-cp-searchrow { flex-direction: column; } .vs-cp-ftoggle { padding: 8px 14px; } }

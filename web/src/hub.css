@@ -1,6 +1,7 @@
 /* ===================================================== barra fija del DT */
 .coachbar { position: sticky; top: 0; z-index: 20; background: color-mix(in oklab, var(--bg) 92%, transparent); backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--rule); box-shadow: inset 0 -3px 0 var(--mc); padding: 8px max(24px, calc((100% - 1240px) / 2)); }
+@media (min-width: 1500px) { .coachbar { padding-left: max(72px, calc((100% - min(2000px, 90vw)) / 2)) !important; padding-right: max(24px, calc((100% - min(2000px, 90vw)) / 2)); } }
 .shell:not(.side-open) .coachbar { padding-left: max(72px, calc((100% - 1240px) / 2)); }
 .cb-row { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .cb-id { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 2px 8px 2px 2px; border-radius: 999px; cursor: pointer; text-align: left; flex: none; max-width: 300px; }
@@ -104,3 +105,12 @@
   .cb-subrow { flex-wrap: wrap; gap: 6px 10px; }
   .cb-subs { width: 100%; }
 }
+@media (min-width: 1500px) { .hub { grid-auto-rows: 310px; } .hub-title { font-size: 44px; } .hub-resumen .hub-title { font-size: 72px; } }
+
+/* subpestañas debajo del título del modo, con icono */
+.cb-subrow { flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 4px; }
+.cb-subs { gap: 8px; }
+.cb-subs button { display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px 7px 12px; font-size: 15px; border-radius: 10px; }
+.cb-sub-ic { width: 18px; height: 18px; flex: none; }
+.cb-subs button[aria-selected='true'] .cb-sub-ic { color: var(--mt, #fff); }
+@media (max-width: 700px) { .cb-subs button { padding: 6px 12px 6px 10px; font-size: 14px; } }

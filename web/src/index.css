@@ -95,6 +95,7 @@ button, select, input { font: inherit; color: inherit; }
 .tab:hover { color: var(--ink); }
 
 .panel { padding: 28px 40px 60px; max-width: 1240px; margin: 0 auto; }
+@media (min-width: 1500px) { .panel { max-width: min(2000px, 90vw); } .hero { padding-left: max(40px, calc((100% - min(2000px, 90vw)) / 2)) !important; padding-right: max(40px, calc((100% - min(2000px, 90vw)) / 2)) !important; } }
 .h2 { font-family: var(--display); font-weight: 700; font-size: 30px; text-transform: uppercase; margin: 28px 0 6px; line-height: 1; }
 .h2:first-child { margin-top: 0; }
 .lede { color: var(--ink-2); max-width: 72ch; margin: 0 0 16px; }

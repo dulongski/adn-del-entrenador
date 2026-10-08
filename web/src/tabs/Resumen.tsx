@@ -4,7 +4,7 @@ import { ClubLogo, PrismDetail, prismSentence } from '../charts'
 import { useDistData } from '../Dist'
 import { MODES, type TabKey } from '../modes'
 import { type P } from './common'
-import { KpiBell, RankStrip, alphaPos, kName, useWide } from './resumenKit'
+import { KpiBell, RankStrip, alphaPos, kName } from './resumenKit'
 import '../styles/resumen.css'
 
 /* ================================================================ RESUMEN */
@@ -26,7 +26,6 @@ const tabLabel = (t: TabKey) => MODES.flatMap(m => m.subs).find(([k]) => k === t
 export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) {
   const N = art.narrativa
   const dd = useDistData()
-  const wide = useWide()
   const att = Object.fromEntries(art.atribucion.map((a: Any) => [a.kpi, a]))
   const tr = art.transferencia as Any[]
   const best = tr.length ? tr.reduce((a, b) => (a.rank_ajustado <= b.rank_ajustado ? a : b)) : null
@@ -34,7 +33,6 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
   const nDT = glob.dts.length
   const open = (t: TabKey) => { go(t); window.scrollTo({ top: 0 }) }
   const secs: Any[] = N.secciones
-  const cols = wide ? [secs.filter((_, i) => i % 2 === 0), secs.filter((_, i) => i % 2 === 1)] : [secs]
   return (
     <div className="rs">
       <div className="facts rs-facts">
@@ -52,7 +50,7 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
       {art.partidos_total < 10 && <p className="rs-empty rs-warn">Con solo {art.partidos_total} partidos estas ideas son preliminares: el modelo acerca su estilo al promedio hasta tener más datos.</p>}
 
       {N.principios.length ? (
-        <div className={`rs-principles${N.principios.length === 1 ? ' one' : ''}`}>
+        <div className={`rs-principles${N.principios.length === 1 ? ' one' : ''}`} data-n={N.principios.length}>
           {N.principios.map((p: Any, i: number) => (
             <article key={p.titulo} className="rs-pr">
               <span className="rs-pr-n">Idea {i + 1}</span>
@@ -60,11 +58,11 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
               <p className="rs-pr-desc">{p.descripcion}</p>
               <KpiBell k={p.kpi} art={art} glob={glob} dd={dd} color={DT_BLUE} />
               {att[p.kpi] && (
-                <div className="rs-pr-who">
-                  <div className="rs-pr-h">¿Quién lo empuja?</div>
+                <details className="rs-pr-who">
+                  <summary><span className="rs-pr-h">Qué parte pone él y qué parte sus jugadores</span></summary>
                   <PrismDetail row={att[p.kpi]} />
                   <p className="explain">{prismSentence(att[p.kpi], kName(p.kpi, glob))}</p>
-                </div>
+                </details>
               )}
             </article>
           ))}
@@ -73,8 +71,8 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
 
       <h3 className="h2 rs-h">La historia en {secs.length} claves</h3>
       <p className="lede">Toca un dato con flechita para ver dónde queda entre todos los DTs.</p>
-      <div className={`rs-chapters${wide ? ' two' : ''}`}>
-        {cols.map((col, ci) => <div key={ci} className="rs-col">{col.map(sec => <Chapter key={sec.id} sec={sec} art={art} glob={glob} media={media} dd={dd} open={open} />)}</div>)}
+      <div className="rs-chapters">
+        {secs.map(sec => <Chapter key={sec.id} sec={sec} art={art} glob={glob} media={media} dd={dd} open={open} />)}
       </div>
       <p className="note rs-foot">Todos los números salen de {glob.muestra.partidos.toLocaleString('es-MX')} partidos de Liga MX y un solo modelo.
         Para ver de dónde sale cada rasgo, abre <button className="rs-link" style={{ ['--acc' as string]: '#e0662f' }} onClick={() => open('dt')}>{tabLabel('dt')} →</button></p>

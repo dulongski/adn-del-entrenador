@@ -15,6 +15,7 @@ export default function CoachPicker({ sims, pts, mapa, media, selected, onPick, 
   const [club, setClub] = useState('todos')
   const [minP, setMinP] = useState(0)
   const [orden, setOrden] = useState<Orden>('parecido')
+  const [showF, setShowF] = useState(false)
 
   const clubOf = (id: number) => media.dts[id]?.club ?? pts.get(id)?.clubes.at(-1) ?? ''
   const clubes = useMemo(() => [...new Set(sims.flatMap(s => pts.get(s.id)?.clubes ?? []))].sort((a, b) => a.localeCompare(b, 'es')), [sims, pts])
@@ -40,6 +41,7 @@ export default function CoachPicker({ sims, pts, mapa, media, selected, onPick, 
 
   const twin = sims[0], opp = sims.at(-1)!
   const filtered = q || activos || fam >= 0 || club !== 'todos' || minP > 0
+  const open = showF || q.trim().length > 0 || !!filtered
   const reset = () => { setQ(''); setActivos(false); setFam(-1); setClub('todos'); setMinP(0) }
 
   return (
@@ -56,8 +58,20 @@ export default function CoachPicker({ sims, pts, mapa, media, selected, onPick, 
         </div>
       </div>
 
-      <div className="vs-cp-controls">
+      <div className="vs-cp-searchrow">
         <input className="vs-cp-search" type="search" value={q} placeholder="Busca un DT por nombre o club…" aria-label="Buscar DT" onChange={e => setQ(e.target.value)} />
+        <button className="vs-cp-ftoggle" aria-expanded={open} onClick={() => setShowF(v => !v)}>{open ? 'Ocultar filtros' : 'Filtros y lista completa'}</button>
+      </div>
+      {!open && (
+        <div className="vs-cp-strip">
+          <span className="note">Más parecidos:</span>
+          {sims.slice(0, 5).map(x => (
+            <button key={x.id} className="vs-cp-chip" aria-pressed={selected === x.id} onClick={() => onPick(x.id)}>{shortName(pts.get(x.id).nombre)} <span className="vs-cp-chip-k">{signed(x.r)}</span></button>
+          ))}
+        </div>
+      )}
+      {open && <>
+      <div className="vs-cp-controls">
         <label className="vs-cp-field"><span>Familia de estilo</span>
           <select value={fam} onChange={e => setFam(Number(e.target.value))}>
             <option value={-1}>Todas</option>
@@ -115,6 +129,7 @@ export default function CoachPicker({ sims, pts, mapa, media, selected, onPick, 
         })}
         {results.length === 0 && <li className="note" style={{ padding: 10 }}>Ningún DT cumple esos filtros.</li>}
       </ul>
+      </>}
     </div>
   )
 }

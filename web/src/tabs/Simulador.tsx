@@ -176,7 +176,7 @@ function CumPts({ rows }: { rows: { a: number; e: number }[] }) {
   const y = (v: number) => P.t + (1 - v / max) * (H - P.t - P.b)
   const last = rows.at(-1)!
   return (
-    <div className="tbl-wrap"><svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: 520 }}>
+    <div className="tbl-wrap"><svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: 520, maxWidth: 1100, display: 'block', margin: '0 auto' }}>
       <polyline points={rows.map((r, i) => `${x(i)},${y(r.e)}`).join(' ')} fill="none" stroke="var(--ink-3)" strokeWidth={2} strokeDasharray="5 4" />
       <polyline points={rows.map((r, i) => `${x(i)},${y(r.a)}`).join(' ')} fill="none" stroke="var(--c-dt)" strokeWidth={2.5} />
       <text x={x(rows.length - 1) + 6} y={y(last.a) + 4} fontSize={12} fill="var(--ink)">Reales {last.a}</text>
