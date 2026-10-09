@@ -37,8 +37,8 @@
 .lg-prog { height: 4px; border-radius: 3px; background: var(--surface-2); overflow: hidden; } .lg-prog i { display: block; height: 100%; background: #8f6cf0; }
 .lg-ev { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; min-height: 24px; }
 .lg-e { display: grid; grid-template-columns: 1fr 22px 1fr; align-items: center; font-size: 13.5px; animation: lg-in .3s both; } .lg-e span { font-family: var(--mono); color: var(--ink-3); } .lg-e b { font-weight: 600; }
-.lg-e.t0 span { text-align: right; order: 1; } .lg-e.t0 em { order: 2; } .lg-e.t0 b { order: 3; text-align: left; }
-.lg-e.t1 { } .lg-e.t1 span { order: 3; text-align: left; } .lg-e.t1 em { order: 2; } .lg-e.t1 b { order: 1; text-align: right; }
+.lg-e.t0 b { order: 1; text-align: right; } .lg-e.t0 em { order: 2; } .lg-e.t0 span { order: 3; text-align: left; }
+.lg-e.t1 span { order: 1; text-align: right; } .lg-e.t1 em { order: 2; } .lg-e.t1 b { order: 3; text-align: left; }
 .lg-e em { font-style: normal; text-align: center; }
 .lg-skip { margin-top: 10px; background: transparent !important; border: 1px solid var(--rule) !important; color: var(--ink-2) !important; }
 .lg-champ { display: flex; align-items: center; gap: 16px; padding: 18px; background: linear-gradient(120deg, color-mix(in oklab, #e8b10c 22%, var(--surface)), var(--surface)); animation: lg-in .5s both; }
