@@ -13,39 +13,44 @@ import '../styles/jugadas.css'
 const pctText = (p: number | null | undefined) => (p == null ? '' : L(`más alto que el ${p}% de los DTs`, `higher than ${p}% of coaches`))
 
 /* ------------------------------------------------------------ ataque */
+const useMore = (p: number | null | undefined) => (p == null ? '' : L(`lo usa más que el ${p}% de los DTs`, `uses it more than ${p}% of coaches`))
+
 function Ataque({ pc, JG, liga, color, media, club }: { pc: Any; JG: Any; liga: Any; color: string; media: Any; club: string }) {
-  const cats: Any[] = useMemo(() => liga.cats.map((c: Any) => ({ ...c, ...pc.ataque.cats[c.id] })).sort((a: Any, b: Any) => (b.xg ?? 0) - (a.xg ?? 0)), [liga, pc])
-  const [sel, setSel] = useState<string>(cats[0].id)
+  // dos ejes que no se pisan: cómo se arma y cómo termina; cada uno se ordena por cuánto lo usa el equipo
+  const blocks: Any[] = useMemo(() => liga.bloques.map((b: Any) => ({ ...b, cats: b.cats.map((c: Any) => ({ ...c, ...pc.ataque.cats[c.id], lg_share: c.share, lg_n: c.n })).sort((x: Any, y: Any) => (y.share ?? 0) - (x.share ?? 0)) })), [liga, pc])
+  const all: Any[] = blocks.flatMap(b => b.cats)
+  const [sel, setSel] = useState<string>(all[0].id)
   const [k, setK] = useState(0)
-  const cur = cats.find(c => c.id === sel) ?? cats[0]
+  const cur = all.find(c => c.id === sel) ?? all[0]
   const ex: Any[] = pc.ataque.ejemplos[cur.id] || []
   const e = ex[k]
-  const max = Math.max(...cats.map(c => Math.max(c.xg ?? 0, c.liga_xg ?? 0, liga.cats.find((l: Any) => l.id === c.id)?.xg ?? 0)), 0.01)
+  const max = Math.max(...all.map(c => Math.max(c.share ?? 0, c.lg_share ?? 0)), 1)
   const partido = e ? JG.partidos[e.m] : null
   const pj = pc.partidos
   return (
     <div className="arq">
       <div className="card arq-list">
-        <div className="jt-list-h">{L('xG por partido de cada tipo', 'xG per match from each type')} <Info wide><p>{L('Una jugada cuenta cuando termina en tiro o llega al área sin balón parado. Cada una se clasifica por cómo se creó el peligro. La barra es el xG por partido que genera de ese tipo; la raya negra, el promedio de la liga.', 'A move counts when it ends in a shot or reaches the box without a set piece. Each one is classified by how the danger was created. The bar is the xG per match it creates that way; the black line is the league average.')}</p><p>{L('Los tipos no se solapan: cada jugada va en uno solo, en el orden de la lista de «Cómo se clasifica».', 'Types do not overlap: each move goes in exactly one, in the order given in "How it is classified".')}</p></Info></div>
-        {cats.map(c => {
-          const lg = liga.cats.find((l: Any) => l.id === c.id)
-          return (
-            <button key={c.id} className="arq-row" aria-pressed={c.id === sel} onClick={() => { setSel(c.id); setK(0) }}>
-              <span className="arq-name">{L(c.es, c.en)}</span>
-              <span className="arq-bar"><span style={{ width: `${(c.xg ?? 0) / max * 100}%`, background: color }} /><i style={{ left: `${(lg?.xg ?? 0) / max * 100}%` }} /></span>
-              <span className="mono arq-val">{fmt(c.xg, 2)}</span>
-            </button>
-          )
-        })}
-        <div className="jt-list-f note">{L('Raya: liga', 'Line: league')}</div>
+        {blocks.map((bl: Any, bi: number) => (
+          <div key={bl.id} className="jt-block">
+            <div className="jt-list-h">{L(bl.es, bl.en)}{bi === 0 && <> <Info wide><p>{L('Sólo cuentan jugadas efectivas: las que terminan en tiro o llegan al área en juego abierto (sin balón parado ni penales).', 'Only effective moves count: those that end in a shot or reach the box in open play (no set pieces or penalties).')}</p><p>{L('Cada jugada se clasifica de dos maneras que no se pisan: cómo se armó (arriba) y cómo terminó (abajo). Así una salida desde atrás puede acabar en centro, y cuenta en una fila de cada bloque. La barra es el % de sus jugadas efectivas de ese tipo; la raya negra, el promedio de la liga.', 'Each move is classified in two ways that do not overlap: how it was built (top) and how it ended (bottom). So a build-up from the back can end in a cross, and it counts in one row of each block. The bar is the % of his effective moves of that type; the black line is the league average.')}</p></Info></>}</div>
+            {bl.cats.map((c: Any) => (
+              <button key={c.id} className="arq-row" aria-pressed={c.id === sel} onClick={() => { setSel(c.id); setK(0) }}>
+                <span className="arq-name">{L(c.es, c.en)}</span>
+                <span className="arq-bar"><span style={{ width: `${(c.share ?? 0) / max * 100}%`, background: color }} /><i style={{ left: `${(c.lg_share ?? 0) / max * 100}%` }} /></span>
+                <span className="mono arq-val">{fmt(c.share, 0)}%</span>
+              </button>
+            ))}
+          </div>
+        ))}
+        <div className="jt-list-f note">{L('% de sus jugadas efectivas · raya: liga', '% of his effective moves · line: league')}</div>
       </div>
       <div className="card arq-ex">
         <div className="arq-head">
           <div>
             <div className="h3" style={{ margin: 0 }}>{L(cur.es, cur.en)} <Info wide><p>{L(cur.desc_es, cur.desc_en)}</p><p>{L('Una de sus jugadas más peligrosas de este tipo en ', 'One of his most dangerous moves of this type at ')}{club}{L('. Sólo aparecen los jugadores que tocan el balón. Línea continua: pase; discontinua: conducción; punteada gris: tramo que los datos no registran. Ataque hacia la derecha.', '. Only players who touch the ball are shown. Solid line: pass; dashed: carry; grey dotted: a stretch the data does not capture. Attacking to the right.')}</p></Info></div>
             <div className="note">
-              {fmt(cur.n, 1)} {L('jugadas por partido', 'moves per match')} ({L('liga', 'league')} {fmt(liga.cats.find((l: Any) => l.id === cur.id)?.n, 1)}) · xG {fmt(cur.xg, 2)} · OBV {fmt(cur.obv, 2)} · {cur.goles} {L(cur.goles === 1 ? 'gol' : 'goles', cur.goles === 1 ? 'goal' : 'goals')} {L('en', 'in')} {pj} {L('partidos', 'matches')}
-              {cur.pct != null && <> · <b>{pctText(cur.pct)}</b></>}
+              <b>{fmt(cur.share, 0)}%</b> {L('de sus jugadas efectivas', 'of his effective moves')} ({L('liga', 'league')} {fmt(cur.lg_share, 0)}%) · {fmt(cur.n, 1)} {L('por partido', 'per match')} ({L('liga', 'league')} {fmt(cur.lg_n, 1)}) · {cur.goles} {L(cur.goles === 1 ? 'gol' : 'goles', cur.goles === 1 ? 'goal' : 'goals')} {L('en', 'in')} {pj} {L('partidos', 'matches')}
+              {cur.pct != null && <> · <b>{useMore(cur.pct)}</b></>}
               {pj < 10 && <> · <b className="jt-warn">{L('muestra chica', 'small sample')}</b></>}
             </div>
           </div>
@@ -72,6 +77,7 @@ const MET: Record<string, { es: string; en: string; d_es: string; d_en: string; 
   wid: { es: 'Ancho de la línea defensiva', en: 'Back-line width', unit: ' m', d_es: 'Distancia lateral entre el defensor más abierto de un lado y el del otro.', d_en: 'Sideways distance between the widest defender on each side.' },
   near: { es: 'Jugadores cerca del balón', en: 'Players near the ball', unit: '', d_es: 'Cuántos de sus jugadores de campo están a 15 m o menos del balón cuando el rival lo tiene.', d_en: 'How many of its outfield players are within 15 m of the ball when the opponent has it.' },
 }
+const KX = 105 / 120   // el 360 viene en metros; la cancha se dibuja en unidades de 120 × 80
 const HEAD: Record<string, string> = { atras: 'front', medio: 'front', bajo: 'back', contra: 'front' }
 
 function Defensa({ pc, liga, color }: { pc: Any; liga: Any; color: string }) {
@@ -102,7 +108,7 @@ function Defensa({ pc, liga, color }: { pc: Any; liga: Any; color: string }) {
       <div className="card arq-ex">
         <div className="arq-head">
           <div>
-            <div className="h3" style={{ margin: 0 }}>{L(cur.es, cur.en)} <Info wide><p>{L(cur.desc_es, cur.desc_en)}</p><p>{L('El equipo ataca hacia arriba y su portería está abajo. Los puntos son la posición media de sus 10 jugadores de campo en esa situación (por hueco, no por nombre: el 360 no identifica jugadores); el círculo blanco es dónde suele estar el balón; la línea punteada es el promedio de la liga.', 'The team attacks upwards and its goal is at the bottom. The dots are the average position of its 10 outfield players in that situation (by slot, not by name: 360 data does not identify players); the white circle is where the ball usually is; the dashed line is the league average.')}</p></Info></div>
+            <div className="h3" style={{ margin: 0 }}>{L(cur.es, cur.en)} <Info wide><p>{L(cur.desc_es, cur.desc_en)}</p><p>{L('El equipo ataca hacia arriba y su portería está abajo. Los puntos son la posición media de sus 10 jugadores de campo en esa situación (por hueco, no por nombre: el 360 no identifica jugadores); el círculo blanco es dónde suele estar el balón; la línea punteada es el promedio de la liga. Se ve toda la cancha; el ancho sólo usa fotos donde la cámara ve de banda a banda.', 'The team attacks upwards and its goal is at the bottom. The dots are the average position of its 10 outfield players in that situation (by slot, not by name: 360 data does not identify players); the white circle is where the ball usually is; the dashed line is the league average. The whole pitch is shown; width only uses frames where the camera sees touchline to touchline.')}</p></Info></div>
             <div className="note">{d.partidos} {L('partidos', 'matches')} · {fmt(d.n, 0)} {L('eventos del rival', 'opponent events')}{d.pocos && <> · <b className="jt-warn">{L('muestra chica', 'small sample')}</b></>}</div>
           </div>
         </div>
@@ -130,13 +136,9 @@ function BlockPitch({ d, tam, color }: { d: Any; tam: number[]; color: string })
   const bola: number[] | null = d.bola?.[0] != null ? d.bola : null
   const lines: number[][][] = []
   if (forma) { let i = 0; for (const n of tam) { lines.push(forma.slice(i, i + n)); i += n } }
-  const lgLines = (['front', 'back'] as const).filter(m => d.liga?.[m] != null).map(m => ({ m, x: d.liga[m] as number }))
-  // acerca la cancha al tramo donde está el bloque, la pelota y las líneas de la liga
-  const xs = [...(forma ?? []).map(p => p[0]), ...(bola ? [bola[0]] : []), ...lgLines.map(l => l.x), d.front, d.back].filter((v): v is number => v != null)
-  let x0 = Math.max(0, Math.min(...xs) - 14), x1 = Math.min(120, Math.max(...xs) + 14)
-  if (x1 - x0 < 62) { const mid = (x0 + x1) / 2; x0 = Math.max(0, mid - 31); x1 = Math.min(120, x0 + 62); x0 = Math.max(0, x1 - 62) }
+  const lgLines = (['front', 'back'] as const).filter(m => d.liga?.[m] != null).map(m => ({ m, x: (d.liga[m] as number) / KX }))   // metros -> unidades de la cancha
   return (
-    <Pitch vertical crop={[x0, x1]} labels={<>
+    <Pitch vertical labels={<>
       {lgLines.map(l => { const [tx, ty] = pitchXY(l.x, 2, true); return <text key={l.m} x={tx + 1} y={ty - 0.8} fontSize={2.6} fill="var(--ink-3)">{L('liga', 'league')} {l.m === 'front' ? L('adelante', 'front') : L('atrás', 'back')}</text> })}
     </>}>
       {lgLines.map(l => <line key={l.m} x1={l.x} y1={0} x2={l.x} y2={80} stroke="var(--ink-3)" strokeWidth={0.35} strokeDasharray="1.6 1.4" />)}
@@ -147,8 +149,8 @@ function BlockPitch({ d, tam, color }: { d: Any; tam: number[]; color: string })
         </>
       ) : (
         <>
-          {d.front != null && <rect x={d.front - 1.3} y={14} width={2.6} height={52} rx={1.3} fill={color} fillOpacity={0.55} />}
-          {d.back != null && <rect x={d.back - 1.3} y={14} width={2.6} height={52} rx={1.3} fill={color} fillOpacity={0.4} />}
+          {d.front != null && <rect x={d.front / KX - 1.3} y={14} width={2.6} height={52} rx={1.3} fill={color} fillOpacity={0.55} />}
+          {d.back != null && <rect x={d.back / KX - 1.3} y={14} width={2.6} height={52} rx={1.3} fill={color} fillOpacity={0.4} />}
         </>
       )}
       {bola && <g><circle cx={bola[0]} cy={bola[1]} r={2} fill="#fff" stroke="var(--ink)" strokeWidth={0.6} /><circle cx={bola[0]} cy={bola[1]} r={3.4} fill="none" stroke="#fff" strokeOpacity={0.6} strokeWidth={0.4} /></g>}
@@ -234,7 +236,9 @@ export function Formaciones({ F, JG, color, club }: { F: Any; JG: Any; color: st
   const panes: { k: 'nominal' | 'con' | 'sin'; title: string; info: string }[] = [
     { k: 'nominal', title: `${L('Alineación', 'Line-up')}${F.formacion ? ` · ${F.formacion}` : ''}`, info: L(`Cada uno en el puesto con el que más veces salió de titular en ${club}. La formación es la que más usó.`, `Each player at the position he most often started in at ${club}. The formation is the one he used most.`) },
     { k: 'con', title: L('Con balón', 'With the ball'), info: L('Posición media de todos sus pases, conducciones, tiros y regates: dónde se para cada uno cuando su equipo tiene el balón.', 'Average position of all his passes, carries, shots and dribbles: where each player stands when his team has the ball.') },
-    { k: 'sin', title: L('Sin balón', 'Without the ball'), info: L('Posición media de sus presiones, duelos, intercepciones, bloqueos y despejes: dónde defiende cada uno. Es donde actúan, no una foto de dónde se paran (los puntos tenues tienen menos de 25 acciones). El portero va fijo.', 'Average position of his pressures, duels, interceptions, blocks and clearances: where each player defends. It is where they act, not a snapshot of where they stand (faded dots have fewer than 25 actions). The goalkeeper is fixed.') },
+    { k: 'sin', title: L('Sin balón', 'Without the ball'), info: F.sin_360
+      ? L('El bloque del equipo cuando el rival tiene el balón en el medio campo, medido con los datos 360 (dónde están de verdad los jugadores). El 360 no dice quién es quién: cada hueco del bloque se asigna a un jugador por su puesto en la alineación (por línea y de izquierda a derecha). El portero va fijo.', 'The team\'s block when the opponent has the ball in midfield, measured with 360 data (where players actually are). 360 data does not say who is who: each slot of the block is given to a player by his line-up position (by line and left to right). The goalkeeper is fixed.')
+      : L('Posición media de sus presiones, duelos, intercepciones, bloqueos y despejes: dónde defiende cada uno. Es donde actúan, no una foto de dónde se paran (los puntos tenues tienen menos de 25 acciones). El portero va fijo.', 'Average position of his pressures, duels, interceptions, blocks and clearances: where each player defends. It is where they act, not a snapshot of where they stand (faded dots have fewer than 25 actions). The goalkeeper is fixed.') },
   ]
   return (
     <div className="fm">
@@ -245,7 +249,7 @@ export function Formaciones({ F, JG, color, club }: { F: Any; JG: Any; color: st
             const pos = p.k === 'nominal' ? j.nominal : p.k === 'con' ? j.con : j.sin
             if (!pos || pos[0] == null) return []
             const n = p.k === 'nominal' ? undefined : pos[2]
-            return [{ id: j.id, x: pos[0], y: pos[1], t: nm(j.id), n: j.portero ? undefined : n, gk: j.portero, tip: <><b>{names[j.id]}</b><br />{j.pos}{n != null && !j.portero ? <><br />{n} {L('acciones', 'actions')}</> : null}</> as Any }]
+            return [{ id: j.id, x: pos[0], y: pos[1], t: nm(j.id), n: j.portero ? undefined : n, gk: j.portero, tip: <><b>{names[j.id]}</b><br />{j.pos}{n != null && !j.portero ? <><br />{n} {L('acciones', 'actions')}</> : null}{p.k === 'sin' && j.sin360 && !j.portero ? <><br />{L('posición en el bloque (360)', 'position in the block (360)')}</> : null}</> as Any }]
           })
           return (
             <div key={p.k} className="fm-p" data-on={on === p.k ? '1' : '0'}>

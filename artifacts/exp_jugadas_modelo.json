@@ -1,0 +1,191 @@
+{
+ "max_cambio_alpha_indicadores_viejos": 0.0,
+ "participacion_por_grupo": {
+  "34 base": {
+   "coach": 0.1460303149527118,
+   "player": 0.4763147435832288,
+   "club": 0.13221063384923892,
+   "opp": 0.10664696965345133,
+   "ctx": -0.021430530329684037,
+   "residual": 0.16022786829105318
+  },
+  "8 arquetipos": {
+   "coach": 0.1414921760006297,
+   "player": 0.486484462318589,
+   "club": 0.14074175826937535,
+   "opp": 0.07726343369135837,
+   "ctx": -0.04230379129392793,
+   "residual": 0.19632196101397553
+  },
+  "9 nuevas": {
+   "coach": 0.1385116488811051,
+   "player": 0.39495892903120394,
+   "club": 0.10448759677377734,
+   "opp": 0.05017255105578879,
+   "ctx": -0.013825334522612294,
+   "residual": 0.32569460878073714
+  },
+  "5 «cómo se arma»": {
+   "coach": 0.13977548671612744,
+   "player": 0.39284510619306,
+   "club": 0.09922933740718534,
+   "opp": 0.057194348059046864,
+   "ctx": -0.022921277407103806,
+   "residual": 0.3338769990316842
+  },
+  "4 «cómo termina»": {
+   "coach": 0.13693185158732718,
+   "player": 0.3976012075788838,
+   "club": 0.11106042098201732,
+   "opp": 0.0413953048017162,
+   "ctx": -0.0024554059169979,
+   "residual": 0.3154666209670534
+  }
+ },
+ "promedio_app": {
+  "actual (42)": {
+   "coach": 0.14516590753326758,
+   "player": 0.47825183286615447,
+   "club": 0.13383560992926488,
+   "opp": 0.10105010566067174,
+   "ctx": -0.025406389560968586,
+   "residual": 0.16710293357160985
+  },
+  "con nuevas (51)": {
+   "coach": 0.14399162659465067,
+   "player": 0.4635530851305751,
+   "club": 0.12865654878417887,
+   "opp": 0.09207171367157475,
+   "ctx": -0.02336267396596454,
+   "residual": 0.19508969978498522
+  },
+  "reemplazo (43)": {
+   "coach": 0.1444566406586546,
+   "player": 0.45928678239792126,
+   "club": 0.12640813771716558,
+   "opp": 0.09482674250510338,
+   "ctx": -0.019838745160762047,
+   "residual": 0.19486044188191728
+  }
+ },
+ "por_indicador_nuevo": {
+  "jg_recup_alta": {
+   "etiqueta": "Recuperación alta",
+   "coach": 0.1281047574007396,
+   "player": 0.4136073511803287
+  },
+  "jg_contra": {
+   "etiqueta": "Contragolpe y ataque vertical",
+   "coach": 0.1409299837717993,
+   "player": 0.42836473375522127
+  },
+  "jg_largo": {
+   "etiqueta": "Balón largo",
+   "coach": 0.12760025467502725,
+   "player": 0.36258586673045745
+  },
+  "jg_salida": {
+   "etiqueta": "Salida desde atrás",
+   "coach": 0.15370937044274896,
+   "player": 0.3839560107861854
+  },
+  "jg_medio": {
+   "etiqueta": "Juego desde el medio campo",
+   "coach": 0.1485330672903221,
+   "player": 0.37571156851310705
+  },
+  "jg_centro_diag": {
+   "etiqueta": "Centros y pases diagonales",
+   "coach": 0.15419696217250997,
+   "player": 0.42210456112999273
+  },
+  "jg_conduccion": {
+   "etiqueta": "Conducción al área",
+   "coach": 0.1307539684884551,
+   "player": 0.31071947697418184
+  },
+  "jg_pase_area": {
+   "etiqueta": "Pase al área por dentro",
+   "coach": 0.12645692941414616,
+   "player": 0.407332355764556
+  },
+  "jg_lejos": {
+   "etiqueta": "Remate de lejos",
+   "coach": 0.13631954627419746,
+   "player": 0.4502484364468045
+  }
+ },
+ "parecido_con_viejos": {
+  "jg_recup_alta": {
+   "mas_parecido": "recuperaciones_altas_90",
+   "r": 0.5182798726593408
+  },
+  "jg_contra": {
+   "mas_parecido": "posesion",
+   "r": -0.5013186644722171
+  },
+  "jg_largo": {
+   "mas_parecido": "salida_corta",
+   "r": -0.3996596890076356
+  },
+  "jg_salida": {
+   "mas_parecido": "recuperaciones_altas_90",
+   "r": -0.4100911843723299
+  },
+  "jg_medio": {
+   "mas_parecido": "posesion_rival_dur",
+   "r": -0.46210226392086445
+  },
+  "jg_centro_diag": {
+   "mas_parecido": "centros",
+   "r": 0.34777924124971765
+  },
+  "jg_conduccion": {
+   "mas_parecido": "conduccion_prog",
+   "r": 0.46019210486872586
+  },
+  "jg_pase_area": {
+   "mas_parecido": "llegada_area",
+   "r": 0.3452040030265292
+  },
+  "jg_lejos": {
+   "mas_parecido": "llegada_area",
+   "r": -0.4230947796595701
+  }
+ },
+ "transferencia": {
+  "34 base (la que usa la app)": {
+   "etapas": 62,
+   "mitad_superior_ajustado": 51,
+   "mediana_ajustado": 16.0,
+   "top5_ajustado": 0.22580645161290322,
+   "p_signo": 1.3878184320715095e-07,
+   "mitad_superior_crudo": 47
+  },
+  "34 base + 8 arquetipos": {
+   "etapas": 62,
+   "mitad_superior_ajustado": 48,
+   "mediana_ajustado": 20.5,
+   "top5_ajustado": 0.25806451612903225,
+   "p_signo": 8.714261300815998e-06,
+   "mitad_superior_crudo": 46
+  },
+  "34 base + 9 nuevas": {
+   "etapas": 62,
+   "mitad_superior_ajustado": 50,
+   "mediana_ajustado": 16.0,
+   "top5_ajustado": 0.1774193548387097,
+   "p_signo": 6.071903850093149e-07,
+   "mitad_superior_crudo": 46
+  },
+  "34 base + 8 arquetipos + 9 nuevas": {
+   "etapas": 62,
+   "mitad_superior_ajustado": 48,
+   "mediana_ajustado": 17.0,
+   "top5_ajustado": 0.1774193548387097,
+   "p_signo": 8.714261300815998e-06,
+   "mitad_superior_crudo": 45
+  }
+ },
+ "n_filas": 24300
+}

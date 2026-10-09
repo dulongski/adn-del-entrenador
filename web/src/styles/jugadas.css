@@ -35,3 +35,7 @@
 
 /* las situaciones de defensa son pocas: sus filas se reparten la altura de la tarjeta */
 .arq .arq-list .arq-row.jt-sit { max-height: 120px; }
+
+.jt-block + .jt-block { margin-top: 6px; }
+
+.arq .arq-list .arq-row { max-height: 88px; }

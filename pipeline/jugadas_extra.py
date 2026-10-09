@@ -31,7 +31,8 @@ MIN_SPELL = 5          # partidos mínimos de un DT en un club para entrar a la 
 MIN_FRAMES = 150       # cuadros 360 mínimos por métrica y situación para compararla con la liga
 # qué métricas son confiables en cada situación (en «atrás» la línea defensiva queda fuera de cámara)
 VALID = {"atras": ["front", "near"], "medio": ["front", "back", "cent", "near"], "bajo": ["front", "back", "wid", "near"], "contra": ["front", "back", "near"]}
-W6 = {"front", "near", "bx", "by"}        # métricas con >= 6 jugadores visibles (el resto, con >= 9)
+W6 = {"front", "near", "bx", "by"}        # métricas con >= 6 jugadores visibles; «wid» con >= 9 y cámara viendo todo el ancho; el resto, con >= 9
+KX, KY = d360.KX, d360.KY                 # unidades StatsBomb (120 × 80) -> metros reales (105 × 68)
 
 RES = ["Goal", "Saved", "Saved to Post", "Saved Off Target", "Post", "Off T", "Wayward", "Blocked"]
 
@@ -142,14 +143,35 @@ def formaciones(core, mym_keys, A, LU, mins, names, J):
     return {"formacion": "-".join(str(form)) if form else None, "jugadores": out}
 
 
+def asignar_bloque(jugadores, forma, tam):
+    """«Sin balón» desde el 360: los 10 huecos del bloque (por línea y de izquierda a derecha) se asignan a los 10 de campo según su
+    puesto en la alineación (misma lógica: líneas por altura, dentro de la línea de izquierda a derecha). Devuelve True si se pudo."""
+    campo = [j for j in jugadores if not j["portero"] and j["nominal"][0] is not None]
+    if len(campo) != 10 or sum(tam) != 10 or not forma:
+        return False
+    campo.sort(key=lambda j: j["nominal"][0])
+    orden, i = [], 0
+    for n in tam:
+        orden += sorted(campo[i:i + n], key=lambda j: j["nominal"][1])
+        i += n
+    for j, sl in zip(orden, forma):
+        j["sin"] = [sl[0], sl[1], None]
+        j["sin360"] = True
+    return True
+
+
 # ---------------------------------------------------------------- liga: ataque
 def attack_tables(M, EFF):
-    """Por categoría y partido-equipo: jugadas, xG, OBV, goles. Devuelve la tabla larga con ceros rellenados."""
+    """Por eje (arma / termina), categoría y partido-equipo: jugadas, xG, OBV, goles (con ceros rellenados)."""
     tm = pd.concat([M[["match_id", "home_id", "home_coach_id"]].set_axis(["match_id", "team_id", "coach"], axis=1),
                     M[["match_id", "away_id", "away_coach_id"]].set_axis(["match_id", "team_id", "coach"], axis=1)], ignore_index=True)
-    g = EFF.groupby(["match_id", "team_id", "cat"]).agg(n=("xg", "size"), xg=("xg", "sum"), obv=("obv", "sum"), goles=("goal", "sum")).reset_index()
-    full = tm.merge(pd.DataFrame({"cat": jg.CAT_IDS}), how="cross").merge(g, on=["match_id", "team_id", "cat"], how="left").fillna({"n": 0, "xg": 0, "obv": 0, "goles": 0})
-    return tm, full
+    parts = []
+    for col, ids in (("arma", jg.BUILD_IDS), ("termina", jg.FINISH_IDS)):
+        g = EFF.groupby(["match_id", "team_id", col]).agg(n=("xg", "size"), xg=("xg", "sum"), obv=("obv", "sum"), goles=("goal", "sum")).reset_index().rename(columns={col: "cat"})
+        f = tm.merge(pd.DataFrame({"cat": ids}), how="cross").merge(g, on=["match_id", "team_id", "cat"], how="left").fillna({"n": 0, "xg": 0, "obv": 0, "goles": 0})
+        f["eje"] = col
+        parts.append(f)
+    return tm, pd.concat(parts, ignore_index=True)
 
 
 def main():
@@ -173,22 +195,29 @@ def main():
 
     # ----- liga: ataque
     tm, full = attack_tables(M, EFF)
-    league_att = full.groupby("cat")[["n", "xg", "obv", "goles"]].mean()
+    league_att = full.groupby(["eje", "cat"])[["n", "xg", "obv", "goles"]].mean()
+    tot_eje = full[full.eje == "arma"].n.sum()           # jugadas efectivas de la liga (cada una cae en un solo tipo de cada eje)
+    league_share = {(e, c): float(full[(full.eje == e) & (full.cat == c)].n.sum() / tot_eje * 100) for e, c in league_att.index}
 
     # ----- liga: defensa. Una fila por (partido, equipo, situación) -> promedio ponderado por cuadros
     DEF = DEF.merge(tm, on=["match_id", "team_id"], how="left")
     spells_att = full.merge(tm.groupby(["coach", "team_id"]).match_id.nunique().rename("pj").reset_index(), on=["coach", "team_id"])
     spells_att = spells_att[spells_att.pj >= MIN_SPELL]
-    sp_att = spells_att.groupby(["coach", "team_id", "cat"])[["n", "xg", "obv"]].mean().reset_index()
+    sp_att = spells_att.groupby(["coach", "team_id", "eje", "cat"])[["n", "xg", "obv"]].sum().reset_index()
+    sp_att["tot"] = sp_att.groupby(["coach", "team_id", "eje"]).n.transform("sum")
+    sp_att["share"] = sp_att.n / sp_att.tot.replace(0, np.nan) * 100
+
+    def wcol(d, col):
+        return d.n6 if col in W6 else d.n9w if col == "wid" else d.n9
 
     def wavg(d, col):
-        w = d.n6 if col in W6 else d.n9
+        w = wcol(d, col)
         x = d[col]
         ok = x.notna() & (w > 0)
         return float((x[ok] * w[ok]).sum() / w[ok].sum()) if ok.any() else float("nan")
 
     def frames(d, col):
-        return int((d.n6 if col in W6 else d.n9).sum())
+        return int(wcol(d, col).sum())
 
     rows_sp = []
     for (c, t, sit), d in DEF.groupby(["coach", "team_id", "sit"]):
@@ -206,9 +235,11 @@ def main():
 
     # ----- liga (archivo común)
     liga = {
-        "cats": [{"id": i, "es": es, "en": en, "desc_es": de, "desc_en": dn,
-                  "n": r1(league_att.loc[i, "n"], 2), "xg": r1(league_att.loc[i, "xg"], 3), "obv": r1(league_att.loc[i, "obv"], 3)}
-                 for i, es, en, de, dn in jg.CATS],
+        "bloques": [
+            {"id": eje, "es": es_b, "en": en_b, "cats": [
+                {"id": i, "es": es, "en": en, "desc_es": de, "desc_en": dn,
+                 "n": r1(league_att.loc[(eje, i), "n"], 2), "share": r1(league_share[(eje, i)], 1)} for i, es, en, de, dn in cats]}
+            for eje, es_b, en_b, cats in (("arma", "Cómo la arma", "How it is built", jg.BUILD), ("termina", "Cómo la termina", "How it ends", jg.FINISH))],
         "sits": [{"id": i, "es": es, "en": en, "desc_es": de, "desc_en": dn,
                   **{m: r1(league_def.get((i, m)), 1) for m in VALID[i]}} for i, es, en, de, dn in SITS],
         "min_partidos": MIN_SPELL,
@@ -250,28 +281,28 @@ def main():
             # --- ataque
             ef = EFF.merge(keys, on=["match_id", "team_id"])
             att = {}
-            tot_xg = float(ef.xg.sum()) if len(ef) else 0.0
-            for cid in jg.CAT_IDS:
-                e = ef[ef.cat == cid]
-                sp = sp_att[sp_att.cat == cid]
-                xgp = float(e.xg.sum() / pj)
-                att[cid] = {"n": r1(len(e) / pj, 2), "xg": r1(xgp, 3), "obv": r1(e.obv.sum() / pj, 3), "goles": int(e.goal.sum()), "tiros": int(e.shot.sum()),
-                            "pct": r1(pct_of(sp.xg, xgp), 0) if pj >= 1 and len(sp) else None, "parte": r1(float(e.xg.sum()) / tot_xg * 100, 0) if tot_xg else 0}
             ejemplos = {}
-            for cid in jg.CAT_IDS:
-                e = ef[ef.cat == cid].copy()
-                e["score"] = e.xg + 0.4 * e.obv + 0.3 * e.goal.astype(float)
-                out, seen = [], set()
-                for r in e.sort_values("score", ascending=False).itertuples():
-                    hit = (r.match_id, r.team_id, r.poss)
-                    if hit not in A_by or len(A_by[hit]) < 2 or r.match_id in seen:
-                        continue
-                    seen.add(r.match_id)
-                    minute = int(PMIN.get((int(r.match_id), int(r.poss)), int(r.t0 // 60))) if PMIN is not None else int(r.t0 // 60)
-                    out.append(_example(A_by, SH, nxt, hit, r, J, midx, minute))
-                    if len(out) == 3:
-                        break
-                ejemplos[cid] = out
+            for eje, ids in (("arma", jg.BUILD_IDS), ("termina", jg.FINISH_IDS)):
+                tot_n = len(ef)
+                for cid in ids:
+                    e = ef[ef[eje] == cid]
+                    sp = sp_att[(sp_att.eje == eje) & (sp_att.cat == cid)]
+                    share = len(e) / tot_n * 100 if tot_n else 0.0
+                    att[cid] = {"eje": eje, "n": r1(len(e) / pj, 2), "share": r1(share, 1), "xg": r1(e.xg.sum() / pj, 3), "obv": r1(e.obv.sum() / pj, 3),
+                                "goles": int(e.goal.sum()), "tiros": int(e.shot.sum()), "pct": r1(pct_of(sp.share, share), 0) if len(sp) and tot_n else None}
+                    e = e.copy()
+                    e["score"] = e.xg + 0.4 * e.obv + 0.3 * e.goal.astype(float)
+                    out, seen = [], set()
+                    for r in e.sort_values("score", ascending=False).itertuples():
+                        hit = (r.match_id, r.team_id, r.poss)
+                        if hit not in A_by or len(A_by[hit]) < 2 or r.match_id in seen:
+                            continue
+                        seen.add(r.match_id)
+                        minute = int(PMIN.get((int(r.match_id), int(r.poss)), int(r.t0 // 60))) if PMIN is not None else int(r.t0 // 60)
+                        out.append(_example(A_by, SH, nxt, hit, r, J, midx, minute))
+                        if len(out) == 3:
+                            break
+                    ejemplos[cid] = out
             # --- formaciones
             st = S.merge(keys, on=["match_id", "team_id"])
             ex = st[["dur", "players"]].explode("players").dropna()
@@ -307,12 +338,14 @@ def main():
                     pct[m] = r1(pct_of(spd, v), 0) if v == v and len(spd) else None
                 forma = None
                 if x.n10.sum() >= 30:
-                    forma = [[r1(float(x[f"sx{i}"].sum() / x.n10.sum())), r1(float(x[f"sy{i}"].sum() / x.n10.sum()))] for i in range(10)]
+                    forma = [[r1(float(x[f"sx{i}"].sum() / x.n10.sum()) / KX), r1(float(x[f"sy{i}"].sum() / x.n10.sum()) / KY)] for i in range(10)]   # en unidades de cancha, listo para dibujar
                 dsit[sid] = {"n": int(x.n.sum()), "n6": int(x.n6.sum()), "n9": int(x.n9.sum()), "n10": int(x.n10.sum()), "partidos": int(x.match_id.nunique()),
-                             **vals, "liga": lg, "pct": pct, "bola": [r1(wavg(x, "bx")), r1(wavg(x, "by"))], "forma": forma,
+                             **vals, "liga": lg, "pct": pct, "bola": [r1(wavg(x, "bx") / KX), r1(wavg(x, "by") / KY)], "forma": forma,
                              "pocos": bool(any(frames(x, m) < MIN_FRAMES for m in VALID[sid]))}
+            blk = dsit.get("medio") or dsit.get("bajo") or {}
+            form["sin_360"] = bool(blk.get("forma") and asignar_bloque(form["jugadores"], blk["forma"], tam))
             por_club[club] = {"partidos": pj, "con360": int(dm.match_id.nunique()),
-                              "ataque": {"cats": att, "ejemplos": ejemplos, "total_xg": r1(tot_xg / pj, 3), "total_n": r1(len(ef) / pj, 2)},
+                              "ataque": {"cats": att, "ejemplos": ejemplos, "total_n": r1(len(ef) / pj, 2)},
                               "defensa": {"sits": dsit, "tam": tam},
                               "formaciones": form}
         obj = {"id": c, "actual": club_list[-1], "clubes": [{"club": k, "partidos": int(clubs.loc[k, "count"]), "desde": clubs.loc[k, "min"], "hasta": clubs.loc[k, "max"]} for k in club_list],
