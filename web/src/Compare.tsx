@@ -52,7 +52,7 @@ export default function Compare({ art, glob, media, mapa, onOpen }: { art: Any; 
     window.addEventListener('coachdna:go', f)
     return () => window.removeEventListener('coachdna:go', f)
   }, [])
-  const [all, setAll] = useState(false)
+  const [orden, setOrden] = useState<'sep' | 'par'>('sep')   // mayor brecha primero | menor brecha (más parecidos) primero
   const dd = useDistData()
   useEffect(() => { setOther(null); if (rid !== null) getJSON(dataUrl(`dt_${rid}.json`)).then(setOther).catch(() => setOther(false)) }, [rid])
 
@@ -73,8 +73,7 @@ export default function Compare({ art, glob, media, mapa, onOpen }: { art: Any; 
 
   const rows = (mapa.kpis as string[]).map(k => ({ k, a: A.alpha[k] ?? 0, b: B.alpha[k] ?? 0 }))
     .map(o => ({ ...o, d: o.a - o.b })).sort((x, y) => Math.abs(y.d) - Math.abs(x.d))
-  const shown = all ? rows : rows.slice(0, 10)
-  const similar = [...rows].sort((x, y) => (Math.abs(x.d) - 0.04 * (Math.abs(x.a) + Math.abs(x.b))) - (Math.abs(y.d) - 0.04 * (Math.abs(y.a) + Math.abs(y.b)))).slice(0, 6)
+  const shown = orden === 'sep' ? rows : [...rows].reverse()
   const lab = (k: string) => kpiLabel(k, glob.kpis[k]?.etiqueta ?? k)
   const low = (k: string) => { const t = lab(k).replace(/\s*\(.*\)$/, ''); return /^[A-ZÁÉÍÓÚ][a-záéíóúñ]/.test(t) ? t[0].toLowerCase() + t.slice(1) : t }
   const top = rows.slice(0, 3)
@@ -161,26 +160,18 @@ export default function Compare({ art, glob, media, mapa, onOpen }: { art: Any; 
 
       <div className="card">
         <div className="vs-head">
-          <div className="h3" style={{ margin: 0 }}>{L('Dónde se parecen más', 'Where they are most alike')}
-            <Info wide><p>{L('Los rasgos en los que sus estilos propios casi coinciden, del más parecido al menos. Haz clic en un rasgo para ver dónde quedan entre todos los DTs.', 'The traits where their own styles almost coincide, from the closest to the least. Click a trait to see where they sit among all coaches.')}</p></Info>
-          </div>
-        </div>
-        <TraitBars rows={similar} lab={lab} A={SA} B={SB} dd={dd} />
-      </div>
-
-      <div className="card">
-        <div className="vs-head">
-          <div className="h3" style={{ margin: 0 }}>{all ? L('Todos los rasgos, de la mayor a la menor diferencia', 'All traits, from the biggest to the smallest gap') : L('Dónde se separan más', 'Where they differ most')}
+          <div className="h3" style={{ margin: 0 }}>{L('Rasgo por rasgo', 'Trait by trait')}
             <Info wide>
-              <p>{L('Haz clic en un rasgo para ver dónde quedan entre todos los DTs.', 'Click a trait to see where they sit among all coaches.')}</p>
-              <p>{L('Cómo leerlo: 0 es el DT promedio de la liga. +1 quiere decir que ese DT empuja el rasgo bastante más que lo normal; +2, muchísimo más; los negativos, lo contrario.', 'How to read it: 0 is the league’s average coach. +1 means that coach pushes the trait well above normal; +2, far above; negatives, the opposite.')}
-              {' '}{L('Las cifras están en desviaciones respecto al DT promedio y ya descuentan lo que aportan sus jugadores, el club y los rivales.', 'Figures are in standard deviations from the average coach and already strip out what his players, the club and opponents bring.')}</p>
+              <p>{L('Todos los rasgos, ordenados por la brecha entre sus estilos propios. Cambia el orden para ver primero en qué se parecen o en qué se separan. Haz clic en un rasgo para ver dónde quedan entre todos los DTs.', 'All traits, ordered by the gap between their own styles. Switch the order to see first where they are alike or where they differ. Click a trait to see where they sit among all coaches.')}</p>
+              <p>{L('Cómo leerlo: 0 es el DT promedio de la liga; +1 es que empuja el rasgo bastante más que lo normal, +2 muchísimo más, y los negativos lo contrario. Ya se descontó lo que aportan sus jugadores, el club y los rivales.', 'How to read it: 0 is the league’s average coach; +1 means he pushes the trait well above normal, +2 far above, and negatives the opposite. What his players, the club and opponents bring has been removed.')}</p>
             </Info>
           </div>
-          <div className="seg" style={{ margin: 0 }}>
-            <button aria-pressed={!all} onClick={() => setAll(false)}>{L('Los 10 más distintos', 'Top 10 gaps')}</button>
-            <button aria-pressed={all} onClick={() => setAll(true)}>{L('Todos', 'All')} ({rows.length})</button>
-          </div>
+          <label className="vs-ord">{L('Ordenar por', 'Order by')}
+            <select value={orden} onChange={e => setOrden(e.target.value as 'sep' | 'par')}>
+              <option value="sep">{L('Mayor brecha (más distintos primero)', 'Biggest gap (most different first)')}</option>
+              <option value="par">{L('Menor brecha (más parecidos primero)', 'Smallest gap (most alike first)')}</option>
+            </select>
+          </label>
         </div>
         <TraitBars rows={shown} lab={lab} A={SA} B={SB} dd={dd} />
       </div>

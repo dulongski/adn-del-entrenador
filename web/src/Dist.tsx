@@ -98,7 +98,7 @@ export default function Dist({ values, marks, refV = 0, refLabel = L('liga', 'le
       <polygon points={geo.poly} fill="color-mix(in oklab, var(--ink) 9%, transparent)" stroke="color-mix(in oklab, var(--ink) 22%, transparent)" strokeWidth={1} />
       {/* eje: línea base, números y qué mide */}
       <line x1={padX} x2={W - padX} y1={top + height + 4} y2={top + height + 4} stroke="var(--ink-3)" strokeOpacity={0.5} />
-      {geo.ticks.filter(t => refV == null || Math.abs(geo.X(t) - geo.X(refV)) > 46).map(t => (
+      {geo.ticks.filter(t => refV == null || Math.abs(geo.X(t) - geo.X(refV)) > 70).map(t => (
         <g key={t}><line x1={geo.X(t)} x2={geo.X(t)} y1={top + height + 4} y2={top + height + 8} stroke="var(--ink-3)" strokeOpacity={0.7} />
           <text x={geo.X(t)} y={top + height + 20} fontSize={11} textAnchor="middle" fill="var(--ink-3)">{format(t)}</text></g>
       ))}

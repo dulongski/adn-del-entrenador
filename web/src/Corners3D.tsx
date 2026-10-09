@@ -82,7 +82,9 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
     return Z.map(z => ({ id: z[0], nombre: z[1], desc: z[2], ...acc[z[0]], share: acc[z[0]].n / tot })).filter(z => z.id === 'corto' ? z.n > 0 : true).sort((a, b) => (a.id === 'fuera') - (b.id === 'fuera') || b.share - a.share)
   }, [E])
   const ownAtt = side === 'favor'
-  const attC = ownAtt ? tc : rivalC, defC = ownAtt ? rivalC : tc
+  // los jugadores llevan colores fijos (azul cielo = su equipo, blanco = rival): el color del club chocaría con la escala amarillo→rojo del xG
+  const MINE = '#38bdf8', RIVAL = '#f4f4f5'
+  const attC = ownAtt ? MINE : RIVAL, defC = ownAtt ? RIVAL : MINE
   const rr = (n: number) => 0.9 + 2.4 * Math.sqrt(n / cells.maxN)
   const who = (kind: 'att' | 'def', i: number) => Q?.[kind]?.[i]
   const dots = showPlayers ? [
@@ -105,13 +107,12 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
           return (
             <g key={d.kind + d.i} opacity={op}
               onMouseMove={e => { const q = d.own ? who(d.kind, d.i) : null; tip.show(e, <>{d.own ? (d.kind === 'def' ? L('Defensor de su equipo', 'His defender') : L('Atacante de su equipo', 'His attacker')) : L('Posición típica del rival', 'Typical opponent position')}{q?.top?.length ? <><br />{q.top.map(([id, nom, p]: [number, string, number]) => <span key={id}>{jugadorCorto(id, nom)} {p}%<br /></span>)}</> : null}</>) }} onMouseLeave={tip.hide}>
-              <circle cx={d.p[0]} cy={fy(d.p[1])} r={1.9} fill="rgba(0,0,0,.35)" />
-              <circle cx={d.p[0]} cy={fy(d.p[1])} r={1.35} fill={d.col} stroke="var(--bg, #111)" strokeWidth={0.45} />
-              <circle cx={d.p[0]} cy={fy(d.p[1])} r={0.42} fill="var(--bg, #111)" opacity={0.55} />
+              <circle cx={d.p[0]} cy={fy(d.p[1])} r={1.55} fill="#0b1018" opacity={0.85} />
+              <circle cx={d.p[0]} cy={fy(d.p[1])} r={1.05} fill={d.col} />
             </g>
           )
         })}
-        {showPlayers && V.portero && <g><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.9} fill="rgba(0,0,0,.35)" /><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.35} fill={ownAtt ? gkRival : tc} stroke="var(--bg, #111)" strokeWidth={0.45} /><text x={V.portero[0]} y={fy(V.portero[1]) + 0.75} fontSize={1.9} fontWeight={800} textAnchor="middle" fill="var(--bg, #111)" transform={`rotate(90 ${V.portero[0]} ${fy(V.portero[1])})`}>P</text></g>}
+        {showPlayers && V.portero && <g><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.9} fill="#0b1018" opacity={0.85} /><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.45} fill={ownAtt ? '#9ca3af' : MINE} /><text x={V.portero[0]} y={fy(V.portero[1]) + 0.75} fontSize={1.9} fontWeight={800} textAnchor="middle" fill="#0b1018" transform={`rotate(90 ${V.portero[0]} ${fy(V.portero[1])})`}>P</text></g>}
         {/* cobrador y bandera */}
         <circle cx={119.4} cy={fy(0.6)} r={0.9} fill="#fff" stroke="#111" strokeWidth={0.3} />
       </Pitch>
@@ -130,8 +131,8 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
         <div className="c3d-key-row"><span className="c3d-2d-sz"><i style={{ width: 8, height: 8 }} /><i style={{ width: 14, height: 14 }} /><i style={{ width: 22, height: 22 }} /></span>{L('Tamaño: cuántos envíos caen ahí', 'Size: how many deliveries land there')}</div>
         <div className="c3d-key-row c3d-key-scale"><span>xG</span><i style={{ background: `linear-gradient(90deg, ${xgColor(0)}, ${xgColor(0.33)}, ${xgColor(0.66)}, ${xgColor(1)})` }} /><span>{fmt(maxX, 2)}+</span></div>
         {showPlayers && <div className="c3d-key-row c3d-key-dots">
-          <span><i style={{ background: tc }} />{side === 'favor' ? L('Su equipo ataca', 'His team attacks') : L('Su equipo defiende', 'His team defends')}</span>
-          <span><i style={{ background: rivalC }} />{L('Rival', 'Opponent')}</span>
+          <span><i style={{ background: MINE }} />{side === 'favor' ? L('Su equipo ataca', 'His team attacks') : L('Su equipo defiende', 'His team defends')}</span>
+          <span><i style={{ background: RIVAL }} />{L('Rival', 'Opponent')}</span>
         </div>}
       </div>
       {tip.el}

@@ -145,7 +145,7 @@ export function KpiBell({ k, art, glob, dd, color, mode: mode0 = 'a', showStats 
       )}
       <Dist values={vals} marks={[{ id: art.id, color }]} refV={K.liga} refLabel={L('liga', 'league')} format={v => kFmt(k, v, true)}
             low={L('menos', 'less')} high={L('más', 'more')} height={compact ? 64 : 78} compact={compact}
-            axis={`${kpiLabel(k, glob.kpis[k]?.etiqueta ?? k)} · ${mode === 'v' ? L('lo que se vio en sus partidos', 'what his matches showed') : L('su sello con jugadores promedio', 'his imprint with average players')} · ${L('cada punto, un DT', 'each dot, one coach')}`} />
+            axis={kpiLabel(k, glob.kpis[k]?.etiqueta ?? k)} />
       {mine !== undefined && cmp && (
         <p className="rs-bell-say">
           <b>{mode === 'v' ? L('En sus partidos', 'In his matches') : L('Su sello', 'His imprint')}: {cmp.txt}.</b> {rankText(vals, mine)}

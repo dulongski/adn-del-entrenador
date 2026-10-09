@@ -4,6 +4,7 @@ import { fmt, type Any } from '../lib'
 import { apellido, rawFormat, signed } from './util'
 import { L } from '../settings'
 import Info from '../Info'
+import { kpiLabel } from '../i18n/data'
 
 export type Row = { k: string; a: number; b: number; d: number }
 type Side = { id: number; name: string; color: string }
@@ -14,9 +15,9 @@ export function TraitBell({ dd, k, A, B, modo, compact = false, height = 84 }: {
   if (!kp) return <p className="note">{L('Cargando la distribución…', 'Loading the distribution…')}</p>
   const marks = [{ id: A.id, color: A.color, label: apellido(A.name) }, { id: B.id, color: B.color, label: apellido(B.name) }]
   if (modo === 'a') {
-    return <Dist values={toValues(kp.a)} marks={marks} refV={0} refLabel={L('promedio', 'average')} format={v => signed(v)} low={L('menos', 'less')} high={L('más', 'more')} height={height} compact={compact} axis={L('Estilo propio en σ (0 = DT promedio) · cada punto, un DT', 'Own style in σ (0 = average coach) · each dot, one coach')} />
+    return <Dist values={toValues(kp.a)} marks={marks} refV={0} refLabel={L('promedio', 'average')} format={v => signed(v)} low={L('menos', 'less')} high={L('más', 'more')} height={height} compact={compact} axis={kpiLabel(k, kp.etiqueta)} />
   }
-  return <Dist values={toValues(kp.v)} marks={marks} refV={kp.liga} refLabel={L('liga', 'league')} format={rawFormat(kp.etiqueta, kp.liga)} low={L('menos', 'less')} high={L('más', 'more')} height={height} compact={compact} axis={`${kp.etiqueta} · ${L('en sus partidos, cada punto un DT', 'in his matches, each dot a coach')}`} />
+  return <Dist values={toValues(kp.v)} marks={marks} refV={kp.liga} refLabel={L('liga', 'league')} format={rawFormat(kp.etiqueta, kp.liga)} low={L('menos', 'less')} high={L('más', 'more')} height={height} compact={compact} axis={kpiLabel(k, kp.etiqueta)} />
 }
 
 /** Frase corta: dónde queda cada uno entre todos los DTs. */

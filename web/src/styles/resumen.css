@@ -53,7 +53,7 @@
 .rs-pick[aria-pressed='true'] { border-color: var(--acc); background: color-mix(in oklab, var(--acc) 14%, var(--surface)); }
 .rs-pick[aria-pressed='true'] .rs-stat-l { color: var(--acc-ink); }
 .rs-liga { border-style: dashed; background: transparent; }
-.rs-bell-say { margin: 2px 0 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
+.rs-bell-say { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
 .rs-bell-say b { color: var(--ink); font-weight: 600; }
 .rs-bell-wait { font-size: 13px; color: var(--ink-3); padding: 18px 0; }
 .rs-tech { font-family: var(--mono); font-size: 11px; color: var(--ink-3); white-space: nowrap; }
