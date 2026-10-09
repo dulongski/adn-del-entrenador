@@ -59,7 +59,7 @@ export const FAM_EN: Record<string, string> = {
   'Organización defensiva': 'Defensive shape', 'Transiciones': 'Transitions', 'Dominio': 'Control',
   'Balón parado': 'Set pieces', 'Arquetipos': 'Possession types',
 }
-export const famLabel = (es: string) => (en ? FAM_EN[es] ?? es : es)
+export const famLabel = (es: string) => (en ? FAM_EN[es] ?? es : es === 'Arquetipos' ? 'Tipos de posesión' : es)
 
 /** Familias de estilo del mapa (mapa.grupos[].nombre), rasgos y ejes, por texto en español. */
 export const MAP_EN: Record<string, string> = {

@@ -1,10 +1,8 @@
 """Datos extra para la sección «Juego» (Fases) de la web, uno por DT:
 
-  - redes de pases por club dirigido (mismo método que build.pass_network: los 11 con más minutos en ese club,
-    posición media de sus pases completos, aristas con ≥1 pase por partido; un solo portero),
   - detalle de cada tiro (partido, rival, minuto, marcador en ese momento, autor, resultado, parte del cuerpo,
-    destino final x/y/z de StatsBomb),
-  - jugadores y desenlace de los ejemplos de arquetipos (mismo orden que arquetipos_ejemplos en dt_<id>.json).
+    destino final x/y/z de StatsBomb) para el explorador de tiros.
+Las jugadas tipo, las formaciones y la defensa con 360 (pipeline/jugadas_extra.py) se incrustan aquí como «jg».
 
 No ajusta ningún modelo: sólo lee data/processed, data/events (para la altura final del tiro) y artifacts/.
 
@@ -161,15 +159,6 @@ def main():
                 return None
             return jug.setdefault(int(pid), len(jug))
 
-        # redes por club
-        redes = {}
-        for club in club_list:
-            my = mym[mym.club == club][["match_id", "team_id"]]
-            net = pass_network(A, my, S, LU)
-            for n in net["nodos"]:
-                n["j"] = J(n["id"])
-            redes[club] = net
-
         # tiros
         sh = SH.merge(mym[["match_id", "team_id"]], on=["match_id", "team_id"]).sort_values(["match_id", "t"])
         tiros = []
@@ -181,67 +170,18 @@ def main():
                           int(r.minute), midx[int(r.match_id)], J(r.player_id),
                           None if r.g_own != r.g_own else int(r.g_own), None if r.g_opp != r.g_opp else int(r.g_opp)])
 
-        # ejemplos de arquetipos: localizar cada posesión dibujada en dt_<id>.json
-        my_all = mym[["match_id", "team_id"]]
-        Ac = A_pcs.merge(my_all, on=["match_id", "team_id"])
-        Ac = Ac.assign(kk=list(zip(Ac.type, Ac.x.astype(float).round(1), Ac.y.astype(float).round(1))))
-        firsts = Ac.groupby(["match_id", "team_id", "poss"], sort=False).head(1)
-        index: dict = {}
-        for r in firsts.itertuples():
-            index.setdefault(r.kk, []).append((r.match_id, r.team_id, r.poss))
-        G = {k: g for k, g in Ac.groupby(["match_id", "team_id", "poss"], sort=False)}
-        Pm = P.set_index(["match_id", "team_id", "poss"])
-        nxt = P.sort_values(["match_id", "poss"]).assign(next_team=lambda d: d.groupby("match_id").team_id.shift(-1)).set_index(["match_id", "team_id", "poss"]).next_team
-        ejemplos = {}
-        for arq, seqs in art["arquetipos_ejemplos"].items():
-            out = []
-            for seq in seqs:
-                if not seq:
-                    out.append(None)
-                    continue
-                key = (seq[0][0], seq[0][1], seq[0][2])
-                hit = None
-                for cand in index.get(key, []):
-                    g = G[cand]
-                    if len(g.head(40)) == len(seq) and all(a == s[0] and round(float(x), 1) == s[1] for a, x, s in zip(g.type, g.x, seq)):
-                        hit = cand
-                        break
-                if hit is None:
-                    out.append(None)
-                    continue
-                g = G[hit].head(40)
-                pr = Pm.loc[hit] if hit in Pm.index else None
-                last = g.iloc[-1]
-                if pr is not None and bool(pr.goal):
-                    fin = "gol"
-                elif last.type == "Shot":
-                    fin = "tiro"
-                elif (last.type == "Pass" and isinstance(last.outcome, str)) or (hit in nxt.index and nxt.loc[hit] == nxt.loc[hit] and nxt.loc[hit] != hit[1]):
-                    fin = "perdida"
-                else:
-                    fin = "fin"
-                shot_out = None
-                if last.type == "Shot":
-                    s_ = SH[(SH.match_id == hit[0]) & (SH.poss == hit[2]) & (SH.team_id == hit[1])]
-                    if len(s_):
-                        shot_out = RES.index(s_.outcome.iloc[-1]) if s_.outcome.iloc[-1] in RES else -1
-                acc = [[J(r.player_id), J(r.recipient_id) if r.type == "Pass" and not isinstance(r.outcome, str) else None,
-                        0 if (r.type == "Pass" and isinstance(r.outcome, str)) else 1] for r in g.itertuples()]
-                minute = int(PMIN.get((int(hit[0]), int(hit[2])), int(g.t.iloc[0] // 60)))
-                out.append({"m": midx[int(hit[0])], "min": minute, "fin": fin, "res": shot_out,
-                            "xg": round(float(pr.xg), 3) if pr is not None and pr.xg == pr.xg else None, "acc": acc})
-            ejemplos[arq] = out
-
         obj = {"id": c, "clubes": [{"club": k, "partidos": int(clubs.loc[k, "count"]), "desde": clubs.loc[k, "min"], "hasta": clubs.loc[k, "max"]} for k in club_list],
-               "partidos": partidos, "jugadores": [[k, str(names.get(k, k))] for k in jug], "redes": redes,
+               "partidos": partidos, "jugadores": [[k, str(names.get(k, k))] for k in jug],
                "tiros_cols": ["x", "y", "ex", "ey", "ez", "xg", "res", "cuerpo", "tipo", "min", "partido", "jugador(índice)", "g_propios", "g_rival"],
-               "res": RES, "cuerpo": BODY, "tipo": TIPO, "tiros": tiros, "ejemplos": ejemplos}
+               "res": RES, "cuerpo": BODY, "tipo": TIPO, "tiros": tiros}
+        jf = DATA / "model_cache" / "jugadas" / f"jugadas_{c}.json"
+        if jf.exists():
+            obj["jg"] = json.load(open(jf))   # jugadas tipo, formaciones y defensa 360 (pipeline/jugadas_extra.py)
         f = OUT / f"juego_{c}.json"
         json.dump(obj, open(f, "w"), ensure_ascii=False, separators=(",", ":"))
         sz = f.stat().st_size
         tot += sz
-        miss = sum(1 for v in ejemplos.values() for e in v if e is None)
-        print(f"  {c} {d['nombre'][:28]:28s} {sz / 1024:6.0f} KB  tiros={len(tiros)} clubes={len(club_list)} ejemplos sin localizar={miss}")
+        print(f"  {c} {d['nombre'][:28]:28s} {sz / 1024:6.0f} KB  tiros={len(tiros)} clubes={len(club_list)}")
     print(f"total {tot / 1024:.0f} KB")
 
 

@@ -362,6 +362,9 @@ def main(coach_filter=None, fast=False, n_boot=30, solo_extra=False):
     dist.main()  # distribuciones entre DTs (campanas) para la web
     from pipeline import partidos_index
     partidos_index.main()  # resultados compactos para el asistente de IA
+    from pipeline import jugadas_extra, juego_extra
+    jugadas_extra.main()   # jugadas tipo, formaciones y bloque defensivo 360 (web/public/data/jugadas_*.json); 360 incremental
+    juego_extra.main()     # tiros por club (web/public/data/juego_*.json)
     if not solo_extra:
         from pipeline.models import transplant
         transplant.main()  # estudio de eventos «trasplante de estilo» (Método 5.5)

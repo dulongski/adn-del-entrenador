@@ -22,7 +22,7 @@ export const MODES: Mode[] = [
     desc: L('Cuánto de cada rasgo pone el DT, la plantilla, el club y el rival, y si su estilo viaja con él de club en club.', 'How much of each trait comes from the coach, squad, club and opponent, and whether his style travels with him.'),
     subs: [['dt', L('DT vs plantilla', 'Coach vs squad')], ['transfer', L('Prueba de transferencia', 'Transfer test')]] },
   { k: 'juego', name: L('Cómo juega', 'How he plays'), title: L('Cómo juega', 'How he plays'), q: L('¿Dónde y cómo ataca y defiende?', 'How does he attack and defend?'), color: '#1fae7a',
-    desc: L('Sus jugadas tipo, mapas de presión y tiro, red de pases, y cómo cambia según marcador, minuto y rival.', 'His typical moves, pressing and shot maps, passing network, and how it shifts with score, clock and opponent.'),
+    desc: L('Cómo crea peligro y cómo defiende, sus formaciones con y sin balón, mapas de presión y tiro, y cómo cambia según marcador, minuto y rival.', 'How it creates danger and defends, line-ups with and without the ball, pressing and shot maps, and how it shifts with score, clock and opponent.'),
     subs: [['fases', L('Estilo y zonas', 'Style & zones')], ['contexto', L('Según el partido', 'Game situations')]] },
   { k: 'jugadores', name: L('Jugadores', 'Players'), title: L('Sus jugadores', 'His players'), q: L('¿A quién usa y cómo los mueve?', 'Who does he pick, and how?'), color: '#e8b10c',
     desc: L('Formaciones, titulares por línea, rotación y qué cambia cuando mete a alguien desde la banca.', 'Formations, starters by line, rotation, and what changes when he goes to the bench.'), subs: [['jugadores', L('Jugadores', 'Players')]] },

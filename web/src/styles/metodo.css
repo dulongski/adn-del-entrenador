@@ -207,7 +207,7 @@
 .mt-iw-keys span { color: var(--ink-2); }
 
 /* ------------------------------------------------------------ otros modelos */
-.mt-models { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; align-items: start; }
+.mt-models { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; align-items: stretch; }
 .mt-model { background: var(--surface); border: 1px solid var(--rule); border-top: 4px solid var(--acc); border-radius: 12px; padding: 16px 18px; }
 .mt-model-t { font-family: var(--display); font-weight: 800; font-size: 24px; text-transform: uppercase; line-height: 1; }
 .mt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 10px; }

@@ -147,7 +147,25 @@ export function Metodo({ glob }: { glob: Any }) {
 
   const others: { t: string; acc: string; what: string; how: ReactNode; key: string[]; fig?: ReactNode }[] = [
     {
-      t: L('Jugadas tipo', 'Possession types'), acc: 'var(--c-club)',
+      t: L('Jugadas tipo', 'Signature plays'), acc: 'var(--c-dt)',
+      what: L('Dice con qué mecanismo crea peligro un equipo. Sólo cuentan jugadas efectivas: posesiones en juego abierto que terminan en tiro o llegan al área (sin balón parado ni penales).', 'Tells which mechanism a team uses to create danger. Only effective moves count: open-play possessions that end in a shot or reach the box (no set pieces or penalties).'),
+      how: L('Siete tipos por reglas explícitas, en este orden de prioridad: centro o pase atrás desde la banda; recuperación en campo rival y remate en ≤ 14 s; contragolpe o ataque vertical (≤ 12 s, avanza ≥ 35 m, no de banda); balón largo (≥ 32 m hacia delante en las 3 primeras acciones); construcción de 8 pases o más; remate desde fuera del área; y el resto, combinaciones cortas. Por partido se cuentan jugadas, xG y OBV; se comparan con la liga y se da el percentil entre las estancias de ≥ 5 partidos. No es un modelo y no entra a la descomposición.', 'Seven types set by explicit rules, in this priority order: a cross or cut-back from the flank; a win-back in the opponent half and a shot within ≤ 14 s; a counter-attack or vertical move (≤ 12 s, ≥ 35 m gained, not down the flank); a long ball (≥ 32 m forward in the first 3 actions); a build-up of 8 passes or more; a shot from outside the box; and the rest, short combinations. Per match we count moves, xG and OBV, compare with the league and give the percentile among spells of ≥ 5 matches. It is not a model and does not enter the decomposition.'),
+      key: [L('7 tipos', '7 types'), L('reglas', 'rules'), 'xG + OBV'],
+    },
+    {
+      t: L('Bloque defensivo (360)', 'Defensive block (360)'), acc: 'var(--c-rival)',
+      what: L('Muestra dónde se para un equipo cuando el rival tiene el balón, en cuatro situaciones: el rival sale desde su portería, está en el medio campo, ataca en nuestro tercio o contragolpea.', 'Shows where a team stands when the opponent has the ball, in four situations: the opponent builds from its own box, is in midfield, attacks in our third or counter-attacks.'),
+      how: L('Cada evento del rival en juego abierto trae una foto 360 de dónde están los jugadores. Se miran los jugadores de campo del equipo que defiende, vistos desde su propia portería. La línea más adelantada y la gente cerca del balón se calculan con ≥ 6 jugadores visibles; la línea defensiva, el ancho y el centro con ≥ 9; la forma del bloque sólo con los 10, por huecos (línea y puesto de izquierda a derecha) según la formación más usada del DT, porque el 360 no identifica jugadores. Mediana por partido, promedio ponderado por cuadros y percentil contra las demás estancias (≥ 5 partidos, ≥ 150 cuadros).', 'Every open-play opponent event comes with a 360 snapshot of where the players are. We look at the defending team\'s outfield players, seen from its own goal. The highest line and the players near the ball use ≥ 6 visible players; the defensive line, width and centre use ≥ 9; the shape of the block uses only frames with all 10, by slot (line and left-to-right position) according to the coach\'s most used formation, because 360 data does not identify players. Median per match, frame-weighted average, and percentile against other spells (≥ 5 matches, ≥ 150 frames).'),
+      key: ['360', L('4 situaciones', '4 situations'), L('mediana por partido', 'per-match median')],
+    },
+    {
+      t: L('Formaciones', 'Formations'), acc: 'var(--c-plantilla)',
+      what: L('Los once con más minutos de un club: la alineación típica, dónde se paran con el balón y dónde defienden.', 'The eleven players with the most minutes at a club: the typical line-up, where they stand with the ball and where they defend.'),
+      how: L('Con balón: posición media de sus pases, conducciones, tiros y regates. Sin balón: de sus presiones, duelos, intercepciones, bloqueos y despejes; es dónde actúan, no una foto de dónde se paran. Alineación: el partido con la formación más usada cuyo once inicial más se parece a esos once.', 'With the ball: average position of his passes, carries, shots and dribbles. Without it: of his pressures, duels, interceptions, blocks and clearances; this is where they act, not a snapshot of where they stand. Line-up: the match with the most used formation whose starting eleven is closest to those eleven.'),
+      key: [L('3 vistas', '3 views'), '11 + GK'],
+    },
+    {
+      t: L('Tipos de posesión', 'Possession types'), acc: 'var(--c-club)',
       what: L('Agrupa todas las posesiones en juego abierto en ocho tipos reconocibles. La frecuencia de cada tipo entra al modelo central como un indicador más.', 'Groups every open-play possession into eight recognizable types. The frequency of each type enters the main model as one more indicator.'),
       how: L('Mezcla gaussiana de covarianza completa sobre seis descriptores de cada posesión: dónde empieza, avance máximo, duración (log), pases (log), verticalidad y peligro. K se eligió en el codo del BIC entre 4 y 12.', 'A full-covariance Gaussian mixture on six descriptors of each possession: start, furthest point reached, duration (log), passes (log), directness and danger. K was chosen at the BIC elbow between 4 and 12.'),
       key: ['K = 8', 'GMM', 'BIC'],
@@ -382,7 +400,7 @@ export function Metodo({ glob }: { glob: Any }) {
               const accs = ['var(--c-dt)', 'var(--c-club)', 'var(--c-ctx)', 'var(--c-plantilla)', 'var(--c-dt)', 'var(--c-rival)', 'var(--c-club)', 'var(--c-ctx)', 'var(--c-plantilla)']
               return (
                 <div key={f} className="mt-fam" style={{ ['--acc' as string]: accs[fi % accs.length] }}>
-                  <div className="mt-fam-h">{f === 'Arquetipos' ? L('Jugadas tipo', 'Possession types') : famLabel(f)} <span className="mono">{ks.length}</span></div>
+                  <div className="mt-fam-h">{f === 'Arquetipos' ? L('Tipos de posesión', 'Possession types') : famLabel(f)} <span className="mono">{ks.length}</span></div>
                   {ks.map(([k, v]) => (
                     <div key={k} className="mt-kpi">
                       <KpiName name={f === 'Arquetipos' ? archLabel(glob.arquetipos?.[k.replace('arq_', '')]?.nombre ?? v.etiqueta) : kpiLabel(k, v.etiqueta)} desc={kpiDesc(k, v.descripcion)} />
@@ -521,7 +539,7 @@ export function Metodo({ glob }: { glob: Any }) {
 
         {/* ------------------------------------------------------------ 6 */}
         <Sec id="mt-s6" num={6} title={L('Otros modelos de la app', 'Other models in the app')} accent="var(--c-club)">
-          <p className="mt-lede">{L('El modelo central da la huella de cada entrenador. Estos otros modelos la describen, la ponen en contexto o la usan para predecir. Cada uno, con su parámetro clave.', 'The main model gives each coach\'s fingerprint. These other models describe it, put it in context or use it to predict. Each one with its key parameter.')}</p>
+          <p className="mt-lede">{L('El modelo central da la huella de cada entrenador. Estos otros modelos y reglas la describen, la ponen en contexto o la usan para predecir. Cada uno, con su parámetro clave.', 'The main model gives each coach\'s fingerprint. These other models and rules describe it, put it in context or use it to predict. Each one with its key parameter.')}</p>
           <div className="mt-models">
             {others.map(o => (
               <div key={o.t} className="mt-model" style={{ ['--acc' as string]: o.acc }}>
