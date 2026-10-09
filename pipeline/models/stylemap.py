@@ -94,14 +94,10 @@ def main():
                     "varianza": float(pca.explained_variance_ratio_[i])}
     # grupos: k-means sobre el MISMO plano 2D que se muestra (así las regiones de color coinciden con
     # lo que se ve); K entre 4 y 6 elegido por silueta
-    best = None
-    for k in range(4, 7):
-        km = KMeans(k, n_init=20, random_state=0).fit(XY)
-        s = silhouette_score(XY, km.labels_)
-        if np.bincount(km.labels_).min() < 5:  # grupos de 1-4 DTs no son una "familia" de estilo
-            continue
-        if best is None or s > best[0]:
-            best = (s, k, km)
+    # K fijo = 3: la silueta es plana entre K=2 y 8 (≈0.36–0.39) y K=3 es la opción con grupos grandes (≥15 DTs) y estabilidad parecida a K=2
+    K = 3
+    km = KMeans(K, n_init=50, random_state=0).fit(XY)
+    best = (silhouette_score(XY, km.labels_), K, km)
     sil, K, km = best
     grupos = []
     used = set()
@@ -136,7 +132,7 @@ def main():
     out = {"puntos": pts, "grupos": grupos, "ejes": ejes, "k": K, "silueta": float(sil),
            "varianza_total": float(pca.explained_variance_ratio_[:2].sum()),
            "varianza_total_3d": float(pca.explained_variance_ratio_.sum()), "kpis": kpis,
-           "metodo": "PCA de 2 componentes sobre la huella propia de cada DT (34 indicadores, α estandarizados entre DTs); grupos por k-means en el plano 2D (K de 4 a 6 elegido por silueta)."}
+           "metodo": "PCA de 2 componentes sobre la huella propia de cada DT (34 indicadores, α estandarizados entre DTs); grupos por k-means en el plano 2D (K = 3 fijo; por silueta)."}
     json.dump(out, open(ART / "mapa.json", "w"), ensure_ascii=False, indent=1)
     print(f"K={K} silueta={sil:.2f} varianza 2D={out['varianza_total']:.0%}")
     for g in grupos:

@@ -66,6 +66,21 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
     return { arr, maxN: Math.max(1, ...arr.map(c => c.n)), tot, prior }
   }, [E])
   const maxX = Math.min(Math.max(maxXref, 0.06), 0.2)
+  // a dónde van los envíos: reparto por zona del área (coordenadas normalizadas: córner en y≈0, primer palo = lado del córner)
+  const zonas = useMemo(() => {
+    const Z = [['corto', L('Cortos', 'Short'), L('Córner en corto', 'Short corner')], ['primer', L('Primer palo', 'Near post'), L('Cae del lado del córner, cerca del palo', 'Lands on the corner side, near the post')], ['centro', L('Centro del área chica', 'Central 6-yard box'), L('Frente al arco, entre los dos palos', 'In front of goal, between the posts')], ['segundo', L('Segundo palo', 'Far post'), L('Al lado contrario al córner', 'Opposite side to the corner')], ['penal', L('Punto penal', 'Penalty spot'), L('Frontal, a la altura del punto penal', 'Central, around the penalty spot')], ['fuera', L('Fuera del área', 'Outside the box'), L('Borde del área o más lejos', 'Edge of the box or beyond')]] as const
+    const acc: Record<string, { n: number; xg: number; sh: number }> = Object.fromEntries(Z.map(z => [z[0], { n: 0, xg: 0, sh: 0 }]))
+    for (const [ex, ey, , g, , short] of E) {
+      let k: string
+      if (short) k = 'corto'
+      else if (ex < 102 || ey < 18 || ey > 62) k = 'fuera'
+      else if (ex < 110 && ey >= 30 && ey <= 50) k = 'penal'
+      else k = ey < 36 ? 'primer' : ey <= 44 ? 'centro' : 'segundo'
+      const a = acc[k]; a.n++; a.xg += g; a.sh += g > 0 ? 1 : 0
+    }
+    const tot = E.length || 1
+    return Z.map(z => ({ id: z[0], nombre: z[1], desc: z[2], ...acc[z[0]], share: acc[z[0]].n / tot })).filter(z => z.id === 'corto' ? z.n > 0 : true).sort((a, b) => (a.id === 'fuera') - (b.id === 'fuera') || b.share - a.share)
+  }, [E])
   const ownAtt = side === 'favor'
   const attC = ownAtt ? tc : rivalC, defC = ownAtt ? rivalC : tc
   const rr = (n: number) => 0.9 + 2.4 * Math.sqrt(n / cells.maxN)
@@ -85,14 +100,32 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
               onMouseMove={e => tip.show(e, <><b>{c.n}</b> {L('envíos', 'deliveries')} ({fmt((100 * c.n) / Math.max(cells.tot, 1), 0)}%)<br />xG {L('medio', 'avg')} <b>{fmt(c.xg / c.n, 3)}</b><br />{L('terminan en remate', 'end in a shot')} {fmt((100 * c.sh) / c.n, 0)}%<br />{L('primer contacto propio', 'own first contact')} {fmt((100 * c.fc) / c.n, 0)}%</>)} onMouseLeave={tip.hide} />
           )
         })}
-        {dots.map(d => (
-          <circle key={d.kind + d.i} cx={d.p[0]} cy={fy(d.p[1])} r={1.15 + 1.1 * Math.min(1, (d.p[2] ?? 0.2) / 0.3)} fill={d.col} stroke="#fff" strokeWidth={0.45} strokeOpacity={0.9}
-            onMouseMove={e => { const q = d.own ? who(d.kind, d.i) : null; tip.show(e, <>{d.own ? (d.kind === 'def' ? L('Defensor de su equipo', 'His defender') : L('Atacante de su equipo', 'His attacker')) : L('Posición típica del rival', 'Typical opponent position')}{q?.top?.length ? <><br />{q.top.map(([id, nom, p]: [number, string, number]) => <span key={id}>{jugadorCorto(id, nom)} {p}%<br /></span>)}</> : null}</>) }} onMouseLeave={tip.hide} />
-        ))}
-        {showPlayers && V.portero && <circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.6} fill={ownAtt ? gkRival : tc} stroke="#fff" strokeWidth={0.45} />}
+        {dots.map(d => {
+          const op = 0.62 + 0.38 * Math.min(1, (d.p[2] ?? 0.2) / 0.3)
+          return (
+            <g key={d.kind + d.i} opacity={op}
+              onMouseMove={e => { const q = d.own ? who(d.kind, d.i) : null; tip.show(e, <>{d.own ? (d.kind === 'def' ? L('Defensor de su equipo', 'His defender') : L('Atacante de su equipo', 'His attacker')) : L('Posición típica del rival', 'Typical opponent position')}{q?.top?.length ? <><br />{q.top.map(([id, nom, p]: [number, string, number]) => <span key={id}>{jugadorCorto(id, nom)} {p}%<br /></span>)}</> : null}</>) }} onMouseLeave={tip.hide}>
+              <circle cx={d.p[0]} cy={fy(d.p[1])} r={1.9} fill="rgba(0,0,0,.35)" />
+              <circle cx={d.p[0]} cy={fy(d.p[1])} r={1.35} fill={d.col} stroke="var(--bg, #111)" strokeWidth={0.45} />
+              <circle cx={d.p[0]} cy={fy(d.p[1])} r={0.42} fill="var(--bg, #111)" opacity={0.55} />
+            </g>
+          )
+        })}
+        {showPlayers && V.portero && <g><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.9} fill="rgba(0,0,0,.35)" /><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.35} fill={ownAtt ? gkRival : tc} stroke="var(--bg, #111)" strokeWidth={0.45} /><text x={V.portero[0]} y={fy(V.portero[1]) + 0.75} fontSize={1.9} fontWeight={800} textAnchor="middle" fill="var(--bg, #111)" transform={`rotate(90 ${V.portero[0]} ${fy(V.portero[1])})`}>P</text></g>}
         {/* cobrador y bandera */}
         <circle cx={119.4} cy={fy(0.6)} r={0.9} fill="#fff" stroke="#111" strokeWidth={0.3} />
       </Pitch>
+      <div className="c3d-zones">
+        <div className="c3d-zones-h">{L('A dónde manda los envíos', 'Where the deliveries go')}<span className="note">{L('% de sus córners · xG medio de cada zona', '% of his corners · average xG of each zone')}</span></div>
+        {zonas.map(z => (
+          <div key={z.id} className="c3d-zone" title={z.desc}>
+            <span className="c3d-zone-n">{z.nombre}</span>
+            <span className="c3d-zone-bar"><i style={{ width: `${Math.min(100, z.share * 100 / Math.max(...zonas.map(q => q.share), 0.01))}%`, background: xgColor(z.n ? z.xg / z.n / maxX : 0) }} /></span>
+            <b>{fmt(z.share * 100, 0)}%</b>
+            <small>{z.n ? `xG ${fmt(z.xg / z.n, 3)}` : '—'}</small>
+          </div>
+        ))}
+      </div>
       <div className="c3d-2d-key" aria-hidden="true">
         <div className="c3d-key-row"><span className="c3d-2d-sz"><i style={{ width: 8, height: 8 }} /><i style={{ width: 14, height: 14 }} /><i style={{ width: 22, height: 22 }} /></span>{L('Tamaño: cuántos envíos caen ahí', 'Size: how many deliveries land there')}</div>
         <div className="c3d-key-row c3d-key-scale"><span>xG</span><i style={{ background: `linear-gradient(90deg, ${xgColor(0)}, ${xgColor(0.33)}, ${xgColor(0.66)}, ${xgColor(1)})` }} /><span>{fmt(maxX, 2)}+</span></div>

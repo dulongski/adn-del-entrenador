@@ -27,10 +27,10 @@ def resumen(mm: pd.DataFrame, lu: pd.DataFrame, st: pd.DataFrame, names: dict) -
     form_by_match = xi.drop_duplicates("match_id").set_index("match_id").formation.astype(str)
     forms = form_by_match.value_counts()
     top = forms.index[0] if len(forms) else None
-    # once típico: el conjunto de 11 puestos más frecuente con ese dibujo y, por puesto, quién arrancó más
-    once = []
-    if top is not None:
-        mids = form_by_match[form_by_match == top].index
+    # once típico de un dibujo: el conjunto de 11 puestos más frecuente con ese dibujo y, por puesto, quién arrancó más
+    def once_de(fm) -> list:
+        once = []
+        mids = form_by_match[form_by_match == fm].index
         x = xi[xi.match_id.isin(mids)]
         sets = x.groupby("match_id").position.apply(lambda s: tuple(sorted(s)))
         slots = list(Counter(sets[sets.map(len) == 11]).most_common(1)[0][0]) if (sets.map(len) == 11).any() else sorted(x.position.unique())[:11]
@@ -46,6 +46,9 @@ def resumen(mm: pd.DataFrame, lu: pd.DataFrame, st: pd.DataFrame, names: dict) -
         for ps in dict.fromkeys(slots):
             for pid, n in done.get(ps, []):
                 once.append({"pos": ps, "posicion": POS_ES.get(ps, ps), "id": pid, "nombre": names.get(pid, str(pid)), "tit": n})
+        return once
+    once = once_de(top) if top is not None else []
+    por_dibujo = {str(f): {"partidos": int(n), "once": once if f == top else once_de(f)} for f, n in forms.items()}
     # rotación: titulares distintos entre partidos consecutivos
     xis = xi.groupby("match_id").player_id.apply(set).reindex(mm.sort_values("date").match_id).dropna()
     changes = [len(a - b) for a, b in zip(xis.values[1:], xis.values[:-1])]
@@ -62,6 +65,7 @@ def resumen(mm: pd.DataFrame, lu: pd.DataFrame, st: pd.DataFrame, names: dict) -
         "formaciones": {str(k): int(v) for k, v in forms.items()},
         "dibujo": top, "partidos_dibujo": int(forms.iloc[0]) if len(forms) else 0,
         "once": once,
+        "once_por_dibujo": por_dibujo,
         "rotacion": round(float(np.mean(changes)), 2) if changes else None,
         "cambios_dibujo": round(float(shifts.mean()), 2) if len(shifts) else None,
         "jugadores": jug,

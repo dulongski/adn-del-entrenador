@@ -68,8 +68,8 @@ export function CambiosBells({ art, glob }: { art: Any; glob: Any }) {
           <div key={r.kpi} className="card jg-bell">
             <div className="jg-bell-t">{r.f.t}</div>
             <p className="jg-bell-s">{r.frase}{r.ruido && <span className="note">{L(' Diferencia chica: puede ser casualidad.', ' Small difference: could be chance.')}</span>}</p>
-            <Dist values={r.values} marks={[{ id: art.id, color: 'var(--c-dt)' }]} refV={0} refLabel={L('DT típico', 'Typical coach')} format={num} height={64} compact />
-            <div className="jg-bell-ax"><span>← {r.f.menos}</span><span>{r.f.mas} →</span></div>
+            <Dist values={r.values} marks={[{ id: art.id, color: 'var(--c-dt)' }]} refV={0} refLabel={L('DT típico', 'Typical coach')} format={num} height={64} compact low={r.f.menos} high={r.f.mas}
+                  axis={L(`Cambio en «${r.f.t}» tras sus cambios (σ) · cada punto, un DT`, `Change in “${r.f.t}” after his subs (σ) · each dot, one coach`)} />
           </div>
         ))}
       </div>

@@ -31,9 +31,11 @@ export function rankOf(values: { v: number }[], v: number) {
 export type Mark = { id: number | string; color: string; label?: string }
 
 export default function Dist({ values, marks, refV = 0, refLabel = L('liga', 'league'), format = (v: number) => fmt(v, 2), low = L('menos', 'less'), high = L('más', 'more'),
-  height = 96, compact = false }: {
+  height = 96, compact = false, axis }: {
   values: { id: number | string; v: number }[]; marks: Mark[]; refV?: number | null; refLabel?: string; format?: (v: number) => string
   low?: string; high?: string; height?: number; compact?: boolean
+  /** Qué mide el eje horizontal (unidad / escala), escrito bajo los números. */
+  axis?: string
 }) {
   const [hover, setHover] = useState<string | null>(null)
   // se dibuja al ancho real del contenedor (1 unidad = 1 px): los textos no se encogen en el teléfono
@@ -46,7 +48,7 @@ export default function Dist({ values, marks, refV = 0, refLabel = L('liga', 'le
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-  const W = w, padX = 18, top = compact ? 22 : 30, bot = compact ? 18 : 24, H = height + top + bot, mid = top + height / 2
+  const W = w, padX = 18, top = compact ? 22 : 30, bot = (compact ? 32 : 40) + (axis ? 14 : 0), H = height + top + bot, mid = top + height / 2
   const geo = useMemo(() => {
     const vs = values.map(o => o.v).filter(Number.isFinite)
     if (vs.length < 3) return null
@@ -80,7 +82,11 @@ export default function Dist({ values, marks, refV = 0, refLabel = L('liga', 'le
       placed.push({ x, y })
       return { id: String(o.id), v: o.v, x, y }
     })
-    return { X, poly: [...up, ...dn].join(' '), dots, r }
+    // marcas del eje con números redondos dentro del rango
+    const rawStep = (hi - lo) / 5, mag = 10 ** Math.floor(Math.log10(rawStep || 1)), stp = [1, 2, 2.5, 5, 10].map(m => m * mag).find(m => m >= rawStep) ?? rawStep
+    const ticks: number[] = []
+    for (let t = Math.ceil(lo / stp) * stp; t <= hi + 1e-9; t += stp) ticks.push(Math.abs(t) < stp * 1e-6 ? 0 : t)
+    return { X, poly: [...up, ...dn].join(' '), dots, r, ticks }
   }, [values, refV, height, mid, W])
   if (!geo) return null
   const markIds = new Set(marks.map(m => String(m.id)))
@@ -90,18 +96,21 @@ export default function Dist({ values, marks, refV = 0, refLabel = L('liga', 'le
     <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="dist" role="img" style={{ width: '100%', display: 'block', overflow: 'visible' }}
          aria-label={marks.map(m => `${m.label ?? coachShort(m.id)}: ${format(values.find(o => String(o.id) === String(m.id))?.v ?? NaN)}`).join(' · ')}>
       <polygon points={geo.poly} fill="color-mix(in oklab, var(--ink) 9%, transparent)" stroke="color-mix(in oklab, var(--ink) 22%, transparent)" strokeWidth={1} />
+      {/* eje: línea base, números y qué mide */}
+      <line x1={padX} x2={W - padX} y1={top + height + 4} y2={top + height + 4} stroke="var(--ink-3)" strokeOpacity={0.5} />
+      {geo.ticks.filter(t => refV == null || Math.abs(geo.X(t) - geo.X(refV)) > 46).map(t => (
+        <g key={t}><line x1={geo.X(t)} x2={geo.X(t)} y1={top + height + 4} y2={top + height + 8} stroke="var(--ink-3)" strokeOpacity={0.7} />
+          <text x={geo.X(t)} y={top + height + 20} fontSize={11} textAnchor="middle" fill="var(--ink-3)">{format(t)}</text></g>
+      ))}
       {refV != null && (
         <g>
-          <line x1={geo.X(refV)} x2={geo.X(refV)} y1={top - 6} y2={top + height + 4} stroke="var(--ink-2)" strokeDasharray="3 3" />
-          {/* la etiqueta de referencia se oculta si choca con la etiqueta inferior de un DT resaltado */}
-          {!marks.some((m, i) => i % 2 === 1 && Math.abs((geo.dots.find(o => o.id === String(m.id))?.x ?? -999) - geo.X(refV)) < 90) &&
-            <text x={geo.X(refV)} y={top + height + 16} fontSize={11.5} textAnchor="middle" fill="var(--ink-3)">{refLabel}</text>}
+          <line x1={geo.X(refV)} x2={geo.X(refV)} y1={top - 6} y2={top + height + 8} stroke="var(--ink-2)" strokeDasharray="3 3" />
+          <text x={geo.X(refV)} y={top + height + 20} fontSize={11} fontWeight={700} textAnchor="middle" fill="var(--ink-2)">{refLabel} {format(refV)}</text>
         </g>
       )}
-      {!compact && <>
-        <text x={padX} y={top + height + 16} fontSize={11.5} fill="var(--ink-3)">← {low}</text>
-        <text x={W - padX} y={top + height + 16} fontSize={11.5} fill="var(--ink-3)" textAnchor="end">{high} →</text>
-      </>}
+      <text x={padX} y={top + height + 36} fontSize={11} fill="var(--ink-3)">← {low}</text>
+      <text x={W - padX} y={top + height + 36} fontSize={11} fill="var(--ink-3)" textAnchor="end">{high} →</text>
+      {axis && <text x={W / 2} y={top + height + 53} fontSize={11.5} fontWeight={600} fill="var(--ink-2)" textAnchor="middle">{axis}</text>}
       {geo.dots.filter(d => !markIds.has(d.id)).map(d => (
         <circle key={d.id} cx={d.x} cy={d.y} r={hover === d.id ? geo.r + 1.6 : geo.r} fill={hover === d.id ? 'var(--ink)' : 'var(--ink-3)'} opacity={hover === d.id ? 1 : 0.55}
                 onMouseEnter={() => setHover(d.id)} onMouseLeave={() => setHover(null)} style={{ cursor: 'default' }} />

@@ -85,21 +85,26 @@ export function ClubSwitch({ clubes, value, set, media, partidos, carrera }: {
   )
 }
 
-export function FormList({ forms, total, color }: { forms: Record<string, number>; total: number; color: string }) {
+export function FormList({ forms, total, color, value, onPick }: { forms: Record<string, number>; total: number; color: string; value?: string | null; onPick?: (f: string) => void }) {
   const rows = Object.entries(forms).sort((a, b) => b[1] - a[1])
-  const top = rows.slice(0, 4)
-  const rest = rows.slice(4).reduce((s, [, v]) => s + v, 0)
+  const top = rows.slice(0, 8)
+  const rest = rows.slice(8).reduce((s, [, v]) => s + v, 0)
   const all = rest ? [...top, ['otros', rest] as [string, number]] : top
   const max = Math.max(...all.map(r => r[1]), 1)
   return (
     <div className="jg-forms">
-      {all.map(([f, v], i) => (
-        <div key={f} className="jg-form-row">
-          <span className={i === 0 ? 'jg-form-name top' : 'jg-form-name'}>{f === 'otros' ? L('Otros', 'Other') : dibujo(f)}</span>
-          <span className="jg-form-bar"><i style={{ width: `${(100 * v) / max}%`, background: i === 0 ? color : 'var(--ink-3)' }} /></span>
-          <span className="jg-form-val">{fmt((100 * v) / total, 0)}%<small> · {v} {L('p.', 'MP')}</small></span>
-        </div>
-      ))}
+      {all.map(([f, v]) => {
+        const on = value === f, can = !!onPick && f !== 'otros'
+        const Tag: Any = can ? 'button' : 'div'
+        return (
+          <Tag key={f} className={`jg-form-row${can ? ' pick' : ''}${on ? ' on' : ''}`} {...(can ? { onClick: () => onPick!(f), 'aria-pressed': on, title: L('Ver su once más probable con este dibujo', 'See his most likely XI in this formation') } : {})}>
+            <span className={on ? 'jg-form-name top' : 'jg-form-name'}>{f === 'otros' ? L('Otros', 'Other') : dibujo(f)}</span>
+            <span className="jg-form-bar"><i style={{ width: `${(100 * v) / max}%`, background: on ? color : 'var(--ink-3)' }} /></span>
+            <span className="jg-form-val">{fmt((100 * v) / total, 0)}%<small> · {v} {L('p.', 'MP')}</small></span>
+          </Tag>
+        )
+      })}
+      {onPick && <div className="note jg-form-hint">{L('Toca un dibujo para ver su once más probable.', 'Tap a formation to see his most likely XI.')}</div>}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, sig, type Any } from '.
 import { type P } from './common'
 import { CARRERA, ClubSwitch, dibujo, FormList, OncePitch, OnceList } from './JugOnce'
 import { CambiosBells } from './JugCambios'
+import { MinutosCambios, TipoCambios } from './JugCambiosViz'
 import Info from '../Info'
 import '../styles/jugadores.css'
 import { L, LANG } from '../settings'
@@ -61,6 +62,7 @@ export function Jugadores({ art, glob, media }: P) {
   const [X, setX] = useState<Any>(null)
   const [pick, setPick] = useState<{ id: number; club: string } | null>(null)
   const [allRows, setAllRows] = useState(false)
+  const [fmSel, setFmSel] = useState<{ key: string; f: string } | null>(null)
   useEffect(() => { setX(null); getJSON(dataUrl(`jugadores_${art.id}.json`)).then(setX).catch(() => setX(false)) }, [art.id])
 
   const actual: string | null = useMemo(() => {
@@ -75,6 +77,10 @@ export function Jugadores({ art, glob, media }: P) {
   const sel = X ? (club === CARRERA || !club ? X.carrera : X.por_club[club]) : null
   const color = club && club !== CARRERA ? clubColor(club, media) : 'var(--c-dt)'
   const setClub = (c: string) => setPick({ id: art.id, club: c })
+  // dibujo elegido: por defecto el más usado; cada dibujo trae su once más probable (once_por_dibujo)
+  const fmKey = `${art.id}|${club}`
+  const fm: string | null = sel ? (fmSel && fmSel.key === fmKey && sel.formaciones[fmSel.f] != null ? fmSel.f : sel.dibujo) : null
+  const view = sel && fm ? { ...sel, dibujo: fm, partidos_dibujo: sel.formaciones[fm] ?? sel.partidos_dibujo, once: sel.once_por_dibujo?.[fm]?.once ?? (fm === sel.dibujo ? sel.once : []) } : sel
   const byId = useMemo(() => Object.fromEntries((J.jugadores as Any[]).map(j => [j.player_id, j])), [J])
 
   const mc = J.minuto_cambios, ml = J.minuto_cambios_liga
@@ -94,14 +100,14 @@ export function Jugadores({ art, glob, media }: P) {
           {sel.partidos < 8 && <p className="note jg-warn">{L(`Sólo ${sel.partidos} partidos ${quien}: tómalo como una primera impresión.`, `Only ${sel.partidos} ${sel.partidos === 1 ? 'match' : 'matches'} ${quien}: treat it as a first impression.`)}</p>}
           <div className="jg-top">
             <div className="card jg-pitch-card">
-              <OncePitch sel={sel} club={club === CARRERA ? null : club} media={media} />
+              <OncePitch sel={view} club={club === CARRERA ? null : club} media={media} />
             </div>
             <div className="jg-side">
               <div className="card">
-                <div className="note">{L('Dibujo inicial más usado', 'Most used starting formation')} {quien}</div>
-                <div className="big" style={{ color }}>{dibujo(sel.dibujo)}</div>
-                <div className="note jg-gap">{L(`Arrancó así ${sel.partidos_dibujo} de ${sel.partidos} partidos.`, `Started this way in ${sel.partidos_dibujo} of ${sel.partidos} matches.`)}</div>
-                <FormList forms={sel.formaciones} total={sel.partidos} color={color} />
+                <div className="note">{fm === sel.dibujo ? L('Dibujo inicial más usado', 'Most used starting formation') : L('Dibujo elegido', 'Chosen formation')} {quien}</div>
+                <div className="big" style={{ color }}>{dibujo(view!.dibujo)}</div>
+                <div className="note jg-gap">{L(`Arrancó así ${view!.partidos_dibujo} de ${sel.partidos} partidos.`, `Started this way in ${view!.partidos_dibujo} of ${sel.partidos} matches.`)}</div>
+                <FormList forms={sel.formaciones} total={sel.partidos} color={color} value={fm} onPick={f => setFmSel({ key: fmKey, f })} />
               </div>
               <div className="jg-pair">
                 <div className="card">
@@ -118,8 +124,8 @@ export function Jugadores({ art, glob, media }: P) {
                 </div>
               </div>
               <div className="card jg-xi-card">
-                <div className="note">{L(`Los fijos del ${dibujo(sel.dibujo)}: veces que arrancó cada uno con ese dibujo`, `Regulars in the ${dibujo(sel.dibujo)}: starts for each player in that formation`)}</div>
-                <OnceList sel={sel} color={color} />
+                <div className="note">{L(`Su once más probable con ${dibujo(view!.dibujo)}: veces que arrancó cada uno con ese dibujo`, `His most likely XI in the ${dibujo(view!.dibujo)}: starts for each player in that formation`)}</div>
+                <OnceList sel={view} color={color} />
               </div>
             </div>
           </div>
@@ -130,17 +136,11 @@ export function Jugadores({ art, glob, media }: P) {
       <div className="grid2">
         <div className="card">
           <div className="h3">{L('En qué minuto hace cada cambio', 'When each sub comes on')} <Info>{L('Minuto típico de cada cambio. La raya marca lo habitual en la liga.', 'Typical minute of each sub. The tick marks the league norm.')}</Info></div>
-          <div className="jg-hbar"><HBar items={Object.keys(mc).map(n => ({ label: L(`${n}º cambio`, `Sub ${n}`), v: mc[n], ref: ml[n] }))} max={95} unit="'" /></div>
+          <MinutosCambios mc={mc} ml={ml} />
         </div>
         <div className="card">
           <div className="h3">{L('Qué tipo de cambio hace según el marcador', 'Type of sub by scoreline')} <Info>{L('Cambios de toda su carrera. «Más ofensivo»: entra alguien que juega más adelante que el que sale.', 'Subs across his whole career. “More attacking”: the player coming on plays further forward than the one going off.')}</Info></div>
-          <table className="t jg-tipo"><thead><tr><th></th><th>{L('Más ofensivo', 'More attacking')}</th><th>{L('Mismo puesto', 'Same role')}</th><th>{L('Más defensivo', 'More defensive')}</th></tr></thead>
-            <tbody>{Object.entries(J.cambios_por_estado).map(([e, v]: Any) => {
-              const tot = ['Más ofensivo', 'Misma línea', 'Más defensivo'].reduce((s, t) => s + v[t], 0) || 1
-              const mx = Math.max(v['Más ofensivo'], v['Misma línea'], v['Más defensivo'])
-              return <tr key={e}><td>{td(e)}</td>{['Más ofensivo', 'Misma línea', 'Más defensivo'].map(t => (
-                <td key={t} className={`num${v[t] === mx && mx > 0 ? ' jg-max' : ''}`}>{v[t]}<small> · {fmt(100 * v[t] / tot, 0)}%</small></td>))}</tr>
-            })}</tbody></table>
+          <TipoCambios data={J.cambios_por_estado} />
         </div>
       </div>
 
