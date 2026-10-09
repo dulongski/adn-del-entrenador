@@ -525,8 +525,8 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 @keyframes vt-in { from { opacity: 0; transform: scale(1.015); } }
 .landing { animation: landing-in .45s cubic-bezier(.2, .7, .2, 1) both; }
 @keyframes landing-in { from { opacity: 0; } }
-.landing .smap-world { animation: map-settle .6s cubic-bezier(.2, .7, .2, 1) both; transform-origin: 50% 50%; }
-@keyframes map-settle { from { opacity: 0; scale: .96; } }
+.landing .smap-world { animation: map-settle .6s cubic-bezier(.2, .7, .2, 1) both; }   /* sólo opacidad: el zoom del mapa asume transform-origin 0 0 */
+@keyframes map-settle { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { ::view-transition-old(root), ::view-transition-new(root), .landing, .landing .smap-world { animation: none; } }
 .landing-title { display: flex; align-items: center; gap: 4px; }
 .landing-info { pointer-events: auto; display: inline-flex; align-self: center; }
