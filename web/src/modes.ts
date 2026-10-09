@@ -2,7 +2,7 @@
    no por nombre técnico. Cada modo tiene su color (tarjeta, barra fija y subpestañas). */
 import { L } from './settings'
 
-export type TabKey = 'resumen' | 'dt' | 'transfer' | 'fases' | 'contexto' | 'jugadores' | 'bp' | 'sim' | 'whatif' | 'vs' | 'metodo'
+export type TabKey = 'resumen' | 'dt' | 'transfer' | 'fases' | 'contexto' | 'jugadores' | 'bp' | 'sim' | 'whatif' | 'liga' | 'vs' | 'metodo'
 export type View = TabKey | 'hub'
 
 export type Mode = {
@@ -29,8 +29,8 @@ export const MODES: Mode[] = [
   { k: 'bp', name: L('Balón parado', 'Set pieces'), title: L('Balón parado', 'Set pieces'), q: L('¿Qué hace en córners y tiros libres?', 'What does he do on corners and free kicks?'), color: '#de4f87',
     desc: L('Córners en 3D: a dónde los manda, cuánto xG generan, dónde se paran sus jugadores. Puedes simularlos.', 'Corners in 3D: where he sends them, how much xG they create, where his players stand. You can simulate them.'), subs: [['bp', L('Balón parado', 'Set pieces')]] },
   { k: 'lab', name: L('Laboratorio', 'Lab'), title: L('Laboratorio', 'Lab'), q: L('¿Y si se jugara otra vez?', 'What if it were played again?'), color: '#8f6cf0',
-    desc: L('Rejuega sus partidos con el xG de cada tiro, o llévalo a dirigir otro club con el once que quieras.', 'Replay his matches with the xG of every shot, or send him to another club with the XI you choose.'),
-    subs: [['sim', L('Rejugar partidos', 'Replay matches')], ['whatif', L('Llévalo a otro club', 'Move him to another club')]] },
+    desc: L('Rejuega sus partidos con el xG de cada tiro, o llévalo a dirigir otro club con el once que quieras, y juega un torneo completo con liguilla.', 'Replay his matches with the xG of every shot, send him to another club with the XI you choose, and play a full tournament with playoffs.'),
+    subs: [['sim', L('Rejugar partidos', 'Replay matches')], ['whatif', L('Llévalo a otro club', 'Move him to another club')], ['liga', L('Simulador de liga', 'League simulator')]] },
   { k: 'vs', name: L('Cara a cara', 'Head to head'), title: L('Cara a cara', 'Head to head'), q: L('¿En qué se parece a otro DT?', 'Who does he play like?'), color: '#e5484d',
     desc: L('Compara su estilo propio contra cualquier otro entrenador, rasgo por rasgo.', 'Compare his own style with any other coach, trait by trait.'), subs: [['vs', '1 vs 1']] },
   { k: 'metodo', name: L('Método', 'Method'), title: L('Método', 'Method'), q: L('¿Cómo se calcula todo esto?', 'How is all this calculated?'), color: '#8a9a92',

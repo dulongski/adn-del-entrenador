@@ -5,9 +5,11 @@ import { Seg } from './common'
 import MatchSim from '../MatchSim'
 import { L, LOCALE } from '../settings'
 import Info from '../Info'
+import StyleLab from '../StyleLab'
+import type { Fx } from '../sim/styleModel'
 import MatchPicker, { currentClub, type MatchRow } from '../MatchPicker'
 
-export function Simulador({ art, media }: { art: Any; media?: Any }) {
+export function Simulador({ art, media, glob }: { art: Any; media?: Any; glob?: Any }) {
   const S = art.simulacion
   // partidos del más reciente al más antiguo, con club y temporada
   const rows: MatchRow[] = useMemo(() => {
@@ -23,6 +25,7 @@ export function Simulador({ art, media }: { art: Any; media?: Any }) {
   const n = 50000  // siempre 50,000 rejugadas
   const [modo, setModo] = useState<'mil' | 'uno'>('mil')
   const [res, setRes] = useState<Any>(null)
+  const [fx, setFx] = useState<Fx | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const tip = useTip()
   const run = () => {
@@ -33,10 +36,10 @@ export function Simulador({ art, media }: { art: Any; media?: Any }) {
       const p = art.partidos.find((x: Any) => x.match_id === mid)
       if (!shots || !p) { setErr(L('No hay tiros registrados para este partido.', 'No shots recorded for this match.')); return }
       // se deja respirar al navegador antes de simular (la interfaz muestra «Rejugando…»)
-      setTimeout(() => setRes({ ...simulateMatch(shots, n), partido: p, tiros: shots, data }), 10)
+      setTimeout(() => setRes({ ...simulateMatch(shots, n, fx ?? undefined), base: fx ? simulateMatch(shots, 20000) : null, partido: p, tiros: shots, data, fx }), 10)
     }).catch(e => setErr(e.message))
   }
-  useEffect(run, [mid]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(run, [mid, fx]) // eslint-disable-line react-hooks/exhaustive-deps
   const pts = useMemo(() => {
     let a = 0, e = 0
     return S.partidos.map((p: Any) => { a += p.puntos; e += p.xpts; return { a, e } })
@@ -59,9 +62,10 @@ export function Simulador({ art, media }: { art: Any; media?: Any }) {
     <div>
       <h3 className="h2">{L('Rejugar sus partidos', 'Replay his matches')}<Info>{L('Volvemos a jugar cada partido 50,000 veces con los mismos tiros: cada uno entra con la probabilidad que marca su xG. Así se ve si el marcador fue justo con lo que pasó en la cancha.', 'We replay every match 50,000 times with the same shots: each one goes in with the probability its xG says. That shows whether the scoreline was fair to what happened on the pitch.')}</Info></h3>
       <Seg opts={[['mil', L('Probabilidades', 'Probabilities')], ['uno', L('Verlo jugada a jugada', 'Watch it play by play')]]} v={modo} set={v => setModo(v as 'mil' | 'uno')} />
+      {glob && <StyleLab art={art} glob={glob} onChange={f => setFx(old => (JSON.stringify(old) === JSON.stringify(f) ? old : f))} />}
       <MatchPicker key={art.id} rows={rows} value={mid} onChange={setMid} media={media} defaultClub={clubActual} />
       {err && <p className="note">{err}</p>}
-      {modo === 'uno' && (res ? <MatchSim key={res.partido.match_id} art={art} media={media} data={res.data} partido={res.partido} /> : <p className="note">{L('Preparando partido…', 'Setting up the match…')}</p>)}
+      {modo === 'uno' && (res ? <MatchSim key={res.partido.match_id + (fx ? 'x' : '')} art={art} media={media} data={res.data} partido={res.partido} fx={fx} /> : <p className="note">{L('Preparando partido…', 'Setting up the match…')}</p>)}
       {modo === 'mil' && <div className="sim-layout2">
         <div className="card">
           {res ? <Pitch>{res.tiros.map((t: number[], i: number) => {
@@ -110,9 +114,10 @@ function SimHeader({ r, media, cols }: { r: Any; media?: Any; cols: string[] }) 
         <ClubName club={r.partido.rival} media={media} size={26} />
       </div>
       <div className="sim-scores">
-        <div><div className="note">{L('Más probable al rejugar', 'Most likely in replays')}</div><b className="sim-modal">{r.modal[0]}–{r.modal[1]}</b><div className="note">{pct(100 * r.modalP)} {L('de las rejugadas', 'of replays')}</div></div>
-        <div><div className="note">{L('Real', 'Actual')}</div><b className="sim-real">{r.partido.gf}–{r.partido.gc}</b></div>
+        <div className="sim-main"><div className="note">{r.fx ? L('Más probable con el estilo cambiado', 'Most likely with the changed style') : L('Más probable al rejugar', 'Most likely in replays')}</div><b className="sim-modal">{r.modal[0]}–{r.modal[1]}</b><div className="note">{pct(100 * r.modalP)} {L('de las rejugadas', 'of replays')}</div></div>
+        <div className="sim-realrow"><span>{L('Marcador real', 'Actual score')}</span><b className="sim-real">{r.partido.gf}–{r.partido.gc}</b></div>
       </div>
+      {r.base && <div className="sim-delta">{L('Con su estilo real:', 'With his real style:')} {L('gana', 'win')} {pct(100 * r.base.victoria)} → <b className={r.victoria >= r.base.victoria ? 'up' : 'dn'}>{pct(100 * r.victoria)}</b> · xPts {fmt(r.base.xpts, 2)} → <b className={r.xpts >= r.base.xpts ? 'up' : 'dn'}>{fmt(r.xpts, 2)}</b></div>}
       <svg viewBox="0 0 400 24" style={{ width: '100%', margin: '12px 0 4px' }} role="img" aria-label={segs.map(([l, v]) => `${l} ${Math.round(v * 100)}%`).join(', ')}>
         {segs.map(([l, v, c]) => { const x = acc; acc += v * 400; return <g key={l}><rect x={x + 1} y={0} width={Math.max(0, v * 400 - 2)} height={22} rx={4} fill={c} />{v > 0.1 && <text x={x + v * 200} y={15} fontSize={12} textAnchor="middle" fill={light(c) ? '#111' : '#fff'} fontWeight={700}>{Math.round(v * 100)}%</text>}</g> })}
       </svg>

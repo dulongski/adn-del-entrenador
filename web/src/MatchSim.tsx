@@ -83,7 +83,7 @@ function syntheticSteps(arch: Any, start?: Pt): Step[] {
   return out
 }
 
-function buildMatch(art: Any, shots: number[][]): Poss[] {
+function buildMatch(art: Any, shots: number[][], fx?: { own: number; rival: number } | null): Poss[] {
   const arqs: Any[] = art.arquetipos || []
   const ex = art.arquetipos_ejemplos || {}
   const area = arqs.find(a => /pisa el área/i.test(a.nombre)) || arqs[0]
@@ -94,7 +94,7 @@ function buildMatch(art: Any, shots: number[][]): Poss[] {
   shots.forEach(s => { if (!groups.has(s[6])) groups.set(s[6], []); groups.get(s[6])!.push(s) })
   groups.forEach(ss => {
     const own = ss[0][3] === 1, last = ss[ss.length - 1]
-    const p = 1 - ss.reduce((q, s) => q * (1 - s[2]), 1)
+    const p = 1 - ss.reduce((q, s) => q * (1 - (fx ? Math.min(0.97, s[2] * (own ? fx.own : fx.rival)) : s[2])), 1)
     const shotAt: Pt = [last[0], last[1]]
     const tpl = own ? ex[area?.id] : undefined
     let steps = tpl?.length ? stepsFromTemplate(tpl[Math.floor(Math.random() * tpl.length)]) : syntheticSteps(area, [rnd(35, 60), rnd(10, 70)])
@@ -145,7 +145,7 @@ function timeline(P: Poss[]): { segs: Seg[]; total: number } {
 
 const cssVar = (n: string, d: string) => { try { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || d } catch { return d } }
 
-export default function MatchSim({ art, media, data, partido }: { art: Any; media: Any; data: Any; partido: Any }) {
+export default function MatchSim({ art, media, data, partido, fx }: { art: Any; media: Any; data: Any; partido: Any; fx?: { own: number; rival: number } | null }) {
   const shots: number[][] = data?.t || []
   const canvas = useRef<HTMLCanvasElement>(null)
   const [seed, setSeed] = useState(0)
@@ -156,7 +156,7 @@ export default function MatchSim({ art, media, data, partido }: { art: Any; medi
   const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   useEffect(() => { getJSON(dataUrl('formas.json')).then((f: Any) => setFormas(f[art.id] || {})).catch(() => setFormas({})) }, [art.id])
 
-  const P = useMemo(() => buildMatch(art, shots), [art, shots, seed]) // eslint-disable-line react-hooks/exhaustive-deps
+  const P = useMemo(() => buildMatch(art, shots, fx), [art, shots, seed, fx]) // eslint-disable-line react-hooks/exhaustive-deps
   const { segs, total } = useMemo(() => timeline(P), [P])
   useEffect(() => { setTau(reduce ? total : 0); setPlaying(!reduce) }, [P, total, reduce])
 

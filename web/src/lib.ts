@@ -101,10 +101,12 @@ export const dataUrl = (f: string) => asset(`data/${f}`)!
  *  máximo un gol por posesión. Mismo método que pipeline/models/simulation.py.
  *  Además devuelve el marcador más probable y UNA rejugada que terminó con ese marcador
  *  (qué tiros fueron gol en ella), para mostrarla sobre la cancha. */
-export function simulateMatch(shots: number[][], n = 10000) {
+export function simulateMatch(shots: number[][], n = 10000, fx?: { own: number; rival: number }) {
+  // fx: factores del estilo editado sobre el xG de cada tiro (propio / rival); sin ellos, el xG tal cual
+  const xgOf = (sh: number[]) => (fx ? Math.min(0.97, sh[2] * (sh[3] === 1 ? fx.own : fx.rival)) : sh[2])
   const groups = new Map<string, number[]>()
   shots.forEach((s, i) => { const k = `${s[3]}-${s[6]}`; if (!groups.has(k)) groups.set(k, []); groups.get(k)!.push(i) })
-  const poss = [...groups.values()].map(ix => ({ own: shots[ix[0]][3] === 1, ix, p: 1 - ix.reduce((q, i) => q * (1 - shots[i][2]), 1) }))
+  const poss = [...groups.values()].map(ix => ({ own: shots[ix[0]][3] === 1, ix, p: 1 - ix.reduce((q, i) => q * (1 - xgOf(shots[i])), 1) }))
   let w = 0, d = 0
   const grid = Array.from({ length: 6 }, () => new Array(6).fill(0))
   for (let i = 0; i < n; i++) {
@@ -121,8 +123,8 @@ export function simulateMatch(shots: number[][], n = 10000) {
     const g: number[] = []; let ga = 0, gb = 0
     for (const q of poss) if (Math.random() < q.p) {
       if (q.own) ga++; else gb++
-      const tot = q.ix.reduce((a, i) => a + shots[i][2], 0); let r = Math.random() * tot
-      g.push(q.ix.find(i => (r -= shots[i][2]) <= 0) ?? q.ix[q.ix.length - 1])
+      const tot = q.ix.reduce((a, i) => a + xgOf(shots[i]), 0); let r = Math.random() * tot
+      g.push(q.ix.find(i => (r -= xgOf(shots[i])) <= 0) ?? q.ix[q.ix.length - 1])
     }
     if (Math.min(ga, 5) === modal[0] && Math.min(gb, 5) === modal[1]) { golesSim = g; break }
   }
