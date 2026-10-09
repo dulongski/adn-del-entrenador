@@ -170,8 +170,9 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
 
 function Score({ res, h, a, media, minute }: { res: MatchRes; h: string; a: string; media: Any; minute?: number }) {
   const ev = minute == null ? res.ev : res.ev.filter(e => e.min <= minute)
-  const gh = ev.filter(e => (e.type === 'goal' && e.team === 0) || (e.type === 'og' && e.team === 1)).length
-  const ga = ev.filter(e => (e.type === 'goal' && e.team === 1) || (e.type === 'og' && e.team === 0)).length
+  // «team» es el equipo al que le cuenta el gol (en un autogol, el rival del jugador)
+  const gh = ev.filter(e => (e.type === 'goal' || e.type === 'og') && e.team === 0).length
+  const ga = ev.filter(e => (e.type === 'goal' || e.type === 'og') && e.team === 1).length
   return { gh, ga, ev, el: null as null, h, a, media }
 }
 
