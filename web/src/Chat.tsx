@@ -282,15 +282,12 @@ export function Ball({ size = 44, mood = 'idle', look = [0, 0] }: { size?: numbe
   return (
     <svg className={`ball ball-${mood}`} width={size} height={size} viewBox="0 0 64 64" aria-hidden>
       <defs>
-        <radialGradient id={`bg${id}`} cx="38%" cy="32%" r="70%"><stop offset="0" stopColor="#fff" /><stop offset=".72" stopColor="#eef1ee" /><stop offset="1" stopColor="#c9d1cc" /></radialGradient>
-        <radialGradient id={`bs${id}`} cx="42%" cy="36%" r="62%"><stop offset=".55" stopColor="#14201a" stopOpacity="0" /><stop offset="1" stopColor="#14201a" stopOpacity=".22" /></radialGradient>
-        <clipPath id={`bc${id}`}><circle cx="32" cy="32" r="29" /></clipPath>
+        <radialGradient id={`bg${id}`} cx="38%" cy="32%" r="70%"><stop offset="0" stopColor="#fff" /><stop offset=".8" stopColor="#fff" /><stop offset="1" stopColor="#f1f4f2" /></radialGradient>
+                <clipPath id={`bc${id}`}><circle cx="32" cy="32" r="29" /></clipPath>
       </defs>
       <circle cx="32" cy="32" r="29" fill={`url(#bg${id})`} />
       <g clipPath={`url(#bc${id})`}>
-        <g className="ball-skin"><path d={SKIN.pent} fill="#1d2a24" strokeLinejoin="round" stroke="#1d2a24" strokeWidth=".8" /><path d={SKIN.seam} fill="none" stroke="#1d2a24" strokeWidth="1.3" strokeLinecap="round" opacity=".8" /></g>
-        <circle cx="32" cy="32" r="29" fill={`url(#bs${id})`} />
-        <ellipse cx="22" cy="14.5" rx="8" ry="4" fill="#fff" opacity=".42" transform="rotate(-32 22 14.5)" />
+        <g className="ball-skin"><path d={SKIN.pent} fill="#1d2a24" strokeLinejoin="round" stroke="#1d2a24" strokeWidth=".8" /></g>
       </g>
       <circle cx="32" cy="32" r="29" fill="none" stroke="#1d2a24" strokeWidth="2" />
       <g className="ball-face" style={{ transform: `translate(${lx}px, ${ly}px)` }}>
