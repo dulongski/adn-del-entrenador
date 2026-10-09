@@ -170,6 +170,77 @@ def run(refresh: bool = False) -> pd.DataFrame:
     return df
 
 
+# ---------------------------------------------------------------- con balón: forma del equipo y quién ocupa cada hueco
+OWN = DATA / "model_cache" / "own360_match.parquet"
+
+
+def _own(args):
+    """Por (partido, equipo): posición media de cada hueco cuando el equipo tiene el balón (cuadros de SUS eventos en juego abierto con los
+    10 jugadores de campo visibles y la cámara viendo todo el ancho) y, con el actor del evento (que sí trae identidad), cuántas veces
+    cada jugador ocupó cada hueco. Esto reemplaza el dibujo «de manual»: la forma y el puesto salen de los datos."""
+    mid, sizes_by_team = args
+    p360, pev = DATA / "360" / f"{mid}.json.gz", DATA / "events" / f"{mid}.json.gz"
+    if not (p360.exists() and pev.exists()):
+        return []
+    ev = {e["id"]: e for e in json.load(gzip.open(pev, "rt"))}
+    acc: dict = {}
+    for fr in json.load(gzip.open(p360, "rt")):
+        e = ev.get(fr["event_uuid"])
+        if e is None or e["type"]["name"] not in EV_OK or e.get("period", 1) >= 5 or "location" not in e or "player" not in e:
+            continue
+        pp = e.get("play_pattern", {}).get("name", "")
+        if pp in SET_PATTERNS or pp == "From Kick Off":
+            continue
+        att = e["team"]["id"]
+        pl = [p for p in fr["freeze_frame"] if p["teammate"] and not p["keeper"]]
+        if len(pl) != 10:
+            continue
+        va = np.asarray(fr["visible_area"], dtype=float).reshape(-1, 2) if fr.get("visible_area") else None
+        if not (va is not None and len(va) and (va[:, 1].max() - va[:, 1].min()) * KY >= FULL_W):
+            continue
+        pts = np.array([[p["location"][0] * KX, p["location"][1] * KY] for p in pl])
+        sl = _slots(pts, sizes_by_team.get(att, DEF_SIZES))
+        a = acc.setdefault(att, {"n": 0, "slots": np.zeros((10, 2)), "act": {}})
+        a["n"] += 1
+        a["slots"] += sl
+        ac = [p for p in pl if p.get("actor")]
+        if ac:
+            q = np.array([ac[0]["location"][0] * KX, ac[0]["location"][1] * KY])
+            k = int(np.argmin(np.hypot(sl[:, 0] - q[0], sl[:, 1] - q[1])))
+            d = a["act"].setdefault(int(e["player"]["id"]), {})
+            d[k] = d.get(k, 0) + 1
+    rows = []
+    for t, a in acc.items():
+        r = {"match_id": mid, "team_id": t, "n10": a["n"], "act": json.dumps(a["act"])}
+        for i in range(10):
+            r[f"sx{i}"] = float(a["slots"][i, 0])
+            r[f"sy{i}"] = float(a["slots"][i, 1])
+        rows.append(r)
+    return rows
+
+
+def run_own(refresh: bool = False) -> pd.DataFrame:
+    old = pd.read_parquet(OWN) if OWN.exists() and not refresh else None
+    sizes = modal_sizes()
+    mids = sorted(int(p.name.split(".")[0]) for p in (DATA / "360").glob("*.json.gz"))
+    if old is not None:
+        mids = [m for m in mids if m not in set(old.match_id.unique())]
+        if not mids:
+            return old
+    rows = []
+    with ProcessPoolExecutor() as ex:
+        for i, r in enumerate(ex.map(_own, [(m, sizes.get(m, {})) for m in mids], chunksize=4)):
+            rows += r
+            if i % 200 == 0:
+                print(f"own {i}/{len(mids)}", flush=True)
+    df = pd.DataFrame(rows)
+    if old is not None:
+        df = pd.concat([old, df], ignore_index=True)
+    df.to_parquet(OWN)
+    return df
+
+
 if __name__ == "__main__":
     d = run(refresh=True)
+    run_own(refresh=True)
     print(d.groupby("sit").agg(partidos=("match_id", "nunique"), n=("n", "sum"), n6=("n6", "sum"), n9=("n9", "sum"), n10=("n10", "sum"), back=("back", "median"), front=("front", "median"), near=("near", "median")))

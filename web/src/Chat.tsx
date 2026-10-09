@@ -31,6 +31,7 @@ type Card =
   | { t: 'coach'; id: number; stats: [string, string][]; traits: string[] }
   | { t: 'matches'; title: string; summary?: string; rows: Any[] }
   | { t: 'compare'; a: number; b: number; sim: number; same: CmpRow[]; diffs: CmpRow[] }
+  | { t: 'list'; title: string; sub: string; rows: { id?: number; club?: string; main: string; note: string; w: number }[] }
   | { t: 'go'; coach: number | null; view: string }
 type CmpRow = { k: string; a: number; b: number; va: number | null; vb: number | null }
 type Msg = { role: 'user' | 'assistant'; text: string; cards?: Card[]; status?: string; error?: string; local?: boolean; memo?: string }
@@ -64,6 +65,44 @@ function matchRows(P: Any) {
   return (P.rows as Any[][]).map(r => Object.fromEntries(C.map((c, i) => [c, r[i]])))
 }
 
+
+/* ------------------------------------------------------------ resultados precalculados (récords, puntos, tabla) */
+const isRegular = (t: string) => t === 'Apertura' || t === 'Clausura' || t === 'Regular Season'
+const torneoN = (t: string) => (t === 'Regular Season' ? 'Apertura' : t)
+type Rec = { n: number; w: number; d: number; l: number; gf: number; gc: number; xg: number; xga: number; hn: number; hp: number; an: number; ap: number }
+const emptyRec = (): Rec => ({ n: 0, w: 0, d: 0, l: 0, gf: 0, gc: 0, xg: 0, xga: 0, hn: 0, hp: 0, an: 0, ap: 0 })
+function addRec(R: Rec, f: number, c: number, xf: number, xc: number, home: boolean) {
+  R.n++; R.gf += f; R.gc += c; R.xg += xf; R.xga += xc
+  const pts = f > c ? 3 : f === c ? 1 : 0
+  if (f > c) R.w++; else if (f === c) R.d++; else R.l++
+  if (home) { R.hn++; R.hp += pts } else { R.an++; R.ap += pts }
+}
+const pts = (R: Rec) => R.w * 3 + R.d
+const METRICS: Record<string, { es: string; en: string; f: (R: Rec) => number | null; fmt: (v: number) => string; unit: string }> = {
+  ppg: { es: 'Puntos por partido', en: 'Points per match', f: R => pts(R) / R.n, fmt: v => fmt(v, 2), unit: 'pts/p' },
+  win_pct: { es: '% de victorias', en: 'Win %', f: R => (100 * R.w) / R.n, fmt: v => `${fmt(v, 0)}%`, unit: '%' },
+  gf: { es: 'Goles a favor por partido', en: 'Goals for per match', f: R => R.gf / R.n, fmt: v => fmt(v, 2), unit: '' },
+  ga: { es: 'Goles en contra por partido (menos es mejor)', en: 'Goals against per match (lower is better)', f: R => R.gc / R.n, fmt: v => fmt(v, 2), unit: '' },
+  gd: { es: 'Diferencia de gol por partido', en: 'Goal difference per match', f: R => (R.gf - R.gc) / R.n, fmt: v => `${v > 0 ? '+' : ''}${fmt(v, 2)}`, unit: '' },
+  xg: { es: 'xG a favor por partido', en: 'xG for per match', f: R => R.xg / R.n, fmt: v => fmt(v, 2), unit: '' },
+  xga: { es: 'xG en contra por partido (menos es mejor)', en: 'xG against per match (lower is better)', f: R => R.xga / R.n, fmt: v => fmt(v, 2), unit: '' },
+  xgd: { es: 'Diferencia de xG por partido', en: 'xG difference per match', f: R => (R.xg - R.xga) / R.n, fmt: v => `${v > 0 ? '+' : ''}${fmt(v, 2)}`, unit: '' },
+  home_ppg: { es: 'Puntos por partido de local', en: 'Home points per match', f: R => (R.hn ? R.hp / R.hn : null), fmt: v => fmt(v, 2), unit: 'pts/p' },
+  away_ppg: { es: 'Puntos por partido de visita', en: 'Away points per match', f: R => (R.an ? R.ap / R.an : null), fmt: v => fmt(v, 2), unit: 'pts/p' },
+}
+const LOWER_BETTER = new Set(['ga', 'xga'])
+function recordsOf(rows: Any[], by: 'coach' | 'club') {
+  const M = new Map<string | number, Rec>()
+  const add = (k: string | number | null, r: Any, home: boolean) => {
+    if (k == null) return
+    const R = M.get(k) ?? emptyRec(); M.set(k, R)
+    addRec(R, home ? r.gl : r.gv, home ? r.gv : r.gl, home ? r.xgl : r.xgv, home ? r.xgv : r.xgl, home)
+  }
+  for (const r of rows) { add(by === 'coach' ? r.dtl : r.local, r, true); add(by === 'coach' ? r.dtv : r.visita, r, false) }
+  return M
+}
+const recOut = (R: Rec) => ({ partidos: R.n, ganados: R.w, empatados: R.d, perdidos: R.l, puntos: pts(R), puntos_por_partido: +(pts(R) / R.n).toFixed(3), goles_favor: R.gf, goles_contra: R.gc, xg_favor_por_partido: +(R.xg / R.n).toFixed(2), xg_contra_por_partido: +(R.xga / R.n).toFixed(2) })
+
 /* ------------------------------------------------------------ herramientas para Claude */
 function makeTools(push: (c: Card) => void, status: (s: string) => void) {
   return [
@@ -80,9 +119,9 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
     },
     {
       name: 'rank_coaches',
-      description: 'Ranking de los 76 entrenadores con perfil en un indicador. measure="propio" (estilo propio del DT, ya sin plantilla, club, rival ni contexto; es lo correcto para «el DT más X») u "observado" (lo que se vio en sus partidos). Muestra al usuario una tarjeta con el ranking; devuelve el top.',
-      inputSchema: { type: 'object', properties: { indicator: { type: 'string', description: 'clave del indicador' }, order: { type: 'string', enum: ['desc', 'asc'] }, measure: { type: 'string', enum: ['propio', 'observado'] }, n: { type: 'number', description: '3 a 10' } }, required: ['indicator'] },
-      execute: async ({ indicator, order = 'desc', measure = 'propio', n = 5 }: Any) => {
+      description: 'Ranking de los 76 entrenadores con perfil en un indicador. measure="propio" (estilo propio del DT, ya sin plantilla, club, rival ni contexto; es lo correcto para «el DT más X») u "observado" (lo que se vio en sus partidos). Devuelve el top (y sólo dibuja una tarjeta si show=true). Para puntos, goles o resultados usa rank_results, no esta.',
+      inputSchema: { type: 'object', properties: { indicator: { type: 'string', description: 'clave del indicador' }, order: { type: 'string', enum: ['desc', 'asc'] }, measure: { type: 'string', enum: ['propio', 'observado'] }, n: { type: 'number', description: '3 a 10' }, show: { type: 'boolean', description: 'true sólo si el usuario pidió ver el ranking o una lista; por defecto no se dibuja nada' } }, required: ['indicator'] },
+      execute: async ({ indicator, order = 'desc', measure = 'propio', n = 5, show = false }: Any) => {
         status(L('Ordenando a los 76 DTs…', 'Ranking all 76 coaches…'))
         const D = await distP(); const k = String(indicator); const e = D.kpis[k]
         if (!e) throw new Error(`Indicador desconocido: ${k}`)
@@ -91,15 +130,15 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
         ids.sort((x, y) => (order === 'asc' ? 1 : -1) * (e[key][x] - e[key][y]))
         const top = ids.slice(0, Math.max(3, Math.min(10, Number(n) || 5)))
         const rows = top.map(id => ({ id, v: e.v[id], a: e.a[id] }))
-        push({ t: 'rank', title: kl(k), unit: '', rows, measure: measure === 'observado' ? 'observado' : 'propio', liga: e.liga })
+        if (show) push({ t: 'rank', title: kl(k), unit: '', rows, measure: measure === 'observado' ? 'observado' : 'propio', liga: e.liga })
         return { indicador: kl(k), media_liga: e.liga, orden: order, medida: measure, top: rows.map((r, i) => ({ puesto: i + 1, id: r.id, nombre: dtName(r.id), observado: r.v, estilo_propio_sigma: r.a })) }
       },
     },
     {
       name: 'coach_profile',
-      description: 'Perfil de un entrenador: clubes, récord (G-E-P), goles y xG a favor y en contra por partido, sus rasgos más marcados y, si se piden, valores de indicadores (observado, liga, estilo propio en σ y percentil entre DTs). Muestra una tarjeta con su foto.',
-      inputSchema: { type: 'object', properties: { coach_id: { type: 'number' }, indicators: { type: 'array', items: { type: 'string' } } }, required: ['coach_id'] },
-      execute: async ({ coach_id, indicators }: Any) => {
+      description: 'Perfil de un entrenador: clubes, récord (G-E-P), goles y xG a favor y en contra por partido, sus rasgos más marcados y, si se piden, valores de indicadores (observado, liga, estilo propio en σ y percentil entre DTs). Dibuja su tarjeta sólo si show=true.',
+      inputSchema: { type: 'object', properties: { coach_id: { type: 'number' }, indicators: { type: 'array', items: { type: 'string' } }, show: { type: 'boolean', description: 'true sólo si piden ver su perfil/ficha' } }, required: ['coach_id'] },
+      execute: async ({ coach_id, indicators, show = false }: Any) => {
         const id = Number(coach_id); if (!DT_BY_ID.has(id)) throw new Error('coach_id desconocido: usa find_coach')
         status(L(`Abriendo el perfil de ${dtName(id)}…`, `Opening ${dtName(id)}'s profile…`))
         const art = await getJSON(dataUrl(`dt_${id}.json`))
@@ -120,15 +159,15 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
           [L('xG / p.', 'xG / m.'), `${fmt(xg, 2)} – ${fmt(xga, 2)}`],
           ...req.slice(0, 2).map(r => [r.indicador, fmt(r.observado, 1)] as [string, string]),
         ]
-        push({ t: 'coach', id, stats, traits })
+        if (show) push({ t: 'coach', id, stats, traits })
         return { nombre: dtName(id), clubes: DT_BY_ID.get(id).clubes, partidos: n, ganados: w, empatados: d, perdidos: n - w - d, goles_favor_por_partido: gf, goles_contra_por_partido: gc, xg_favor_por_partido: xg, xg_contra_por_partido: xga, rasgos: traits, indicadores: req }
       },
     },
     {
       name: 'match_results',
-      description: 'Resultados de partidos de Liga MX 2021/22–2026/27 (públicos): filtra por club, rival, entrenador, temporada ("2025/26") o torneo ("Apertura"/"Clausura"). Devuelve el resumen (G-E-P desde el punto de vista del club o DT filtrado) y como mucho 8 partidos, los más recientes. Muestra una tarjeta con los partidos.',
-      inputSchema: { type: 'object', properties: { club: { type: 'string' }, rival: { type: 'string' }, coach_id: { type: 'number' }, season: { type: 'string' }, tournament: { type: 'string' }, limit: { type: 'number', description: '1 a 8' } } },
-      execute: async ({ club, rival, coach_id, season, tournament, limit = 6 }: Any) => {
+      description: 'Resultados de partidos de Liga MX 2021/22–2026/27 (públicos): filtra por club, rival, entrenador, temporada ("2025/26") o torneo ("Apertura"/"Clausura"). Devuelve el resumen (G-E-P desde el punto de vista del club o DT filtrado) y como mucho 8 partidos, los más recientes. Dibuja la tarjeta sólo si show=true.',
+      inputSchema: { type: 'object', properties: { club: { type: 'string' }, rival: { type: 'string' }, coach_id: { type: 'number' }, season: { type: 'string' }, tournament: { type: 'string' }, limit: { type: 'number', description: '1 a 8' }, show: { type: 'boolean', description: 'true sólo si piden ver/listar partidos' } } },
+      execute: async ({ club, rival, coach_id, season, tournament, limit = 6, show = false }: Any) => {
         status(L('Revisando resultados…', 'Checking results…'))
         const rows = matchRows(await partidosP())
         const has = (s: string, q?: string) => !q || norm(s).includes(norm(String(q)))
@@ -155,16 +194,75 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
         const k = Math.max(1, Math.min(8, Number(limit) || 6))
         const out = sel.slice(0, k)
         const who = cid != null ? dtName(cid) : club ? String(club) : ''
-        push({ t: 'matches', title: [who, rival ? `vs ${rival}` : '', season ?? '', tournament ?? ''].filter(Boolean).join(' ') || L('Resultados', 'Results'), summary, rows: out })
+        if (show) push({ t: 'matches', title: [who, rival ? `vs ${rival}` : '', season ?? '', tournament ?? ''].filter(Boolean).join(' ') || L('Resultados', 'Results'), summary, rows: out })
         const dtTxt = (id: number | null) => (id ? `DT ${dtName(id)} (id ${id})` : 'DT sin dato')
         return { total: sel.length, resumen: summary, mostrados: out.map(r => ({ fecha: r.fecha, torneo: `${r.torneo} ${r.temporada}`, jornada: r.jornada, partido: `${r.local} [${dtTxt(r.dtl)}] ${r.gl}-${r.gv} ${r.visita} [${dtTxt(r.dtv)}]`, xg: `${r.local} ${r.xgl} – ${r.xgv} ${r.visita}` })), nota: (sel.length > k ? 'Hay más partidos; no los listes todos, sugiere filtrar. ' : '') + 'Los DTs de cada partido son SOLO los de este campo «partido».' }
       },
     },
     {
+      name: 'rank_results',
+      description: 'Ranking de DENTRO DE LOS RESULTADOS (no de estilo): entrenadores (scope "coach", los 76 con perfil) o clubes (scope "club") por puntos por partido, % de victorias, goles, xG, diferencia, local/visita. Filtros: season ("2025/26"), tournament ("Apertura"/"Clausura"), phase ("regular" por defecto, "liguilla" o "all"), min_matches (por defecto 20 DTs / 17 clubes). Úsala para «el DT con más puntos por partido», «el club que más goles recibe», etc. metric: ' + Object.keys(METRICS).join(', ') + '.',
+      inputSchema: { type: 'object', properties: { scope: { type: 'string', enum: ['coach', 'club'] }, metric: { type: 'string', enum: Object.keys(METRICS) }, season: { type: 'string' }, tournament: { type: 'string' }, phase: { type: 'string', enum: ['regular', 'liguilla', 'all'] }, min_matches: { type: 'number' }, order: { type: 'string', enum: ['best', 'worst'] }, n: { type: 'number', description: '3 a 10' }, show: { type: 'boolean', description: 'true sólo si piden ver el ranking o una lista' } }, required: ['metric'] },
+      execute: async ({ scope = 'coach', metric = 'ppg', season, tournament, phase = 'regular', min_matches, order = 'best', n = 5, show = false }: Any) => {
+        const M = METRICS[String(metric)]; if (!M) throw new Error(`Métrica desconocida. Opciones: ${Object.keys(METRICS).join(', ')}`)
+        status(L('Calculando récords…', 'Computing records…'))
+        const all = matchRows(await partidosP())
+        const rows = all.filter(r => (!season || String(r.temporada).includes(String(season))) && (!tournament || torneoN(String(r.torneo).split(' - ')[0]).toLowerCase().includes(String(tournament).toLowerCase())) && (phase === 'all' || (phase === 'liguilla') !== isRegular(r.torneo)))
+        const by = scope === 'club' ? 'club' : 'coach'
+        const R = recordsOf(rows, by)
+        const minN = Number(min_matches) || (by === 'coach' ? 20 : 17)
+        const lowGood = LOWER_BETTER.has(String(metric))
+        const list = [...R.entries()].filter(([k, v]) => v.n >= minN && (by === 'club' || DT_BY_ID.has(Number(k)))).map(([k, v]) => ({ k, v, x: M.f(v) })).filter(o => o.x != null && Number.isFinite(o.x as number)) as { k: string | number; v: Rec; x: number }[]
+        if (!list.length) throw new Error(`Ninguno tiene al menos ${minN} partidos con ese filtro; baja min_matches.`)
+        const desc = (order !== 'worst') !== lowGood
+        list.sort((a, b) => (desc ? b.x - a.x : a.x - b.x))
+        const top = list.slice(0, Math.max(3, Math.min(10, Number(n) || 5)))
+        const label = (k: string | number) => (by === 'coach' ? dtName(Number(k)) : String(k))
+        if (show) {
+          const mx = Math.max(...top.map(o => Math.abs(o.x)), 1e-6)
+          push({ t: 'list', title: L(M.es, M.en), sub: [season, tournament, phase === 'liguilla' ? 'liguilla' : phase === 'all' ? L('todo', 'all') : ''].filter(Boolean).join(' · ') || L('toda la muestra', 'whole sample'), rows: top.map(o => ({ id: by === 'coach' ? Number(o.k) : undefined, club: by === 'club' ? String(o.k) : by === 'coach' ? dtClub(Number(o.k)) : undefined, main: M.fmt(o.x), note: `${o.v.n} ${L('partidos', 'matches')} · ${o.v.w}-${o.v.d}-${o.v.l}`, w: Math.abs(o.x) / mx })) })
+        }
+        return { metrica: M.es, filtros: { season: season ?? 'todas', torneo: tournament ?? 'todos', fase: phase, min_partidos: minN }, orden: order === 'worst' ? 'peor primero' : 'mejor primero', candidatos: list.length, top: top.map((o, i) => ({ puesto: i + 1, id: by === 'coach' ? Number(o.k) : undefined, nombre: label(o.k), valor: +o.x.toFixed(3), ...recOut(o.v) })) }
+      },
+    },
+    {
+      name: 'record',
+      description: 'Récord completo de UN entrenador (coach_id) o UN club (club) con filtros opcionales season, tournament, phase ("regular" por defecto / "liguilla" / "all"): partidos, G-E-P, puntos, puntos por partido, goles y xG por partido, y su puntos por partido de local y de visita. Úsala para «¿cuántos puntos por partido tiene X?», «¿cómo le va de visita?», etc.',
+      inputSchema: { type: 'object', properties: { coach_id: { type: 'number' }, club: { type: 'string' }, season: { type: 'string' }, tournament: { type: 'string' }, phase: { type: 'string', enum: ['regular', 'liguilla', 'all'] } } },
+      execute: async ({ coach_id, club, season, tournament, phase = 'regular' }: Any) => {
+        status(L('Sumando su récord…', 'Adding up the record…'))
+        const all = matchRows(await partidosP())
+        const rows = all.filter(r => (!season || String(r.temporada).includes(String(season))) && (!tournament || torneoN(String(r.torneo).split(' - ')[0]).toLowerCase().includes(String(tournament).toLowerCase())) && (phase === 'all' || (phase === 'liguilla') !== isRegular(r.torneo)))
+        const cid = coach_id != null ? Number(coach_id) : null
+        if (cid == null && !club) throw new Error('Indica coach_id o club')
+        const R = emptyRec()
+        for (const r of rows) {
+          if (cid != null) { if (r.dtl === cid) addRec(R, r.gl, r.gv, r.xgl, r.xgv, true); else if (r.dtv === cid) addRec(R, r.gv, r.gl, r.xgv, r.xgl, false) }
+          else { const q = norm(String(club)); if (norm(r.local).includes(q)) addRec(R, r.gl, r.gv, r.xgl, r.xgv, true); else if (norm(r.visita).includes(q)) addRec(R, r.gv, r.gl, r.xgv, r.xgl, false) }
+        }
+        if (!R.n) throw new Error('Sin partidos con ese filtro.')
+        return { quien: cid != null ? dtName(cid) : club, filtros: { season: season ?? 'todas', torneo: tournament ?? 'todos', fase: phase }, ...recOut(R), ppg_local: R.hn ? +(R.hp / R.hn).toFixed(2) : null, ppg_visita: R.an ? +(R.ap / R.an).toFixed(2) : null, partidos_local: R.hn, partidos_visita: R.an }
+      },
+    },
+    {
+      name: 'standings',
+      description: 'Tabla general de la fase regular de un torneo (season "2025/26" + tournament "Apertura" o "Clausura"): puesto, puntos, G-E-P, goles. Devuelve la tabla completa (18 equipos).',
+      inputSchema: { type: 'object', properties: { season: { type: 'string' }, tournament: { type: 'string', enum: ['Apertura', 'Clausura'] }, show: { type: 'boolean', description: 'true sólo si piden ver la tabla' } }, required: ['season', 'tournament'] },
+      execute: async ({ season, tournament, show = false }: Any) => {
+        status(L('Armando la tabla…', 'Building the table…'))
+        const rows = matchRows(await partidosP()).filter(r => String(r.temporada).includes(String(season)) && isRegular(r.torneo) && torneoN(r.torneo).toLowerCase() === String(tournament).toLowerCase())
+        if (!rows.length) throw new Error('Sin datos de ese torneo.')
+        const R = recordsOf(rows, 'club')
+        const t = [...R.entries()].map(([club, v]) => ({ club, v })).sort((a, b) => pts(b.v) - pts(a.v) || (b.v.gf - b.v.gc) - (a.v.gf - a.v.gc) || b.v.gf - a.v.gf)
+        if (show) push({ t: 'list', title: `${L('Tabla', 'Table')} ${tournament} ${season}`, sub: L('fase regular', 'regular season'), rows: t.slice(0, 10).map((o, i) => ({ club: o.club, main: `${pts(o.v)} pts`, note: `${i + 1}. · ${o.v.w}-${o.v.d}-${o.v.l} · ${o.v.gf}:${o.v.gc}`, w: pts(o.v) / pts(t[0].v) })) })
+        return { torneo: `${tournament} ${season}`, partidos_jugados_por_equipo: Math.max(...t.map(o => o.v.n)), tabla: t.map((o, i) => ({ puesto: i + 1, club: o.club, pts: pts(o.v), g: o.v.w, e: o.v.d, p: o.v.l, gf: o.v.gf, gc: o.v.gc })) }
+      },
+    },
+    {
       name: 'compare_coaches',
-      description: 'Compara el estilo propio de dos entrenadores en los indicadores base: parecido (0–100), los 2 rasgos en que más coinciden y los 4 en que más difieren, con el número de cada uno (estilo propio en σ, 0 = media de la liga, y valor observado). Muestra una tarjeta con ambos.',
-      inputSchema: { type: 'object', properties: { coach_a: { type: 'number' }, coach_b: { type: 'number' } }, required: ['coach_a', 'coach_b'] },
-      execute: async ({ coach_a, coach_b }: Any) => {
+      description: 'Compara el estilo propio de dos entrenadores en los indicadores base: parecido (0–100), los 2 rasgos en que más coinciden y los 4 en que más difieren, con el número de cada uno (estilo propio en σ, 0 = media de la liga, y valor observado). Dibuja la tarjeta sólo si show=true.',
+      inputSchema: { type: 'object', properties: { coach_a: { type: 'number' }, coach_b: { type: 'number' }, show: { type: 'boolean', description: 'true sólo si piden comparar o ver la comparación' } }, required: ['coach_a', 'coach_b'] },
+      execute: async ({ coach_a, coach_b, show = false }: Any) => {
         const a = Number(coach_a), b = Number(coach_b)
         if (!DT_BY_ID.has(a) || !DT_BY_ID.has(b)) throw new Error('coach_id desconocido: usa find_coach')
         status(L('Comparando estilos…', 'Comparing styles…'))
@@ -178,7 +276,7 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
         const rows: CmpRow[] = ks.map((k, i) => ({ k, a: va[i], b: vb[i], va: D.kpis[k].v[a] ?? null, vb: D.kpis[k].v[b] ?? null }))
         const diffs = [...rows].sort((x, y) => Math.abs(y.a - y.b) - Math.abs(x.a - x.b)).slice(0, 4)
         const same = rows.filter(r => Math.sign(r.a) === Math.sign(r.b) && Math.abs(r.a) >= 0.25 && Math.abs(r.b) >= 0.25).sort((x, y) => Math.abs(x.a - x.b) - Math.abs(y.a - y.b)).slice(0, 2)
-        push({ t: 'compare', a, b, sim, same, diffs })
+        if (show) push({ t: 'compare', a, b, sim, same, diffs })
         const out = (r: CmpRow) => ({ indicador: kl(r.k), [`${dtName(a)}_estilo_propio_sigma`]: +r.a.toFixed(2), [`${dtName(b)}_estilo_propio_sigma`]: +r.b.toFixed(2), [`${dtName(a)}_observado`]: r.va, [`${dtName(b)}_observado`]: r.vb })
         return { parecido_0_100: sim, se_parecen_en: same.map(out), mas_distintos: diffs.map(out) }
       },
@@ -208,8 +306,10 @@ Responde en ${LANG === 'en' ? 'inglés' : 'español'}, en 1 a 3 frases, con tono
 Reglas:
 - Todo número sale de las herramientas. Nunca inventes datos ni uses lo que sepas de fuera. Si algo no está en los datos, dilo.
 - Antes de usar un coach_id, búscalo con find_coach (salvo que ya lo tengas).
-- Las herramientas ya le muestran al usuario tarjetas con rankings, perfiles y partidos: no las repitas; comenta lo importante.
-- Nunca des tablas completas ni más de 8 partidos. Si piden «todos», da el resumen y sugiere filtrar por rival o temporada.
+- Responde con texto. Las tarjetas (show=true) sólo cuando el usuario pide ver un ranking, una lista, una ficha, una tabla o una comparación; para una pregunta de un dato («¿cuántos puntos por partido tiene X?») basta una frase.
+- Resultados y récords (puntos por partido, G-E-P, goles, xG, tabla, local/visita) salen de rank_results, record y standings: nunca digas que no tienes ese cálculo ni que «va más allá de los datos»; úsalas. Estilo de juego (posesión, presión…) sale de rank_coaches y coach_profile.
+- No pidas aclaraciones salvo que la pregunta sea de verdad ambigua; elige la interpretación más razonable (todo el periodo de la muestra, fase regular) y dilo en una frase.
+- Nunca des tablas completas en el texto ni más de 8 partidos. Si piden «todos», da el resumen y sugiere filtrar por rival o temporada.
 - Para «el mejor/más X DT», usa rank_coaches con measure "propio" y explica en pocas palabras que es su estilo propio, descontando plantilla y rival.
 - Si la respuesta vive en una vista de la app, llama a open_view para llevar al usuario ahí.
 - Cada pregunta se responde con datos de las herramientas DE ESE TURNO. Los DTs, clubes o partidos de preguntas anteriores NO se aplican a la nueva pregunta, salvo que el usuario los retome («él», «ese partido», «y contra el América»). Nunca pongas a un DT en un club o partido que no figure así en el resultado de la herramienta (campo «partido» de match_results); si no aparece, no lo menciones.
@@ -347,6 +447,20 @@ function CardView({ c }: { c: Card }) {
       </div>
     )
   }
+  if (c.t === 'list') return (
+    <div className="cc cc-rank">
+      <div className="cc-h">{c.title}<em>{c.sub}</em></div>
+      {c.rows.map((r, i) => (
+        <button key={i} className="cc-rank-row" style={{ ['--i' as string]: i }} onClick={() => r.id != null && go(r.id, 'resumen')}>
+          <span className="cc-pos">{i + 1}</span>
+          {r.id != null ? <Face id={r.id} size={28} /> : <ClubLogo club={r.club ?? ''} media={media} size={26} />}
+          <span className="cc-name">{r.id != null ? dtName(r.id) : r.club}<small>{r.id != null && r.club ? <><ClubLogo club={r.club} media={media} size={12} />{r.club} · </> : null}{r.note}</small></span>
+          <span className="cc-bar"><i style={{ width: `${r.w * 100}%` }} /></span>
+          <b className="mono">{r.main}</b>
+        </button>
+      ))}
+    </div>
+  )
   if (c.t === 'coach') return (
     <div className="cc cc-coach">
       <button className="cc-coach-h" onClick={() => go(c.id, 'resumen')}>

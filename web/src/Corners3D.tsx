@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, pct, type Any } from './lib'
 import { L } from './settings'
 import Info from './Info'
+import { Pitch, pitchXY, useTip } from './charts'
 import './styles/bp.css'
 
 /* Córners en 3D (datos: pipeline/corners.py, todos los córners normalizados como si se cobraran
@@ -43,11 +44,74 @@ function luminance(c: string) {
 
 type Sim = { e: number[]; t0: number; goal: boolean; txt: string }
 
+
+/* ------------------------------------------------------------ mapa 2D de zonas de envío
+   Cada círculo es una zona (4 × 6.7 unidades del último tercio): su TAMAÑO es cuántos envíos caen ahí y su RELLENO el xG medio de esos córners
+   (con encogimiento hacia el promedio del DT: k = 3 envíos, para que una zona con 2 envíos no se pinte roja por azar). Mismos datos que el 3D. */
+function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref }: { E: number[][]; V: Any; side: Side; lado: Lado; tc: string; rivalC: string; gkRival: string; showPlayers: boolean; Q: Any; maxXref: number }) {
+  const tip = useTip()
+  const CX = 4, CYN = 12, flip = lado === 'der'
+  const fy = (y: number) => (flip ? 80 - y : y)
+  const cells = useMemo(() => {
+    const m = new Map<string, { i: number; j: number; n: number; xg: number; sh: number; fc: number }>()
+    let tot = 0, totX = 0
+    for (const [ex, ey, fc, g, , short] of E) {
+      if (short || ex < X0) continue
+      const i = Math.min(Math.floor((ex - 92) / CX), 6), j = clamp(Math.floor(ey / (80 / CYN)), 0, CYN - 1)
+      const k = `${i}:${j}`, c = m.get(k) ?? { i, j, n: 0, xg: 0, sh: 0, fc: 0 }
+      c.n++; c.xg += g; c.sh += g > 0 ? 1 : 0; c.fc += fc === 1 ? 1 : 0; m.set(k, c); tot++; totX += g
+    }
+    const prior = tot ? totX / tot : 0.03
+    const arr = [...m.values()].filter(c => c.n >= 2).map(c => ({ ...c, v: (c.xg + 3 * prior) / (c.n + 3) }))
+    return { arr, maxN: Math.max(1, ...arr.map(c => c.n)), tot, prior }
+  }, [E])
+  const maxX = Math.min(Math.max(maxXref, 0.06), 0.2)
+  const ownAtt = side === 'favor'
+  const attC = ownAtt ? tc : rivalC, defC = ownAtt ? rivalC : tc
+  const rr = (n: number) => 0.9 + 2.4 * Math.sqrt(n / cells.maxN)
+  const who = (kind: 'att' | 'def', i: number) => Q?.[kind]?.[i]
+  const dots = showPlayers ? [
+    ...(V.defensores || []).map((p: number[], i: number) => ({ p, col: defC, own: !ownAtt, kind: 'def' as const, i })),
+    ...(V.atacantes || []).map((p: number[], i: number) => ({ p, col: attC, own: ownAtt, kind: 'att' as const, i })),
+  ].filter(d => d.p[0] >= 92) : []
+  const [lx, ly] = pitchXY(119.5, 1, true)
+  return (
+    <div className="c3d-2d">
+      <Pitch vertical crop={[88, 121]} labels={<text x={lx} y={ly} fontSize={2.6} fill="var(--ink-3)">{L('portería ↑', 'goal ↑')}</text>}>
+        {cells.arr.map(c => {
+          const cx = 92 + (c.i + 0.5) * CX, cy = fy((c.j + 0.5) * (80 / CYN)), t = c.v / maxX
+          return (
+            <circle key={`${c.i}:${c.j}`} cx={cx} cy={cy} r={rr(c.n)} fill={xgColor(t)} fillOpacity={0.92} stroke="rgba(0,0,0,.35)" strokeWidth={0.25}
+              onMouseMove={e => tip.show(e, <><b>{c.n}</b> {L('envíos', 'deliveries')} ({fmt((100 * c.n) / Math.max(cells.tot, 1), 0)}%)<br />xG {L('medio', 'avg')} <b>{fmt(c.xg / c.n, 3)}</b><br />{L('terminan en remate', 'end in a shot')} {fmt((100 * c.sh) / c.n, 0)}%<br />{L('primer contacto propio', 'own first contact')} {fmt((100 * c.fc) / c.n, 0)}%</>)} onMouseLeave={tip.hide} />
+          )
+        })}
+        {dots.map(d => (
+          <circle key={d.kind + d.i} cx={d.p[0]} cy={fy(d.p[1])} r={1.15 + 1.1 * Math.min(1, (d.p[2] ?? 0.2) / 0.3)} fill={d.col} stroke="#fff" strokeWidth={0.45} strokeOpacity={0.9}
+            onMouseMove={e => { const q = d.own ? who(d.kind, d.i) : null; tip.show(e, <>{d.own ? (d.kind === 'def' ? L('Defensor de su equipo', 'His defender') : L('Atacante de su equipo', 'His attacker')) : L('Posición típica del rival', 'Typical opponent position')}{q?.top?.length ? <><br />{q.top.map(([id, nom, p]: [number, string, number]) => <span key={id}>{jugadorCorto(id, nom)} {p}%<br /></span>)}</> : null}</>) }} onMouseLeave={tip.hide} />
+        ))}
+        {showPlayers && V.portero && <circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.6} fill={ownAtt ? gkRival : tc} stroke="#fff" strokeWidth={0.45} />}
+        {/* cobrador y bandera */}
+        <circle cx={119.4} cy={fy(0.6)} r={0.9} fill="#fff" stroke="#111" strokeWidth={0.3} />
+      </Pitch>
+      <div className="c3d-2d-key" aria-hidden="true">
+        <div className="c3d-key-row"><span className="c3d-2d-sz"><i style={{ width: 8, height: 8 }} /><i style={{ width: 14, height: 14 }} /><i style={{ width: 22, height: 22 }} /></span>{L('Tamaño: cuántos envíos caen ahí', 'Size: how many deliveries land there')}</div>
+        <div className="c3d-key-row c3d-key-scale"><span>xG</span><i style={{ background: `linear-gradient(90deg, ${xgColor(0)}, ${xgColor(0.33)}, ${xgColor(0.66)}, ${xgColor(1)})` }} /><span>{fmt(maxX, 2)}+</span></div>
+        {showPlayers && <div className="c3d-key-row c3d-key-dots">
+          <span><i style={{ background: tc }} />{side === 'favor' ? L('Su equipo ataca', 'His team attacks') : L('Su equipo defiende', 'His team defends')}</span>
+          <span><i style={{ background: rivalC }} />{L('Rival', 'Opponent')}</span>
+        </div>}
+      </div>
+      {tip.el}
+    </div>
+  )
+}
+
 export default function Corners3D({ art, media, side, onSide }: { art: Any; media: Any; side: Side; onSide: (s: Side) => void }) {
   const [data, setData] = useState<Any>(null)
   const [liga, setLiga] = useState<Any>(null)
   const [lado, setLado] = useState<Lado>('ambos')
   const [showPlayers, setShowPlayers] = useState(true)
+  const [vista, setVista] = useState<'2d' | '3d'>('2d')
   const [rot, setRot] = useState({ yaw: 1.25, pitch: 0.82 })
   const [sim, setSim] = useState<Sim | null>(null)
   const [hover, setHover] = useState<Hover | null>(null)
@@ -339,11 +403,18 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
           <button aria-pressed={lado === 'izq'} onClick={() => setLado('izq')}>{L('Desde la izquierda', 'From the left')}</button>
           <button aria-pressed={lado === 'der'} onClick={() => setLado('der')}>{L('Desde la derecha', 'From the right')}</button>
         </div>
+        <div className="seg sm" role="group" aria-label={L('Vista 2D o 3D', '2D or 3D view')}>
+          <button aria-pressed={vista === '2d'} onClick={() => setVista('2d')}>2D</button>
+          <button aria-pressed={vista === '3d'} onClick={() => setVista('3d')}>3D</button>
+        </div>
         <label className="smap-activos" htmlFor="c3d-players"><input id="c3d-players" type="checkbox" checked={showPlayers} onChange={e => setShowPlayers(e.target.checked)} /> {L('Jugadores (360)', 'Players (360)')}</label>
-        <button className="btn c3d-play" onClick={runOne}>▶ {L('Simular un córner', 'Simulate a corner')}</button>
+        {vista === '3d' && <button className="btn c3d-play" onClick={runOne}>▶ {L('Simular un córner', 'Simulate a corner')}</button>}
       </div>
       <div className="c3d-main">
         <div className="c3d-stage">
+          {vista === '2d' ? (
+            <Map2D E={E} V={V} side={side} lado={lado} tc={tc} rivalC={rivalC} gkRival={gkRival} showPlayers={showPlayers} Q={V.quien || {}} maxXref={grid.maxX} />
+          ) : (<>
           <div className="c3d-sizer" />
           <canvas ref={canvas} className={`c3d-canvas${hover ? ' hot' : ''}`} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
             onPointerCancel={() => { drag.current = null }} onPointerLeave={e => { if (e.pointerType === 'mouse' && !drag.current) setHover(null) }}
@@ -370,6 +441,7 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
           )}
           {simDone && <div key={sim!.t0} className={`c3d-result${sim!.goal ? ' gol' : ''}`}>{sim!.txt}</div>}
           <div className="c3d-hint note">{L('Arrastra para girar · pasa el cursor sobre su equipo', 'Drag to rotate · hover over his team')}</div>
+          </>)}
         </div>
         <aside className="c3d-side">
           <div>

@@ -101,7 +101,7 @@ def _example(A_by, SH, nxt, hit, row, J, midx, minute):
 
 
 # ---------------------------------------------------------------- formaciones
-def formaciones(core, mym_keys, A, LU, mins, names, J):
+def formaciones(core, mym_keys, A, LU, mins, names, J, OWN=None):
     """core: ids de los 11 con más minutos. Devuelve nominal / con balón / sin balón por jugador."""
     k = A.merge(mym_keys, on=["match_id", "team_id"])
     lu = LU.merge(mym_keys, on=["match_id", "team_id"])
@@ -117,6 +117,8 @@ def formaciones(core, mym_keys, A, LU, mins, names, J):
         if sc > bs:
             best, bs = g, sc
     typical = dict(zip(best.player_id, best.position)) if best is not None else {}
+    if best is not None and len(best) == 11 and best.player_id.nunique() == 11:
+        core = [int(p) for p in best.player_id]   # un once real (el partido que más se parece a los 11 con más minutos): evita dos laterales derechos o sin delantero
     on = k[k.type.isin(ON_BALL) & k.player_id.isin(core)]
     off = k[k.type.isin(DEF_ACTIONS) & k.player_id.isin(core)]
     out = []
@@ -140,7 +142,63 @@ def formaciones(core, mym_keys, A, LU, mins, names, J):
             sin = [r1(POS["Goalkeeper"][0]), r1(POS["Goalkeeper"][1]), 0]
         out.append({"id": int(pid), "j": J(pid), "pos": pos, "min": int(round(mins.get(pid, 0))), "portero": bool(gk),
                     "nominal": [r1(nominal[0]), r1(nominal[1])], "con": con, "sin": sin})
-    return {"formacion": "-".join(str(form)) if form else None, "jugadores": out}
+    res = {"formacion": "-".join(str(form)) if form else None, "jugadores": out, "con_360": False}
+    if OWN is not None and len(OWN) and form:
+        _slots_360(res, OWN, d360._sizes(str(form)))
+    return res
+
+
+def _diagram(sizes):
+    """Dibujo estándar de la formación (convención, no dato): una fila por línea, repartidas a lo largo de la cancha; dentro de cada línea, de izquierda a derecha."""
+    nl = len(sizes)
+    xs = {3: [28, 62, 96], 4: [26, 48, 74, 98], 5: [24, 40, 58, 78, 98]}.get(nl) or [24 + 74 * i / (nl - 1) for i in range(nl)]
+    ys = {1: [40], 2: [27, 53], 3: [16, 40, 64], 4: [10, 29, 51, 70], 5: [8, 24, 40, 56, 72]}
+    pos = []
+    for x, n in zip(xs, sizes):
+        pos += [(x, y) for y in ys[n]]
+    return pos
+
+
+def _slots_360(res, OWN, sizes):
+    """Con balón desde el 360: posición media de cada hueco y quién lo ocupa. El actor de cada evento trae identidad, así que se cuenta cuántas
+    veces cada jugador estuvo en cada hueco (línea, de izquierda a derecha) y se asignan los 10 huecos a los 10 de campo maximizando esas cuentas."""
+    from scipy.optimize import linear_sum_assignment
+    jug = [j for j in res["jugadores"] if not j["portero"]]
+    if len(jug) != 10 or OWN.n10.sum() < 40 or sum(sizes) != 10:
+        return
+    C = np.zeros((10, 10))
+    for js in OWN.act:
+        for pid, d in json.loads(js).items():
+            for k, n in d.items():
+                for a, j in enumerate(jug):
+                    if j["id"] == int(pid):
+                        C[a, int(k)] += n
+    if C.sum() < 60:
+        return
+    # desempate: el orden por puesto de la alineación
+    order = sorted(range(10), key=lambda a: jug[a]["nominal"][0] if jug[a]["nominal"][0] is not None else 50)
+    prior = np.zeros((10, 10))
+    i = 0
+    for n in sizes:
+        grp = sorted(order[i:i + n], key=lambda a: jug[a]["nominal"][1] if jug[a]["nominal"][1] is not None else 40)
+        for r, a in enumerate(grp):
+            prior[a, i + r] = 0.5
+        i += n
+    share = C / np.maximum(C.sum(1, keepdims=True), 1)
+    ri, ci = linear_sum_assignment(-(share + prior * 0.3))
+    w = float(OWN.n10.sum())
+    sl = np.array([[float(OWN[f"sx{k}"].sum() / w), float(OWN[f"sy{k}"].sum() / w)] for k in range(10)])
+    diag = _diagram(sizes)
+    tot = C.sum(1)
+    for a, k in zip(ri, ci):
+        j = jug[a]
+        j["slot"] = int(k)
+        j["nominal"] = [r1(diag[k][0]), r1(diag[k][1])]
+        j["con"] = [r1(sl[k][0] / KX), r1(sl[k][1] / KY), None]
+        j["ev"] = r1(C[a, k] / tot[a], 2) if tot[a] else None   # de las veces que lo vimos en un hueco, qué parte fue en éste
+    res["con_360"] = True
+    res["evidencia"] = r1(float(sum(C[a, k] for a, k in zip(ri, ci)) / C.sum()), 2)
+    res["cuadros"] = int(OWN.n10.sum())
 
 
 def asignar_bloque(jugadores, forma, tam):
@@ -149,11 +207,14 @@ def asignar_bloque(jugadores, forma, tam):
     campo = [j for j in jugadores if not j["portero"] and j["nominal"][0] is not None]
     if len(campo) != 10 or sum(tam) != 10 or not forma:
         return False
-    campo.sort(key=lambda j: j["nominal"][0])
-    orden, i = [], 0
-    for n in tam:
-        orden += sorted(campo[i:i + n], key=lambda j: j["nominal"][1])
-        i += n
+    if all("slot" in j for j in campo):
+        orden = sorted(campo, key=lambda j: j["slot"])
+    else:
+        campo.sort(key=lambda j: j["nominal"][0])
+        orden, i = [], 0
+        for n in tam:
+            orden += sorted(campo[i:i + n], key=lambda j: j["nominal"][1])
+            i += n
     for j, sl in zip(orden, forma):
         j["sin"] = [sl[0], sl[1], None]
         j["sin360"] = True
@@ -185,6 +246,7 @@ def main():
     P = pd.read_parquet(PROC / "possessions.parquet", columns=["match_id", "team_id", "poss", "goal", "xg", "obv"])
     EFF = jg.classify(refresh=True)   # reglas sobre los datos procesados: rápido, siempre al día
     DEF = d360.run()
+    OWN = d360.run_own()
     k3 = ["match_id", "team_id", "poss"]
     nxt = P.sort_values(["match_id", "poss"]).assign(next_team=lambda d: d.groupby("match_id").team_id.shift(-1)).set_index(k3).next_team
     PMIN = None
@@ -319,7 +381,8 @@ def main():
                 core.append(pid)
                 if len(core) == 11:
                     break
-            form = formaciones(core, keys, A[["match_id", "team_id", "player_id", "type", "x", "y"]], LU, mins, names, J)
+            om = OWN.merge(keys, on=["match_id", "team_id"]) if OWN is not None else None
+            form = formaciones(core, keys, A[["match_id", "team_id", "player_id", "type", "x", "y"]], LU, mins, names, J, om)
             # --- defensa 360
             dm = DEF.merge(keys, on=["match_id", "team_id"])
             tam = d360._sizes(form["formacion"].replace("-", "") if form["formacion"] else None)
