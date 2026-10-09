@@ -83,7 +83,19 @@ def main():
         yr = (y + a * 0.12) / (m / 90 + a)
         rr = (r + a * 0.004) / (m / 90 + a)
         jug[str(p)] = [round(gr, 4), round(yr, 4), round(rr, 5), round(m)]
-    json.dump({"liga": liga, "jugadores": jug}, open(OUT, "w"), ensure_ascii=False, separators=(",", ":"))
+    # ---- lo que va del torneo en curso (para arrancar la tabla de goleo a media temporada)
+    cur = M[(M.season == "2026/27") & (M.stage == "Apertura")]
+    ids = set(cur.match_id)
+    club_of = pd.concat([M[["home_id", "home"]].set_axis(["t", "c"], axis=1), M[["away_id", "away"]].set_axis(["t", "c"], axis=1)]).drop_duplicates("t").set_index("t").c
+    pn = pd.read_parquet(PROC / "players.parquet").drop_duplicates("player_id").set_index("player_id").player
+    gl = SH[SH.match_id.isin(ids) & (SH.outcome == "Goal")].groupby(["player_id", "team_id"]).size().rename("g")
+    cd = C[C.match_id.isin(ids)].groupby(["player_id", "team_id", "k"]).size().unstack(fill_value=0)
+    R = pd.concat([gl, cd], axis=1).fillna(0).reset_index()
+    for c in ("g", "y", "r"):
+        if c not in R:
+            R[c] = 0
+    real = [[int(r.player_id), str(pn.get(r.player_id, r.player_id)), str(club_of.get(r.team_id, "")), int(r.g), int(r.y), int(r.r)] for r in R.itertuples() if r.g + r.y + r.r > 0]
+    json.dump({"liga": liga, "jugadores": jug, "real": real}, open(OUT, "w"), ensure_ascii=False, separators=(",", ":"))
     print(liga["xg_mean"], xg_h / nm * 0, "home/away", round(xg_h, 3), round(xg_a, 3), "conv", round(conv, 3), "yel", round(liga["amarillas_por_equipo"], 2), "red", round(liga["rojas_por_equipo"], 3), len(jug), OUT.stat().st_size // 1024, "KB")
 
 

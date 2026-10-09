@@ -47,7 +47,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
   const realCoach: number = wi.squads[club].dt
   const sameCoach = realCoach === art.id
   const teamsFor = (c: string, withCoach: boolean, style: Record<string, number> | null) => Object.fromEntries(clubs.map(k => [k, k === c && withCoach ? buildTeam(wi, ls, sx, k, art.id, style) : buildTeam(wi, ls, sx, k, wi.squads[k].dt, null)])) as Record<string, Team>
-  const make = (withCoach: boolean) => new Season(clubs, teamsFor(club, withCoach, withCoach ? dz : null), ls.liga, pk.real, pk.cal, fresh)
+  const make = (withCoach: boolean) => new Season(clubs, teamsFor(club, withCoach, withCoach ? dz : null), ls.liga, pk.real, pk.cal, fresh, (ls as Any).real)
 
   const start = () => { cancelAnimationFrame(raf.current); setLive(null); setProbs(null); setSeason(make(true)) }
   useEffect(() => { setSeason(null); setLive(null); setProbs(null) }, [club, fresh])
@@ -76,14 +76,25 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
   useEffect(() => { if (over) { const t = setTimeout(finishLive, 1100); return () => clearTimeout(t) } }, [over]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => cancelAnimationFrame(raf.current), [])
   const runTo = (stop: (s: Season, n: Next) => boolean) => { if (!S) return; if (live) finishLive(); S.run(stop); refresh() }
-  const doProbs = () => {
-    setBusy(true)
-    setTimeout(() => {
-      const N = 400
-      const you = manySeasons(() => make(true), N)
-      const base = sameCoach && !dz ? you : manySeasons(() => make(false), N)
-      setProbs({ you, base, n: N }); setBusy(false)
-    }, 30)
+  const [prog, setProg] = useState(0)
+  const N_SIMS = 3000
+  const doProbs = async () => {
+    setBusy(true); setProg(0); setProbs(null)
+    const CH = 250, acc = (parts: Any[]) => {
+      const out: Any = {}
+      for (const p of parts) for (const [c, o] of Object.entries(p as Record<string, Any>)) { const t = (out[c] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0 }); for (const k of Object.keys(t)) t[k] += (o as Any)[k] / parts.length }
+      return out
+    }
+    const yp: Any[] = [], bp: Any[] = []
+    const same = sameCoach && !dz
+    for (let i = 0; i < N_SIMS / CH; i++) {
+      await new Promise(r => setTimeout(r, 0))
+      yp.push(manySeasons(() => make(true), CH, i + 1))
+      if (!same) bp.push(manySeasons(() => make(false), CH, i + 1))
+      setProg((i + 1) / (N_SIMS / CH))
+    }
+    const you = acc(yp)
+    setProbs({ you, base: same ? you : acc(bp), n: N_SIMS }); setBusy(false)
   }
 
   const nxt = S?.next() ?? null
@@ -147,8 +158,8 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
 
       {S && (
         <div className="card lg-prob">
-          <div className="h3">{L('Probabilidades', 'Probabilities')} <Info wide>{L(`Se juegan ${400} torneos completos (sólo marcadores) con esta misma configuración y se cuenta cuántas veces cada club llega a liguilla, a la final y es campeón. «Con su DT actual» es el mismo torneo sin tocar nada del club.`, `${400} full tournaments are played (scores only) with this same set-up and we count how often each club reaches the playoffs, the final and wins it. "With the current coach" is the same tournament with nothing changed at the club.`)}</Info></div>
-          <button className="btn" disabled={busy} onClick={doProbs}>{busy ? L('Jugando 400 torneos…', 'Playing 400 tournaments…') : L('Jugar 400 torneos', 'Play 400 tournaments')}</button>
+          <div className="h3">{L('Probabilidades', 'Probabilities')} <Info wide>{L(`Se juegan ${3000} torneos completos (sólo marcadores) con esta misma configuración y se cuenta cuántas veces cada club llega a liguilla, a la final y es campeón. «Con su DT actual» es el mismo torneo sin tocar nada del club, jugado con los mismos «dados», así que la diferencia entre ambos casi no tiene ruido. Margen de error de cada porcentaje: ±1–2 puntos.`, `${3000} full tournaments are played (scores only) with this same set-up and we count how often each club reaches the playoffs, the final and wins it. "With the current coach" is the same tournament with nothing changed at the club, played with the same "dice", so the difference between the two is almost noise-free. Margin of error of each percentage: ±1–2 points.`)}</Info></div>
+          <button className="btn" disabled={busy} onClick={doProbs}>{busy ? `${L('Jugando', 'Playing')} ${N_SIMS.toLocaleString()} ${L('torneos', 'tournaments')}… ${Math.round(prog * 100)}%` : L(`Jugar ${N_SIMS.toLocaleString()} torneos`, `Play ${N_SIMS.toLocaleString()} tournaments`)}</button>
           {probs && <Probs probs={probs} club={club} media={media} coach={coachName} sameCoach={sameCoach && !dz} color={color} />}
         </div>
       )}
@@ -242,14 +253,14 @@ function Champion({ club, media, mine, coach }: { club: string; media: Any; mine
 }
 
 function Scorers({ S, media }: { S: Season; media: Any }) {
-  const top = [...S.scorers.values()].filter(s => s.g > 0).sort((a, b) => b.g - a.g || a.y - b.y).slice(0, 6)
+  const top = [...S.scorers.values()].filter(s => s.g > 0).sort((a, b) => b.g - a.g || a.y - b.y).slice(0, 8)
   const ys = [...S.scorers.values()].reduce((a, s) => a + s.y, 0), rs = [...S.scorers.values()].reduce((a, s) => a + s.r, 0)
   if (!top.length) return null
   return (
     <div className="card lg-sc2">
       <div className="h3">{L('Goleadores', 'Top scorers')}</div>
       {top.map((s, i) => <div key={s.pl.id} className="lg-s"><span className="n">{i + 1}</span><ClubLogo club={s.club} media={media} size={16} /><b>{sName(s.pl)}</b><span className="note">{s.club}</span><em>{s.g}</em></div>)}
-      <div className="note lg-sub">🟨 {ys} · 🟥 {rs} {L('en lo simulado', 'in what was simulated')}</div>
+      <div className="note lg-sub">🟨 {ys} · 🟥 {rs} {L('en el torneo', 'in the tournament')}</div>
     </div>
   )
 }

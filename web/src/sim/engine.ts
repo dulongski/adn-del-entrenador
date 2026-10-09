@@ -9,6 +9,17 @@ export type Ev = { min: number; label: string; type: 'goal' | 'og' | 'yellow' | 
 export type MatchRes = { gh: number; ga: number; ev: Ev[]; et?: boolean; pens?: [number, number] }
 export type Liga = { xg_mean: number; goles_local: number; goles_visita: number; goles_pdf5: number[]; amarillas_pdf5: number[]; amarillas_por_equipo: number; rojas_por_equipo: number }
 const M0 = 1.073        // xG medio por 90 sin penales (escala de los indicadores xg_90 y xg_contra_90)
+let seed: number | null = null
+/** Semilla fija (mulberry32) para comparar dos configuraciones con los mismos «dados»; null = aleatorio. */
+export const setSeed = (n: number | null) => { seed = n === null ? null : n >>> 0 }
+export function rnd() {
+  if (seed === null) return Math.random()
+  seed = (seed + 0x6d2b79f5) >>> 0
+  let t = seed
+  t = Math.imul(t ^ (t >>> 15), t | 1)
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+}
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
 
 /** Tasas de un equipo: z = base + α(DT) + φ(club) + Σβ(XI) + cambio de estilo (como en «Llévalo a otro club»). */
@@ -27,9 +38,9 @@ export function buildTeam(wi: Any, ls: Any, sx: StyleX, club: string, coach: num
   return { club, coach, att: clamp(raw('xg_90') + sh.dFor, 0.5, 2.2), def: clamp(raw('xg_contra_90') + sh.dAgainst, 0.5, 2.2), xi, bench }
 }
 
-const pick = <T,>(arr: T[], w: number[]): T => { const t = w.reduce((a, b) => a + b, 0); let r = Math.random() * t; for (let i = 0; i < arr.length; i++) { r -= w[i]; if (r <= 0) return arr[i] } return arr[arr.length - 1] }
+const pick = <T,>(arr: T[], w: number[]): T => { const t = w.reduce((a, b) => a + b, 0); let r = rnd() * t; for (let i = 0; i < arr.length; i++) { r -= w[i]; if (r <= 0) return arr[i] } return arr[arr.length - 1] }
 export const lambdas = (h: Team, a: Team, L: Liga) => ({ lh: L.goles_local * clamp(h.att / M0, 0.4, 2) * clamp(a.def / M0, 0.4, 2), la: L.goles_visita * clamp(a.att / M0, 0.4, 2) * clamp(h.def / M0, 0.4, 2) })
-const poisson = (l: number) => { const e = Math.exp(-l); let k = 0, p = 1; do { k++; p *= Math.random() } while (p > e); return k - 1 }
+const poisson = (l: number) => { const e = Math.exp(-l); let k = 0, p = 1; do { k++; p *= rnd() } while (p > e); return k - 1 }
 
 /** Partido rápido (sólo marcador, sin eventos): para miles de torneos. */
 export function quickMatch(h: Team, a: Team, L: Liga): [number, number] { const { lh, la } = lambdas(h, a, L); return [poisson(lh), poisson(la)] }
@@ -41,7 +52,7 @@ export function simMatch(h: Team, a: Team, L: Liga, opt: { extra?: boolean } = {
   const off: Set<number>[] = [new Set(), new Set()], yel: Set<number>[] = [new Set(), new Set()]
   const ev: Ev[] = []
   const g = [0, 0]
-  const add = opt.extra ? 3 : 2 + Math.floor(Math.random() * 5)
+  const add = opt.extra ? 3 : 2 + Math.floor(rnd() * 5)
   const end = 90 + add
   const nRed = [0, 0]
   const onPitch = (t: 0 | 1, m: number) => [...T[t].xi, ...(m >= 58 ? T[t].bench.slice(0, 3) : [])].filter(p => !off[t].has(p.id))
@@ -51,15 +62,15 @@ export function simMatch(h: Team, a: Team, L: Liga, opt: { extra?: boolean } = {
     const bin = Math.min(17, Math.floor((m - 1) / 5))
     for (const t of [0, 1] as const) {
       const f = (nRed[t] ? 0.82 ** nRed[t] : 1) * (nRed[1 - t] ? 1.12 ** nRed[1 - t] : 1)
-      if (Math.random() < (lam[t] * L.goles_pdf5[bin] / 5) * f) {
-        if (Math.random() < 0.025) { const { ps, w } = wOf((1 - t) as 0 | 1, m, () => 1); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'og', team: t, pl: p }) }
+      if (rnd() < (lam[t] * L.goles_pdf5[bin] / 5) * f) {
+        if (rnd() < 0.025) { const { ps, w } = wOf((1 - t) as 0 | 1, m, () => 1); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'og', team: t, pl: p }) }
         else { const { ps, w } = wOf(t, m, p => p.g); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'goal', team: t, pl: p }) }
       }
-      if (Math.random() < (0.85 * L.amarillas_por_equipo * L.amarillas_pdf5[bin] / 5)) {
+      if (rnd() < (0.85 * L.amarillas_por_equipo * L.amarillas_pdf5[bin] / 5)) {
         const { ps, w } = wOf(t, m, p => p.y); const p = pick(ps, w)
         if (yel[t].has(p.id)) { ev.push({ min: m, label: lab(m), type: 'red2', team: t, pl: p }); off[t].add(p.id); nRed[t]++ } else { yel[t].add(p.id); ev.push({ min: m, label: lab(m), type: 'yellow', team: t, pl: p }) }
       }
-      if (Math.random() < 0.06 / 90) {
+      if (rnd() < 0.06 / 90) {
         const { ps, w } = wOf(t, m, p => p.r + 0.01); const p = pick(ps, w); off[t].add(p.id); nRed[t]++; ev.push({ min: m, label: lab(m), type: 'red', team: t, pl: p })
       }
     }
@@ -110,7 +121,7 @@ export function table(clubs: string[], games: { h: string; a: string; gh: number
     h.pj++; a.pj++; a.gfa += m.ga; h.gf += m.gh; h.gc += m.ga; a.gf += m.ga; a.gc += m.gh
     if (m.gh > m.ga) { h.g++; h.pts += 3; a.p++ } else if (m.gh < m.ga) { a.g++; a.pts += 3; h.p++ } else { h.e++; a.e++; h.pts++; a.pts++ }
   }
-  const tie = Object.fromEntries(clubs.map(c => [c, Math.random()]))
+  const tie = Object.fromEntries(clubs.map(c => [c, rnd()]))
   return Object.values(R).sort((x, y) => y.pts - x.pts || (y.gf - y.gc) - (x.gf - x.gc) || y.gf - x.gf || y.gfa - x.gfa || tie[y.club] - tie[x.club])
 }
 
@@ -141,8 +152,8 @@ export function decide(t: Tie, team: (c: string) => Team, L: Liga): string | und
   gHi += eh; gLo += ea
   t.legs[t.legs.length - 1] = { ...t.legs[t.legs.length - 1], et: true }
   if (gHi !== gLo) return gHi > gLo ? t.hi : t.lo
-  const win = Math.random() < 0.5 + 0.02 * (t.seedLo - t.seedHi)
-  const pw = 4 + Math.floor(Math.random() * 2), pl = pw - 1 - Math.floor(Math.random() * 2)
+  const win = rnd() < 0.5 + 0.02 * (t.seedLo - t.seedHi)
+  const pw = 4 + Math.floor(rnd() * 2), pl = pw - 1 - Math.floor(rnd() * 2)
   t.pens = win ? [pw, pl] : [pl, pw]
   return win ? t.hi : t.lo
 }

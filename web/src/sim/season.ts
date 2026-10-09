@@ -1,5 +1,5 @@
 import type { Any } from '../lib'
-import { decide, legsTotal, mkTie, nextLeg, quickMatch, simMatch, table, type Fx, type Liga, type MatchRes, type Pl, type Team, type Tie } from './engine'
+import { decide, setSeed, legsTotal, mkTie, nextLeg, quickMatch, simMatch, table, type Fx, type Liga, type MatchRes, type Pl, type Team, type Tie } from './engine'
 
 export type Phase = 'liga' | 'qf' | 'sf' | 'final' | 'done'
 export type Next = { kind: 'fx'; fx: Fx; h: string; a: string } | { kind: 'tie'; tie: Tie; h: string; a: string }
@@ -17,7 +17,9 @@ export class Season {
   scorers = new Map<number, Scorer>()
   log: { fx: Fx; res: MatchRes }[] = []
   /** real: partidos ya jugados (con su jornada); cal: calendario oficial de lo que falta. «fresh» rehace todo el torneo con el mismo calendario. */
-  constructor(public clubs: string[], public teams: Record<string, Team>, public L: Liga, real: { h: string; a: string; gh: number; ga: number; r: number }[], cal: { r: number; j?: number; h: string; a: string }[], fresh: boolean) {
+  constructor(public clubs: string[], public teams: Record<string, Team>, public L: Liga, real: { h: string; a: string; gh: number; ga: number; r: number }[], cal: { r: number; j?: number; h: string; a: string }[], fresh: boolean, init: [number, string, string, number, number, number][] = []) {
+    // si el torneo ya va a la mitad, goleo y tarjetas arrancan con lo que ya pasó de verdad
+    if (!fresh) for (const [id, name, club, g, y, r] of init) this.scorers.set(id, { pl: { id, name, pos: '', g: 0, y: 0, r: 0 }, club, g, y, r })
     this.played = fresh ? [] : real
     this.fixtures = (fresh ? [...real.map(x => ({ r: x.r, h: x.h, a: x.a })), ...cal] : cal).map(f => ({ h: f.h, a: f.a, round: f.r, j: (f as Any).j })).sort((x, y) => x.round - y.round)
   }
@@ -101,12 +103,12 @@ export class Season {
 }
 
 /** Miles de torneos rápidos: probabilidad de cada club de avanzar a liguilla y de ser campeón. */
-export function manySeasons(make: () => Season, n: number) {
+export function manySeasons(make: () => Season, n: number, seed0 = 1) {
   const out: Record<string, { top6: number; liguilla: number; final: number; title: number; pts: number }> = {}
   for (let i = 0; i < n; i++) {
+    setSeed(seed0 * 100003 + i * 7919)     // mismos «dados» en cada configuración: la diferencia entre ellas casi no tiene ruido
     const s = make()
     s.run(() => false, true)
-    const all = [...s.done]
     const finalists = new Set(s.done.filter(t => t.fase === 'final').flatMap(t => [t.hi, t.lo]))
     s.seeds.forEach((c, k) => {
       const o = (out[c] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0 })
@@ -115,8 +117,9 @@ export function manySeasons(make: () => Season, n: number) {
       if (finalists.has(c)) o.final++
       if (s.champion === c) o.title++
     })
-    const tb = s.table(); tb.forEach(r => { (out[r.club] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0 }).pts += r.pts })
+    s.table().forEach(r => { (out[r.club] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0 }).pts += r.pts })
   }
+  setSeed(null)
   for (const k of Object.keys(out)) { const o = out[k]; o.top6 /= n; o.liguilla /= n; o.final /= n; o.title /= n; o.pts /= n }
   return out
 }
