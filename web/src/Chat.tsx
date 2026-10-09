@@ -3,7 +3,7 @@
    pestañas, devuelven tarjetas (rankings, perfiles, partidos) y pueden llevar al usuario a la vista
    donde está la respuesta. Sin IA disponible (fuera del visor, o si el usuario no la permite) cae a una
    búsqueda simple sobre nombres de DTs, clubes e indicadores. */
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import boot from './boot.json'
 import { asset, dataUrl, fmt, getJSON, nombreDT, shortName, type Any } from './lib'
 import { ClubLogo } from './charts'
@@ -30,9 +30,10 @@ type Card =
   | { t: 'rank'; title: string; unit: string; rows: { id: number; v: number; a: number }[]; measure: 'propio' | 'observado'; liga: number }
   | { t: 'coach'; id: number; stats: [string, string][]; traits: string[] }
   | { t: 'matches'; title: string; summary?: string; rows: Any[] }
-  | { t: 'compare'; a: number; b: number; sim: number; diffs: { k: string; a: number; b: number }[] }
+  | { t: 'compare'; a: number; b: number; sim: number; same: CmpRow[]; diffs: CmpRow[] }
   | { t: 'go'; coach: number | null; view: string }
-type Msg = { role: 'user' | 'assistant'; text: string; cards?: Card[]; status?: string; error?: string; local?: boolean }
+type CmpRow = { k: string; a: number; b: number; va: number | null; vb: number | null }
+type Msg = { role: 'user' | 'assistant'; text: string; cards?: Card[]; status?: string; error?: string; local?: boolean; memo?: string }
 
 /* ------------------------------------------------------------ navegación (App escucha este evento) */
 function go(coach: number | null, view: string) {
@@ -155,12 +156,13 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
         const out = sel.slice(0, k)
         const who = cid != null ? dtName(cid) : club ? String(club) : ''
         push({ t: 'matches', title: [who, rival ? `vs ${rival}` : '', season ?? '', tournament ?? ''].filter(Boolean).join(' ') || L('Resultados', 'Results'), summary, rows: out })
-        return { total: sel.length, resumen: summary, mostrados: out.map(r => ({ fecha: r.fecha, torneo: `${r.torneo} ${r.temporada}`, jornada: r.jornada, partido: `${r.local} ${r.gl}-${r.gv} ${r.visita}`, xg: `${r.xgl}-${r.xgv}`, dt_local: r.dtl ? dtName(r.dtl) : null, dt_visita: r.dtv ? dtName(r.dtv) : null })), nota: sel.length > k ? 'Hay más partidos; no los listes todos, sugiere filtrar.' : undefined }
+        const dtTxt = (id: number | null) => (id ? `DT ${dtName(id)} (id ${id})` : 'DT sin dato')
+        return { total: sel.length, resumen: summary, mostrados: out.map(r => ({ fecha: r.fecha, torneo: `${r.torneo} ${r.temporada}`, jornada: r.jornada, partido: `${r.local} [${dtTxt(r.dtl)}] ${r.gl}-${r.gv} ${r.visita} [${dtTxt(r.dtv)}]`, xg: `${r.local} ${r.xgl} – ${r.xgv} ${r.visita}` })), nota: (sel.length > k ? 'Hay más partidos; no los listes todos, sugiere filtrar. ' : '') + 'Los DTs de cada partido son SOLO los de este campo «partido».' }
       },
     },
     {
       name: 'compare_coaches',
-      description: 'Compara el estilo propio de dos entrenadores en los indicadores base: parecido (0–100) y las 4 diferencias más grandes. Muestra una tarjeta con ambos.',
+      description: 'Compara el estilo propio de dos entrenadores en los indicadores base: parecido (0–100), los 2 rasgos en que más coinciden y los 4 en que más difieren, con el número de cada uno (estilo propio en σ, 0 = media de la liga, y valor observado). Muestra una tarjeta con ambos.',
       inputSchema: { type: 'object', properties: { coach_a: { type: 'number' }, coach_b: { type: 'number' } }, required: ['coach_a', 'coach_b'] },
       execute: async ({ coach_a, coach_b }: Any) => {
         const a = Number(coach_a), b = Number(coach_b)
@@ -173,9 +175,12 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
         const cov = va.reduce((s, v, i) => s + (v - ma) * (vb[i] - mb), 0)
         const r = cov / Math.sqrt(va.reduce((s, v) => s + (v - ma) ** 2, 0) * vb.reduce((s, v) => s + (v - mb) ** 2, 0))
         const sim = Math.round(((r + 1) / 2) * 100)
-        const diffs = ks.map((k, i) => ({ k, a: va[i], b: vb[i] })).sort((x, y) => Math.abs(y.a - y.b) - Math.abs(x.a - x.b)).slice(0, 4)
-        push({ t: 'compare', a, b, sim, diffs })
-        return { parecido_0_100: sim, diferencias: diffs.map(d => ({ indicador: kl(d.k), [dtName(a)]: d.a, [dtName(b)]: d.b })) }
+        const rows: CmpRow[] = ks.map((k, i) => ({ k, a: va[i], b: vb[i], va: D.kpis[k].v[a] ?? null, vb: D.kpis[k].v[b] ?? null }))
+        const diffs = [...rows].sort((x, y) => Math.abs(y.a - y.b) - Math.abs(x.a - x.b)).slice(0, 4)
+        const same = rows.filter(r => Math.sign(r.a) === Math.sign(r.b) && Math.abs(r.a) >= 0.25 && Math.abs(r.b) >= 0.25).sort((x, y) => Math.abs(x.a - x.b) - Math.abs(y.a - y.b)).slice(0, 2)
+        push({ t: 'compare', a, b, sim, same, diffs })
+        const out = (r: CmpRow) => ({ indicador: kl(r.k), [`${dtName(a)}_estilo_propio_sigma`]: +r.a.toFixed(2), [`${dtName(b)}_estilo_propio_sigma`]: +r.b.toFixed(2), [`${dtName(a)}_observado`]: r.va, [`${dtName(b)}_observado`]: r.vb })
+        return { parecido_0_100: sim, se_parecen_en: same.map(out), mas_distintos: diffs.map(out) }
       },
     },
     {
@@ -207,6 +212,9 @@ Reglas:
 - Nunca des tablas completas ni más de 8 partidos. Si piden «todos», da el resumen y sugiere filtrar por rival o temporada.
 - Para «el mejor/más X DT», usa rank_coaches con measure "propio" y explica en pocas palabras que es su estilo propio, descontando plantilla y rival.
 - Si la respuesta vive en una vista de la app, llama a open_view para llevar al usuario ahí.
+- Cada pregunta se responde con datos de las herramientas DE ESE TURNO. Los DTs, clubes o partidos de preguntas anteriores NO se aplican a la nueva pregunta, salvo que el usuario los retome («él», «ese partido», «y contra el América»). Nunca pongas a un DT en un club o partido que no figure así en el resultado de la herramienta (campo «partido» de match_results); si no aparece, no lo menciones.
+- No narres lo que vas a hacer («voy a buscar…»): llama a la herramienta y responde con el dato.
+- Al final de los turnos anteriores verás «[datos de la respuesta anterior: …]»: es contexto interno para seguir la conversación; no lo cites ni lo copies.
 - Para nombrar a un DT escribe [[dt:ID]] (se muestra su foto y nombre); para un club escribe [[club:Nombre exacto]].
 - Si preguntan algo ajeno al futbol mexicano o a la app, responde amablemente que sólo sabes de esto.
 Vistas (view): ${views}.
@@ -240,28 +248,63 @@ function localAnswer(q: string): Msg {
 }
 
 /* ------------------------------------------------------------ mascota: balón con ojos */
-export function Ball({ size = 44, mood = 'idle', look = [0, 0] }: { size?: number; mood?: 'idle' | 'think' | 'happy'; look?: [number, number] }) {
+export type Mood = 'idle' | 'curious' | 'think' | 'happy' | 'oops'
+// cinco pentágonos simétricos sobre el perímetro (un vértice mira al centro) y costuras que los unen
+const SKIN = (() => {
+  const C = 32, D = 27.4, R = 8.2, cs: { cx: number; cy: number; v: [number, number][] }[] = []
+  for (let k = 0; k < 5; k++) {
+    const th = ((-90 + 72 * k) * Math.PI) / 180, cx = C + D * Math.cos(th), cy = C + D * Math.sin(th)
+    cs.push({ cx, cy, v: Array.from({ length: 5 }, (_, j) => { const a = th + Math.PI + (j * 2 * Math.PI) / 5; return [cx + R * Math.cos(a), cy + R * Math.sin(a)] as [number, number] }) })
+  }
+  const near = (p: (typeof cs)[number], tx: number, ty: number) => p.v.reduce((m, q) => (Math.hypot(q[0] - tx, q[1] - ty) < Math.hypot(m[0] - tx, m[1] - ty) ? q : m))
+  const f = (n: number) => n.toFixed(2)
+  const pent = cs.map(p => `M${p.v.map(q => `${f(q[0])} ${f(q[1])}`).join(' L')} Z`).join(' ')
+  const seam = cs.map((p, k) => { const n = cs[(k + 1) % 5], a = near(p, n.cx, n.cy), b = near(n, p.cx, p.cy); return `M${f(a[0])} ${f(a[1])} L${f(b[0])} ${f(b[1])}` }).join(' ')
+  return { pent, seam }
+})()
+const BROW: Record<Mood, [string, string, number]> = {   // [ceja izq, ceja der, opacidad]
+  idle: ['translate(0px,3px)', 'translate(0px,3px)', 0],
+  curious: ['translate(0px,-1.6px) rotate(-5deg)', 'translate(0px,-3.8px) rotate(10deg)', 1],
+  think: ['translate(0px,1.4px) rotate(14deg)', 'translate(0px,-2.8px) rotate(-6deg)', 1],
+  happy: ['translate(0px,-2.6px) rotate(-3deg)', 'translate(0px,-2.6px) rotate(3deg)', 1],
+  oops: ['translate(0px,-.6px) rotate(-17deg)', 'translate(0px,-.6px) rotate(17deg)', 1],
+}
+const EYES: Record<Mood, { s: string; look?: [number, number] }> = {
+  idle: { s: 'scale(1)' }, curious: { s: 'scale(1.15)' }, think: { s: 'scale(1, .84)', look: [-2, -2.6] },
+  happy: { s: 'scale(1)' }, oops: { s: 'scale(.9, .8)', look: [0, 1.8] },
+}
+export function Ball({ size = 44, mood = 'idle', look = [0, 0] }: { size?: number; mood?: Mood; look?: [number, number] }) {
+  const id = useId().replace(/:/g, '')
+  const [lx, ly] = EYES[mood].look ?? look
+  const eye = (cx: number) => (
+    <g>
+      <ellipse cx={cx} cy="32" rx="4.7" ry="6.5" fill="#14201a" />
+      <circle cx={cx + 1.6} cy="29.2" r="1.9" fill="#fff" /><circle cx={cx - 1.3} cy="34.4" r="0.95" fill="#fff" opacity=".85" />
+    </g>
+  )
   return (
     <svg className={`ball ball-${mood}`} width={size} height={size} viewBox="0 0 64 64" aria-hidden>
       <defs>
-        <radialGradient id="ballg" cx="38%" cy="32%" r="70%"><stop offset="0" stopColor="#fff" /><stop offset=".72" stopColor="#eef1ee" /><stop offset="1" stopColor="#c9d1cc" /></radialGradient>
-        <clipPath id="ballc"><circle cx="32" cy="32" r="29" /></clipPath>
+        <radialGradient id={`bg${id}`} cx="38%" cy="32%" r="70%"><stop offset="0" stopColor="#fff" /><stop offset=".72" stopColor="#eef1ee" /><stop offset="1" stopColor="#c9d1cc" /></radialGradient>
+        <radialGradient id={`bs${id}`} cx="42%" cy="36%" r="62%"><stop offset=".55" stopColor="#14201a" stopOpacity="0" /><stop offset="1" stopColor="#14201a" stopOpacity=".22" /></radialGradient>
+        <clipPath id={`bc${id}`}><circle cx="32" cy="32" r="29" /></clipPath>
       </defs>
-      <circle cx="32" cy="32" r="29" fill="url(#ballg)" stroke="#1d2a24" strokeWidth="2" />
-      <g className="ball-skin" clipPath="url(#ballc)" fill="#1d2a24">
-        <path d="M32 6 l7 5 -2.6 8.2 h-8.8 L25 11 z" />
-        <path d="M5 26 l6.5-2 5.4 6.6 -3.4 8 -7.2 .6 z" />
-        <path d="M59 26 l-6.5-2 -5.4 6.6 3.4 8 7.2 .6 z" />
-        <path d="M18 54 l2-7.6 8.4-1 4 7 -4.6 6.4 z" opacity=".9" />
-        <path d="M46 54 l-2-7.6 -8.4-1 -4 7 4.6 6.4 z" opacity=".9" />
+      <circle cx="32" cy="32" r="29" fill={`url(#bg${id})`} />
+      <g clipPath={`url(#bc${id})`}>
+        <g className="ball-skin"><path d={SKIN.pent} fill="#1d2a24" strokeLinejoin="round" stroke="#1d2a24" strokeWidth=".8" /><path d={SKIN.seam} fill="none" stroke="#1d2a24" strokeWidth="1.3" strokeLinecap="round" opacity=".8" /></g>
+        <circle cx="32" cy="32" r="29" fill={`url(#bs${id})`} />
+        <ellipse cx="22" cy="14.5" rx="8" ry="4" fill="#fff" opacity=".42" transform="rotate(-32 22 14.5)" />
       </g>
-      <g className="ball-face" style={{ transform: `translate(${look[0]}px, ${look[1]}px)` }}>
-        <g className="ball-eyes">
-          <ellipse cx="24.5" cy="31" rx="3.6" ry="4.4" fill="#1d2a24" /><circle cx="25.8" cy="29.4" r="1.2" fill="#fff" />
-          <ellipse cx="39.5" cy="31" rx="3.6" ry="4.4" fill="#1d2a24" /><circle cx="40.8" cy="29.4" r="1.2" fill="#fff" />
+      <circle cx="32" cy="32" r="29" fill="none" stroke="#1d2a24" strokeWidth="2" />
+      <g className="ball-face" style={{ transform: `translate(${lx}px, ${ly}px)` }}>
+        <g className="ball-eyes" style={{ transform: EYES[mood].s, opacity: mood === 'happy' ? 0 : 1 }}><g className="ball-blink">{eye(24.5)}{eye(39.5)}</g></g>
+        <g style={{ opacity: mood === 'happy' ? 1 : 0, transition: 'opacity .18s' }} fill="none" stroke="#14201a" strokeWidth="3.3" strokeLinecap="round">
+          <path d="M19.6 35 Q24.5 26.4 29.4 35" /><path d="M34.6 35 Q39.5 26.4 44.4 35" />
         </g>
-        <path className="ball-mouth" d={mood === 'happy' ? 'M26 39 q6 6 12 0' : 'M28 40 q4 3 8 0'} fill="none" stroke="#1d2a24" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="20" cy="38" r="2.4" fill="#ff8fa3" opacity=".45" /><circle cx="44" cy="38" r="2.4" fill="#ff8fa3" opacity=".45" />
+        <g fill="none" stroke="#14201a" strokeWidth="2.3" strokeLinecap="round" style={{ opacity: BROW[mood][2], transition: 'opacity .2s' }}>
+          <path className="ball-brow" d="M19.2 23.4 Q24.4 20.4 29.6 23.2" style={{ transform: BROW[mood][0] }} />
+          <path className="ball-brow" d="M34.4 23.2 Q39.6 20.4 44.8 23.4" style={{ transform: BROW[mood][1] }} />
+        </g>
       </g>
     </svg>
   )
@@ -326,31 +369,49 @@ function CardView({ c }: { c: Card }) {
       {c.rows.length === 0 && <div className="cc-foot">{L('Sin partidos con ese filtro.', 'No matches for that filter.')}</div>}
       {c.rows.map((r: Any, i: number) => (
         <div key={`${r.fecha}-${r.local}`} className="cc-match" style={{ ['--i' as string]: i }}>
-          <span className="cc-date">{r.fecha.slice(2).split('-').reverse().join('/')}</span>
-          <span className="cc-team r">{r.local}<ClubLogo club={r.local} media={media} size={18} /></span>
+          <span className="cc-date">{r.fecha.slice(8, 10)}/{r.fecha.slice(5, 7)}<br />{r.fecha.slice(0, 4)}</span>
+          <span className="cc-team r"><span className="cc-tn">{r.local}</span><ClubLogo club={r.local} media={media} size={18} /></span>
           <b className="cc-score">{r.gl}<i>–</i>{r.gv}</b>
-          <span className="cc-team"><ClubLogo club={r.visita} media={media} size={18} />{r.visita}</span>
+          <span className="cc-team"><ClubLogo club={r.visita} media={media} size={18} /><span className="cc-tn">{r.visita}</span></span>
+          <span className="cc-dt r">{r.dtl ? dtName(r.dtl) : ''}</span>
           <span className="cc-xg">xG {fmt(r.xgl, 1)}–{fmt(r.xgv, 1)}</span>
+          <span className="cc-dt">{r.dtv ? dtName(r.dtv) : ''}</span>
         </div>
       ))}
     </div>
   )
-  if (c.t === 'compare') return (
-    <div className="cc cc-compare">
-      <div className="cc-vs">
-        <button onClick={() => go(c.a, 'resumen')}><Face id={c.a} size={44} /><span>{dtName(c.a)}</span></button>
-        <div className="cc-sim"><b>{c.sim}</b><span>{L('parecido', 'alike')}</span></div>
-        <button onClick={() => go(c.b, 'resumen')}><Face id={c.b} size={44} /><span>{dtName(c.b)}</span></button>
+  if (c.t === 'compare') {
+    const pos = (v: number) => `${Math.max(3, Math.min(97, ((v + 1.5) / 3) * 100))}%`
+    const sg = (v: number) => `${v > 0.004 ? '+' : v < -0.004 ? '−' : ''}${fmt(Math.abs(v), 2)}σ`
+    const row = (d: CmpRow, i: number) => (
+      <div key={d.k} className="cc-cmp" style={{ ['--i' as string]: i }}>
+        <b className="cc-n a">{sg(d.a)}<small>{d.va != null ? fmt(d.va, 1) : ''}</small></b>
+        <div className="cc-cmp-mid">
+          <span className="cc-cmp-l">{kl(d.k)}</span>
+          <span className="cc-cmp-track">
+            <i className="zero" />
+            <i className="link" style={{ left: pos(Math.min(d.a, d.b)), width: `calc(${pos(Math.max(d.a, d.b))} - ${pos(Math.min(d.a, d.b))})` }} />
+            <i className="dot a" style={{ left: pos(d.a) }} /><i className="dot b" style={{ left: pos(d.b) }} />
+          </span>
+        </div>
+        <b className="cc-n b">{sg(d.b)}<small>{d.vb != null ? fmt(d.vb, 1) : ''}</small></b>
       </div>
-      {c.diffs.map((d, i) => (
-        <div key={d.k} className="cc-diff" style={{ ['--i' as string]: i }}>
-          <span className="cc-diff-a" style={{ ['--w' as string]: `${Math.min(1, Math.abs(d.a) / 1.2) * 100}%` }}><i className={d.a < 0 ? 'neg' : ''} /></span>
-          <span className="cc-diff-l">{kl(d.k)}</span>
-          <span className="cc-diff-b" style={{ ['--w' as string]: `${Math.min(1, Math.abs(d.b) / 1.2) * 100}%` }}><i className={d.b < 0 ? 'neg' : ''} /></span>
+    )
+    return (
+      <div className="cc cc-compare">
+        <div className="cc-vs">
+          <button onClick={() => go(c.a, 'resumen')}><Face id={c.a} size={44} ring="var(--c-dt)" /><span className="a">{dtName(c.a)}</span></button>
+          <div className="cc-sim"><b>{c.sim}</b><span>{L('de 100 parecido', 'of 100 alike')}</span></div>
+          <button onClick={() => go(c.b, 'resumen')}><Face id={c.b} size={44} ring="var(--c-plantilla)" /><span className="b">{dtName(c.b)}</span></button>
         </div>
-      ))}
-    </div>
-  )
+        <div className="cc-note">{L('Estilo propio en σ (0 = media de la liga) y, debajo, el valor que se vio en sus partidos.', 'Own style in σ (0 = league average) and, below, the value seen in his matches.')}</div>
+        {c.same.length > 0 && <div className="cc-sec">{L('Se parecen en', 'Alike in')}</div>}
+        {c.same.map(row)}
+        <div className="cc-sec">{L('Más distintos', 'Most different')}</div>
+        {c.diffs.map((d, i) => row(d, i + c.same.length))}
+      </div>
+    )
+  }
   return (
     <button className="cc cc-go" onClick={() => go(c.coach, c.view)}>
       {c.coach != null ? <Face id={c.coach} size={26} /> : <span className="cc-go-map">◎</span>}
@@ -360,10 +421,10 @@ function CardView({ c }: { c: Card }) {
   )
 }
 
-function Face({ id, size }: { id: number; size: number }) {
+function Face({ id, size, ring }: { id: number; size: number; ring?: string }) {
   const [bad, setBad] = useState(false)
   const src = dtFoto(id)
-  const color = media.clubes?.[dtClub(id)]?.color ?? 'var(--c-dt)'
+  const color = ring ?? media.clubes?.[dtClub(id)]?.color ?? 'var(--c-dt)'
   return (
     <span className="face" style={{ width: size, height: size, ['--ring' as string]: color }}>
       {src && !bad ? <img src={src} alt="" onError={() => setBad(true)} /> : <i style={{ fontSize: size * 0.38 }}>{dtName(id).split(' ').map(w => w[0]).slice(0, 2).join('')}</i>}
@@ -392,6 +453,10 @@ export default function Chat({ coach, view }: { coach: number | null; view: stri
   const fabRef = useRef<HTMLButtonElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [aiOff, setAiOff] = useState(false)
+  const [hover, setHover] = useState(false)
+  const [flashMood, setFlashMood] = useState<Mood | null>(null)
+  const flashT = useRef<number>(0)
+  const flash = (m: Mood) => { setFlashMood(m); window.clearTimeout(flashT.current); flashT.current = window.setTimeout(() => setFlashMood(null), m === 'happy' ? 2600 : 3200) }
 
   useEffect(() => {
     const c = (window as Any).claude
@@ -418,7 +483,10 @@ export default function Chat({ coach, view }: { coach: number | null; view: stri
   const ask = async (q: string) => {
     q = q.trim(); if (!q || busy) return
     setInput('')
-    const history = msgs.filter(m => !m.local && !m.error && m.text).slice(-8).map(m => ({ role: m.role, content: m.text }))
+    const history = msgs.filter(m => !m.local && !m.error && m.text).slice(-8).map(m => ({
+      role: m.role,
+      content: m.role === 'assistant' && m.memo ? `${m.text}\n\n[datos de la respuesta anterior (contexto interno, no los cites):\n${m.memo}]` : m.text,
+    }))
     setMsgs(ms => [...ms, { role: 'user', text: q }, { role: 'assistant', text: '', cards: [], status: L('Pensando…', 'Thinking…') }])
     setBusy(true)
     // espera breve a que el visor diga si hay IA
@@ -426,26 +494,37 @@ export default function Chat({ coach, view }: { coach: number | null; view: stri
     const sample = sampleRef.current
     if (!sample) { setAiOff(true); setMsgs(ms => [...ms.slice(0, -1), localAnswer(q)]); setBusy(false); return }
     const cards: Card[] = []
+    const memo: string[] = []
     const push = (c: Card) => { cards.push(c); update(m => ({ ...m, cards: [...cards] })) }
     const status = (s: string) => update(m => ({ ...m, status: s }))
+    // cada herramienta deja su resultado resumido: en la siguiente pregunta el modelo ve qué datos usó (y no los inventa)
+    const tools = makeTools(push, status).map(t => ({ ...t, execute: async (input: Any, c: Any) => {
+      const out = await (t.execute as Any)(input, c)
+      memo.push(`${t.name}(${JSON.stringify(input)}) → ${JSON.stringify(out).slice(0, 900)}`)
+      update(m => ({ ...m, memo: memo.join('\n') }))
+      return out
+    } }))
     ctl.current = new AbortController()
     try {
       await sample([{ role: 'user', content: rules(view, coach) }, ...history, { role: 'user', content: q }], {
-        modelTier: 'quick', signal: ctl.current.signal, tools: makeTools(push, status),
+        modelTier: 'quick', signal: ctl.current.signal, tools,
         onText: ({ text }: Any) => update(m => ({ ...m, text: text.replace(/\n{3,}/g, '\n\n'), status: undefined })),
       })
       update(m => ({ ...m, status: undefined }))
+      flash('happy')
     } catch (e: Any) {
       const off = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'tools_unavailable'].includes(e?.code)
       if (off) { setAiOff(true); setMsgs(ms => [...ms.slice(0, -1), localAnswer(q)]) }
-      else update(m => ({
+      else { if (e?.code !== 'cancelled') flash('oops'); update(m => ({
         ...m, status: undefined, text: e?.code === 'refused' ? '' : e?.text ?? m.text,
         error: e?.code === 'cancelled' ? undefined : e?.code === 'rate_limited' ? L('Demasiadas preguntas seguidas. Espera un momento.', 'Too many questions in a row. Wait a moment.') : L('Se cortó la respuesta. Intenta de nuevo.', 'The answer was cut off. Try again.'),
-      }))
+      })) }
     } finally { setBusy(false); ctl.current = null }
   }
 
   const empty = msgs.length === 0
+  const typing = open && !busy && input.trim().length > 0
+  const mood: Mood = busy ? 'think' : flashMood ?? (typing || hover ? 'curious' : 'idle')
   const ctxName = coach != null ? dtName(coach) : null
   const sugg = useMemo(() => {
     const s = SUGGEST()
@@ -455,14 +534,14 @@ export default function Chat({ coach, view }: { coach: number | null; view: stri
 
   return (
     <>
-      <button ref={fabRef} className={`ai-fab${open ? ' is-open' : ''}`} onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label={L('Abrir el chat con IA', 'Open the AI chat')}>
-        <span className="ai-fab-ball"><Ball size={46} mood={busy ? 'think' : 'idle'} look={look} /></span>
+      <button ref={fabRef} className={`ai-fab${open ? ' is-open' : ''}`} data-mood={mood} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onFocus={() => setHover(true)} onBlur={() => setHover(false)} onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label={L('Abrir el chat con IA', 'Open the AI chat')}>
+        <span className="ai-fab-ball"><Ball size={46} mood={mood} look={look} /></span>
         <span className="ai-fab-txt"><b>{L('Pregúntale a la IA', 'Ask the AI')}</b><small>{L('chat sobre los datos', 'chat about the data')}</small></span>
         <span className="ai-fab-badge">IA</span>
       </button>
       <section className={`ai-panel${open ? ' is-open' : ''}`} aria-hidden={!open} aria-label={L('Chat con IA', 'AI chat')}>
         <header className="ai-head">
-          <Ball size={38} mood={busy ? 'think' : 'happy'} look={[0, 0]} />
+          <Ball size={38} mood={mood} look={look} />
           <div><b>{L('Asistente IA', 'AI assistant')}<span className="ai-spark">✦</span></b><small>{L('Responde sólo con los datos de Coach DNA y te lleva a la vista', 'Answers only from Coach DNA data and takes you to the view')}</small></div>
           {msgs.length > 0 && <button className="ai-x ai-new" onClick={() => { ctl.current?.abort(); setMsgs([]) }} title={L('Nueva conversación', 'New chat')}>↺</button>}
           <button className="ai-x" onClick={() => setOpen(false)} aria-label={L('Cerrar', 'Close')}>×</button>

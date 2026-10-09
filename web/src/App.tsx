@@ -61,7 +61,11 @@ export default function App() {
   const swap = (fn: () => void) => {
     const d = document as Document & { startViewTransition?: (cb: () => void) => unknown }
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (d.startViewTransition && !reduce) d.startViewTransition(() => flushSync(fn))
+    if (d.startViewTransition && !reduce) {
+      // si el navegador aborta la transición (pestaña oculta, cambio durante otra transición) el cambio igual se aplica y no hay error
+      const vt = d.startViewTransition(() => flushSync(fn)) as { ready?: Promise<unknown>; finished?: Promise<unknown>; updateCallbackDone?: Promise<unknown> } | undefined
+      vt?.ready?.catch(() => {}); vt?.finished?.catch(() => {}); vt?.updateCallbackDone?.catch(() => {})
+    }
     else fn()
   }
   const openCoach = (id: number) => swap(() => { setTabRaw('hub'); setCoachId(id); setSideOpen(false); window.scrollTo({ top: 0 }) })

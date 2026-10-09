@@ -22,16 +22,30 @@
 @keyframes aiBob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-3px) rotate(5deg); } }
 @keyframes aiShine { to { background-position: -200% 0; } }
 
-/* balón */
-.ball { display: block; overflow: visible; }
-.ball-face { transition: transform .18s ease-out; }
-.ball-eyes { transform-origin: 32px 31px; animation: aiBlink 4.6s infinite; }
-@keyframes aiBlink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
-.ball-think .ball-skin { animation: aiRoll 1.1s linear infinite; transform-origin: 32px 32px; }
-.ball-think { animation: aiHop .55s ease-in-out infinite alternate; }
+/* balón: ojos grandes, cejas que aparecen según el ánimo; cada ánimo tiene su movimiento */
+.ball { display: block; overflow: visible; transform-origin: 50% 55%; transition: transform .35s cubic-bezier(.2,1.3,.4,1); }
+.ball-face { transition: transform .22s ease-out; }
+.ball-eyes { transition: transform .26s cubic-bezier(.2,1.4,.4,1), opacity .18s; transform-box: fill-box; transform-origin: center; }
+.ball-blink { transform-box: fill-box; transform-origin: center; animation: aiBlink 4.4s infinite; }
+@keyframes aiBlink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
+.ball-brow { transform-box: fill-box; transform-origin: center; transition: transform .3s cubic-bezier(.2,1.4,.4,1); }
+.ball-skin { transform-origin: 32px 32px; }
+/* pensando: rueda en su lugar, un poco ladeado y con la mirada arriba */
+.ball-think { transform: rotate(-9deg); }
+.ball-think .ball-skin { animation: aiRoll 1.15s linear infinite; }
+.ball-think .ball-blink { animation-duration: 2.4s; }
 @keyframes aiRoll { to { transform: rotate(360deg); } }
-@keyframes aiHop { from { transform: translateY(1px); } to { transform: translateY(-4px); } }
-.ball-happy .ball-eyes { animation: aiBlink 3.4s infinite; }
+/* curioso (pasas el cursor o escribes): ladea la cabeza como perrito */
+.ball-curious { animation: aiDog 3.8s ease-in-out infinite; }
+@keyframes aiDog { 0% { transform: rotate(0); } 18%, 42% { transform: rotate(-15deg); } 56% { transform: rotate(0); } 72%, 90% { transform: rotate(12deg); } 100% { transform: rotate(0); } }
+/* feliz: ojos en arco, brinquitos y un giro */
+.ball-happy { animation: aiJoy .55s cubic-bezier(.3,1.5,.5,1) 3; }
+.ball-happy .ball-skin { animation: aiRoll .9s ease-out 1; }
+@keyframes aiJoy { 0% { transform: translateY(0) scale(1, 1); } 35% { transform: translateY(-6px) scale(.94, 1.08); } 70% { transform: translateY(0) scale(1.08, .92); } 100% { transform: translateY(0) scale(1, 1); } }
+/* algo salió mal: cejas tristes y una sacudida */
+.ball-oops { animation: aiShake .5s ease-in-out 2; }
+@keyframes aiShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px) rotate(-3deg); } 75% { transform: translateX(2px) rotate(3deg); } }
+.ai-fab[data-mood="think"] .ai-fab-ball, .ai-fab[data-mood="curious"] .ai-fab-ball, .ai-fab[data-mood="happy"] .ai-fab-ball { animation: none; }
 
 /* panel */
 .ai-panel {
@@ -165,5 +179,36 @@
   .ai-panel { right: 0; bottom: 0; width: 100vw; height: 86vh; height: 86dvh; border-radius: 20px 20px 0 0; transform-origin: 90% 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ai-fab, .ai-fab-ball, .ai-fab-badge, .ball-eyes, .ball-think, .ball-think .ball-skin, .ai-spark { animation: none; }
+  .ai-fab, .ai-fab-ball, .ai-fab-badge, .ball, .ball-blink, .ball-skin, .ai-spark { animation: none !important; }
 }
+
+/* comparación con números: a la izquierda el primer DT, a la derecha el segundo */
+.cc-vs span.a { color: var(--c-dt); } .cc-vs span.b { color: var(--c-plantilla); }
+.cc-note { font-size: 11.5px; color: var(--ink-3); text-align: center; line-height: 1.3; margin: 0 0 4px; }
+.cc-sec { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin: 8px 0 2px; }
+.cc-cmp { display: grid; grid-template-columns: 62px minmax(0, 1fr) 62px; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid var(--rule); animation: aiIn .35s both; animation-delay: calc(var(--i) * 60ms + 100ms); }
+.cc-n { display: flex; flex-direction: column; font-family: var(--display); font-size: 19px; font-weight: 800; line-height: 1.05; white-space: nowrap; }
+.cc-n small { font-family: inherit; font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--ink-3); }
+.cc-n.a { color: var(--c-dt); align-items: flex-start; } .cc-n.b { color: var(--c-plantilla); align-items: flex-end; }
+.cc-cmp-mid { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.cc-cmp-l { font-size: 12px; text-align: center; color: var(--ink-2); line-height: 1.2; }
+.cc-cmp-track { position: relative; height: 14px; }
+.cc-cmp-track::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px; border-radius: 2px; background: var(--surface-2); }
+.cc-cmp-track i { position: absolute; top: 50%; display: block; }
+.cc-cmp-track .zero { left: 50%; width: 1px; height: 14px; margin-top: -7px; background: var(--ink-3); opacity: .55; }
+.cc-cmp-track .link { height: 3px; margin-top: -1.5px; border-radius: 2px; background: color-mix(in oklab, var(--ink-3) 50%, transparent); transform-origin: left; animation: aiGrow .7s both; }
+.cc-cmp-track .dot { width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; box-shadow: 0 0 0 2px var(--bg); animation: aiIn .5s both; animation-delay: calc(var(--i) * 60ms + 250ms); }
+.cc-cmp-track .dot.a { background: var(--c-dt); } .cc-cmp-track .dot.b { background: var(--c-plantilla); }
+
+/* partidos: segunda línea con xG y el DT de cada lado */
+.cc-xgl { font-size: 10.5px; color: var(--ink-3); }
+.cc-dt { font-size: 11px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: -2px; }
+.cc-dt.r { text-align: right; }
+.cc-xg { grid-column: auto; text-align: center; font-size: 11px; margin-top: -2px; color: var(--ink-2); font-weight: 600; white-space: nowrap; }
+.cc-match { grid-template-columns: 44px minmax(0, 1fr) 76px minmax(0, 1fr); }
+.cc-xg { font-size: 10.5px; }
+
+.cc-match { grid-template-columns: 34px minmax(0, 1fr) 70px minmax(0, 1fr); column-gap: 5px; }
+.cc-date { grid-row: span 2; align-self: center; font-size: 10.5px; line-height: 1.25; color: var(--ink-3); }
+.cc-tn { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.cc-team { gap: 4px; }
