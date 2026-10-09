@@ -90,8 +90,8 @@ export const MAP_EN: Record<string, string> = {
   'volumen ofensivo · balón parado': 'attacking volume · set pieces',
   'juego por bandas · contrapresión': 'wing play · counter-press',
   // método
-  'PCA de 2 componentes sobre la huella propia de cada DT (34 indicadores, α estandarizados entre DTs); grupos por k-means en el plano 2D (K = 3 fijo; por silueta).':
-    '2-component PCA on each coach\'s own fingerprint (34 indicators, α standardized across coaches); groups by k-means on the 2D plane (K = 3, fixed).',
+  'PCA de 2 componentes sobre la huella propia de cada DT (34 indicadores, α estandarizados entre DTs); grupos por k-means en el plano 2D (K de 4 a 6 elegido por silueta).':
+    '2-component PCA on each coach\'s own fingerprint (34 indicators, α standardized across coaches); groups by k-means on the 2D plane (K from 4 to 6 chosen by silhouette).',
 }
 export const mapLabel = (es: string) => (en ? MAP_EN[es] ?? es : es)
 

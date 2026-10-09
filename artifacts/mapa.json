@@ -43,7 +43,7 @@
     "field_tilt": -0.1,
     "xg_balon_parado_90": -0.221
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Guadalajara",
     "Monterrey",
@@ -98,7 +98,7 @@
     "field_tilt": 0.644,
     "xg_balon_parado_90": 0.571
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Puebla",
     "León",
@@ -154,7 +154,7 @@
     "field_tilt": 0.285,
     "xg_balon_parado_90": 0.616
    },
-   "grupo": 2,
+   "grupo": 3,
    "clubes": [
     "Toluca",
     "Querétaro",
@@ -210,7 +210,7 @@
     "field_tilt": 0.268,
     "xg_balon_parado_90": 0.058
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "América",
     "Monterrey",
@@ -265,7 +265,7 @@
     "field_tilt": -0.447,
     "xg_balon_parado_90": -0.226
    },
-   "grupo": 1,
+   "grupo": 0,
    "clubes": [
     "Toluca",
     "Santos Laguna",
@@ -320,7 +320,7 @@
     "field_tilt": 0.271,
     "xg_balon_parado_90": 0.081
    },
-   "grupo": 0,
+   "grupo": 3,
    "clubes": [
     "León",
     "Toluca",
@@ -373,7 +373,7 @@
     "field_tilt": -0.148,
     "xg_balon_parado_90": -0.474
    },
-   "grupo": 1,
+   "grupo": 0,
    "clubes": [
     "Tijuana",
     "Tigres UANL",
@@ -428,7 +428,7 @@
     "field_tilt": -0.271,
     "xg_balon_parado_90": -0.454
    },
-   "grupo": 1,
+   "grupo": 0,
    "clubes": [
     "Atlas",
     "Querétaro",
@@ -483,7 +483,7 @@
     "field_tilt": 0.43,
     "xg_balon_parado_90": -0.052
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Santos Laguna",
     "Pachuca",
@@ -538,7 +538,7 @@
     "field_tilt": 0.175,
     "xg_balon_parado_90": 0.494
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Tigres UANL",
     "Tijuana",
@@ -593,7 +593,7 @@
     "field_tilt": 0.13,
     "xg_balon_parado_90": 0.378
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Guadalajara",
     "Tigres UANL"
@@ -647,7 +647,7 @@
     "field_tilt": 0.32,
     "xg_balon_parado_90": 0.186
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Guadalajara",
     "Necaxa"
@@ -701,7 +701,7 @@
     "field_tilt": 0.117,
     "xg_balon_parado_90": 0.649
    },
-   "grupo": 2,
+   "grupo": 3,
    "clubes": [
     "Pumas UNAM",
     "Juárez"
@@ -753,7 +753,7 @@
     "field_tilt": -0.328,
     "xg_balon_parado_90": 0.56
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Santos Laguna",
     "Necaxa"
@@ -807,7 +807,7 @@
     "field_tilt": -0.194,
     "xg_balon_parado_90": -0.465
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Atlas",
     "Tigres UANL"
@@ -861,7 +861,7 @@
     "field_tilt": 0.01,
     "xg_balon_parado_90": -0.267
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Pachuca",
     "Pumas UNAM"
@@ -915,7 +915,7 @@
     "field_tilt": 0.198,
     "xg_balon_parado_90": -0.076
    },
-   "grupo": 1,
+   "grupo": 3,
    "clubes": [
     "Atlético San Luis",
     "América"
@@ -969,7 +969,7 @@
     "field_tilt": 0.176,
     "xg_balon_parado_90": 0.596
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Santos Laguna",
     "Juárez"
@@ -1023,7 +1023,7 @@
     "field_tilt": 0.004,
     "xg_balon_parado_90": -0.397
    },
-   "grupo": 1,
+   "grupo": 3,
    "clubes": [
     "Necaxa",
     "Pachuca"
@@ -1077,7 +1077,7 @@
     "field_tilt": 0.163,
     "xg_balon_parado_90": -0.096
    },
-   "grupo": 2,
+   "grupo": 3,
    "clubes": [
     "Atlético San Luis",
     "Monterrey"
@@ -1131,7 +1131,7 @@
     "field_tilt": -0.306,
     "xg_balon_parado_90": 0.151
    },
-   "grupo": 1,
+   "grupo": 0,
    "clubes": [
     "Juárez",
     "Atlético San Luis"
@@ -1185,7 +1185,7 @@
     "field_tilt": -0.427,
     "xg_balon_parado_90": -0.115
    },
-   "grupo": 1,
+   "grupo": 0,
    "clubes": [
     "Mazatlán",
     "Atlas"
@@ -1239,7 +1239,7 @@
     "field_tilt": 0.297,
     "xg_balon_parado_90": 0.034
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Necaxa",
     "Puebla"
@@ -1293,7 +1293,7 @@
     "field_tilt": 0.139,
     "xg_balon_parado_90": -0.542
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Guadalajara",
     "Puebla"
@@ -1347,7 +1347,7 @@
     "field_tilt": 0.203,
     "xg_balon_parado_90": 0.023
    },
-   "grupo": 2,
+   "grupo": 3,
    "clubes": [
     "Juárez",
     "Necaxa"
@@ -1401,7 +1401,7 @@
     "field_tilt": 0.19,
     "xg_balon_parado_90": 0.238
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Pumas UNAM",
     "Toluca"
@@ -1455,7 +1455,7 @@
     "field_tilt": 0.07,
     "xg_balon_parado_90": -0.26
    },
-   "grupo": 2,
+   "grupo": 3,
    "clubes": [
     "Pumas UNAM",
     "Necaxa"
@@ -1509,7 +1509,7 @@
     "field_tilt": -0.432,
     "xg_balon_parado_90": -0.536
    },
-   "grupo": 1,
+   "grupo": 0,
    "clubes": [
     "Juárez",
     "Cruz Azul"
@@ -1563,7 +1563,7 @@
     "field_tilt": 0.086,
     "xg_balon_parado_90": -0.032
    },
-   "grupo": 0,
+   "grupo": 3,
    "clubes": [
     "Cruz Azul",
     "Necaxa"
@@ -1616,7 +1616,7 @@
     "field_tilt": -0.253,
     "xg_balon_parado_90": -0.077
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Santos Laguna"
    ],
@@ -1668,7 +1668,7 @@
     "field_tilt": -0.299,
     "xg_balon_parado_90": 0.193
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Cruz Azul"
    ],
@@ -1720,7 +1720,7 @@
     "field_tilt": 0.192,
     "xg_balon_parado_90": 0.095
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Monterrey"
    ],
@@ -1773,7 +1773,7 @@
     "field_tilt": -0.099,
     "xg_balon_parado_90": 0.093
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Guadalajara"
    ],
@@ -1824,7 +1824,7 @@
     "field_tilt": 0.111,
     "xg_balon_parado_90": -0.339
    },
-   "grupo": 2,
+   "grupo": 3,
    "clubes": [
     "Mazatlán"
    ],
@@ -1876,7 +1876,7 @@
     "field_tilt": -0.002,
     "xg_balon_parado_90": -0.181
    },
-   "grupo": 1,
+   "grupo": 3,
    "clubes": [
     "Guadalajara"
    ],
@@ -1927,7 +1927,7 @@
     "field_tilt": -0.096,
     "xg_balon_parado_90": -0.047
    },
-   "grupo": 1,
+   "grupo": 3,
    "clubes": [
     "Puebla"
    ],
@@ -1980,7 +1980,7 @@
     "field_tilt": -0.187,
     "xg_balon_parado_90": 0.105
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Cruz Azul"
    ],
@@ -2031,7 +2031,7 @@
     "field_tilt": -0.004,
     "xg_balon_parado_90": -0.495
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "América"
    ],
@@ -2084,7 +2084,7 @@
     "field_tilt": -0.353,
     "xg_balon_parado_90": 0.041
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Puebla"
    ],
@@ -2137,7 +2137,7 @@
     "field_tilt": -0.225,
     "xg_balon_parado_90": 0.508
    },
-   "grupo": 1,
+   "grupo": 0,
    "clubes": [
     "Mazatlán"
    ],
@@ -2190,7 +2190,7 @@
     "field_tilt": -0.172,
     "xg_balon_parado_90": 0.263
    },
-   "grupo": 1,
+   "grupo": 0,
    "clubes": [
     "Puebla"
    ],
@@ -2243,7 +2243,7 @@
     "field_tilt": -0.019,
     "xg_balon_parado_90": 0.57
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Monterrey"
    ],
@@ -2296,7 +2296,7 @@
     "field_tilt": -0.052,
     "xg_balon_parado_90": -0.247
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Cruz Azul"
    ],
@@ -2348,7 +2348,7 @@
     "field_tilt": 0.06,
     "xg_balon_parado_90": -0.308
    },
-   "grupo": 0,
+   "grupo": 3,
    "clubes": [
     "Puebla"
    ],
@@ -2401,7 +2401,7 @@
     "field_tilt": 0.661,
     "xg_balon_parado_90": 0.619
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Cruz Azul"
    ],
@@ -2454,7 +2454,7 @@
     "field_tilt": 0.22,
     "xg_balon_parado_90": 0.151
    },
-   "grupo": 1,
+   "grupo": 3,
    "clubes": [
     "Atlético San Luis"
    ],
@@ -2507,7 +2507,7 @@
     "field_tilt": -0.388,
     "xg_balon_parado_90": 0.147
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Atlas"
    ],
@@ -2560,7 +2560,7 @@
     "field_tilt": -0.052,
     "xg_balon_parado_90": -0.127
    },
-   "grupo": 0,
+   "grupo": 3,
    "clubes": [
     "Tijuana"
    ],
@@ -2611,7 +2611,7 @@
     "field_tilt": 0.279,
     "xg_balon_parado_90": -0.041
    },
-   "grupo": 0,
+   "grupo": 3,
    "clubes": [
     "Mazatlán"
    ],
@@ -2664,7 +2664,7 @@
     "field_tilt": 0.014,
     "xg_balon_parado_90": -0.392
    },
-   "grupo": 0,
+   "grupo": 3,
    "clubes": [
     "Cruz Azul"
    ],
@@ -2713,7 +2713,7 @@
     "field_tilt": 0.698,
     "xg_balon_parado_90": -0.012
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Tijuana"
    ],
@@ -2766,7 +2766,7 @@
     "field_tilt": 0.094,
     "xg_balon_parado_90": -0.468
    },
-   "grupo": 0,
+   "grupo": 3,
    "clubes": [
     "Monterrey"
    ],
@@ -2815,7 +2815,7 @@
     "field_tilt": -0.091,
     "xg_balon_parado_90": 0.558
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Santos Laguna"
    ],
@@ -2868,7 +2868,7 @@
     "field_tilt": -0.108,
     "xg_balon_parado_90": -0.51
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Tijuana"
    ],
@@ -2917,7 +2917,7 @@
     "field_tilt": -0.013,
     "xg_balon_parado_90": -0.242
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Cruz Azul"
    ],
@@ -3023,7 +3023,7 @@
     "field_tilt": -0.059,
     "xg_balon_parado_90": 0.29
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Querétaro"
    ],
@@ -3076,7 +3076,7 @@
     "field_tilt": 0.037,
     "xg_balon_parado_90": 0.137
    },
-   "grupo": 1,
+   "grupo": 3,
    "clubes": [
     "León"
    ],
@@ -3129,7 +3129,7 @@
     "field_tilt": 0.292,
     "xg_balon_parado_90": -0.194
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Tigres UANL"
    ],
@@ -3182,7 +3182,7 @@
     "field_tilt": -0.299,
     "xg_balon_parado_90": -0.259
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "León"
    ],
@@ -3235,7 +3235,7 @@
     "field_tilt": -0.097,
     "xg_balon_parado_90": 0.03
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Atlético San Luis"
    ],
@@ -3286,7 +3286,7 @@
     "field_tilt": 0.132,
     "xg_balon_parado_90": -0.06
    },
-   "grupo": 1,
+   "grupo": 3,
    "clubes": [
     "Pumas UNAM"
    ],
@@ -3339,7 +3339,7 @@
     "field_tilt": -0.029,
     "xg_balon_parado_90": -0.223
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Santos Laguna"
    ],
@@ -3392,7 +3392,7 @@
     "field_tilt": 0.32,
     "xg_balon_parado_90": -0.105
    },
-   "grupo": 2,
+   "grupo": 3,
    "clubes": [
     "León"
    ],
@@ -3445,7 +3445,7 @@
     "field_tilt": -0.118,
     "xg_balon_parado_90": 0.216
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Pachuca"
    ],
@@ -3494,7 +3494,7 @@
     "field_tilt": -0.172,
     "xg_balon_parado_90": -0.207
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Necaxa"
    ],
@@ -3547,7 +3547,7 @@
     "field_tilt": -0.09,
     "xg_balon_parado_90": 0.14
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Querétaro"
    ],
@@ -3600,7 +3600,7 @@
     "field_tilt": -0.03,
     "xg_balon_parado_90": -0.296
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Juárez"
    ],
@@ -3652,7 +3652,7 @@
     "field_tilt": 0.356,
     "xg_balon_parado_90": 0.75
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Guadalajara"
    ],
@@ -3705,7 +3705,7 @@
     "field_tilt": 0.073,
     "xg_balon_parado_90": -0.228
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Atlético San Luis"
    ],
@@ -3758,7 +3758,7 @@
     "field_tilt": -0.086,
     "xg_balon_parado_90": -0.174
    },
-   "grupo": 0,
+   "grupo": 3,
    "clubes": [
     "Pumas UNAM"
    ],
@@ -3809,7 +3809,7 @@
     "field_tilt": -0.086,
     "xg_balon_parado_90": -0.007
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "León"
    ],
@@ -3861,7 +3861,7 @@
     "field_tilt": -0.265,
     "xg_balon_parado_90": 0.018
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Mazatlán"
    ],
@@ -3914,7 +3914,7 @@
     "field_tilt": -0.035,
     "xg_balon_parado_90": 0.205
    },
-   "grupo": 0,
+   "grupo": 2,
    "clubes": [
     "Querétaro"
    ],
@@ -3967,7 +3967,7 @@
     "field_tilt": 0.26,
     "xg_balon_parado_90": 0.529
    },
-   "grupo": 2,
+   "grupo": 1,
    "clubes": [
     "Monterrey"
    ],
@@ -4021,7 +4021,7 @@
     "field_tilt": 0.219,
     "xg_balon_parado_90": 0.411
    },
-   "grupo": 2,
+   "grupo": 3,
    "clubes": [
     "Atlas"
    ],
@@ -4035,82 +4035,109 @@
  "grupos": [
   {
    "id": 0,
-   "nombre": "Juego directo y verticalidad",
-   "n": 41,
+   "nombre": "Presión baja y pausa tras recuperar",
+   "n": 9,
    "rasgos": [
     {
+     "kpi": "altura_presion",
+     "efecto": -0.6302946022727273
+    },
+    {
+     "kpi": "contraataque",
+     "efecto": -0.6210538510101011
+    },
+    {
      "kpi": "progresivos",
-     "efecto": 0.39830322493224934
+     "efecto": -0.5732390151515151
     },
     {
-     "kpi": "pase_largo",
-     "efecto": 0.38906440379403795
+     "kpi": "altura_defensiva",
+     "efecto": -0.551965183080808
     },
     {
-     "kpi": "tempo",
-     "efecto": -0.359119430894309
-    },
-    {
-     "kpi": "verticalidad",
-     "efecto": 0.3439087398373984
-    },
-    {
-     "kpi": "posesion",
-     "efecto": -0.3416552303523035
+     "kpi": "recuperaciones_altas_90",
+     "efecto": -0.5378214646464646
     }
    ]
   },
   {
    "id": 1,
-   "nombre": "Pausa tras recuperar y defensa hundida",
-   "n": 15,
+   "nombre": "Defensa adelantada y presión alta",
+   "n": 11,
    "rasgos": [
     {
-     "kpi": "progresivos",
-     "efecto": -0.554749945799458
-    },
-    {
-     "kpi": "contraataque",
-     "efecto": -0.49983402439024394
-    },
-    {
-     "kpi": "recuperaciones_altas_90",
-     "efecto": -0.4750325880758807
-    },
-    {
      "kpi": "altura_defensiva",
-     "efecto": -0.4646441327913279
+     "efecto": 0.6534880155723906
     },
     {
      "kpi": "altura_presion",
-     "efecto": -0.4019415311653116
+     "efecto": 0.6333053977272728
+    },
+    {
+     "kpi": "recuperaciones_altas_90",
+     "efecto": 0.6259253367003367
+    },
+    {
+     "kpi": "intensidad_presion",
+     "efecto": 0.567643066077441
+    },
+    {
+     "kpi": "posesion_rival_dur",
+     "efecto": -0.5563060921717172
     }
    ]
   },
   {
    "id": 2,
-   "nombre": "Presión alta y defensa adelantada",
-   "n": 18,
+   "nombre": "Juego directo y verticalidad",
+   "n": 32,
    "rasgos": [
     {
-     "kpi": "altura_presion",
-     "efecto": 0.542150135501355
+     "kpi": "progresivos",
+     "efecto": 0.4121776515151515
     },
     {
-     "kpi": "altura_defensiva",
-     "efecto": 0.49500753387533875
+     "kpi": "pase_largo",
+     "efecto": 0.3644952546296296
     },
     {
-     "kpi": "posesion_rival_dur",
-     "efecto": -0.4711540108401084
+     "kpi": "verticalidad",
+     "efecto": 0.357065140993266
     },
     {
-     "kpi": "linea_360",
-     "efecto": 0.4613914363143631
+     "kpi": "posesion",
+     "efecto": -0.34971965488215484
     },
     {
-     "kpi": "recuperaciones_altas_90",
-     "efecto": 0.4306090785907859
+     "kpi": "contrapresion",
+     "efecto": -0.3420486952861953
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "nombre": "Salida corta y elaboración",
+   "n": 22,
+   "rasgos": [
+    {
+     "kpi": "salida_corta",
+     "efecto": 0.19254181397306397
+    },
+    {
+     "kpi": "transicion_def",
+     "efecto": 0.19012904040404038
+    },
+    {
+     "kpi": "pases_por_posesion",
+     "efecto": 0.14942446338383839
+    },
+    {
+     "kpi": "entradas_ultimo_tercio",
+     "efecto": 0.14377444234006737
+    },
+    {
+     "kpi": "verticalidad",
+     "efecto": -0.14358826809764308
     }
    ]
   }
@@ -4132,8 +4159,8 @@
    "varianza": 0.08243993788392609
   }
  },
- "k": 3,
- "silueta": 0.3730751135825889,
+ "k": 4,
+ "silueta": 0.363227657589847,
  "varianza_total": 0.4766675210490138,
  "varianza_total_3d": 0.5591074589329399,
  "kpis": [
@@ -4172,5 +4199,5 @@
   "field_tilt",
   "xg_balon_parado_90"
  ],
- "metodo": "PCA de 2 componentes sobre la huella propia de cada DT (34 indicadores, α estandarizados entre DTs); grupos por k-means en el plano 2D (K = 3 fijo; por silueta)."
+ "metodo": "PCA de 2 componentes sobre la huella propia de cada DT (34 indicadores, α estandarizados entre DTs); grupos por k-means en el plano 2D (K de 4 a 6 elegido por silueta)."
 }
