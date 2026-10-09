@@ -55,8 +55,10 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
   const cells = useMemo(() => {
     const m = new Map<string, { i: number; j: number; n: number; xg: number; sh: number; fc: number }>()
     let tot = 0, totX = 0
-    for (const [ex, ey, fc, g, , short] of E) {
+    for (const [ex, ey0, fc, g, , short, sd] of E) {
       if (short || ex < X0) continue
+      // «ambos»: cada envío en su lado real (los de la derecha se reflejan de vuelta); si no, todos como si salieran del mismo córner
+      const ey = lado === 'ambos' && sd === 1 ? 80 - ey0 : ey0
       const i = Math.min(Math.floor((ex - 92) / CX), 6), j = clamp(Math.floor(ey / (80 / CYN)), 0, CYN - 1)
       const k = `${i}:${j}`, c = m.get(k) ?? { i, j, n: 0, xg: 0, sh: 0, fc: 0 }
       c.n++; c.xg += g; c.sh += g > 0 ? 1 : 0; c.fc += fc === 1 ? 1 : 0; m.set(k, c); tot++; totX += g
@@ -64,7 +66,7 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
     const prior = tot ? totX / tot : 0.03
     const arr = [...m.values()].filter(c => c.n >= 2).map(c => ({ ...c, v: (c.xg + 3 * prior) / (c.n + 3) }))
     return { arr, maxN: Math.max(1, ...arr.map(c => c.n)), tot, prior }
-  }, [E])
+  }, [E, lado])
   const maxX = Math.min(Math.max(maxXref, 0.06), 0.2)
   // a dónde van los envíos: reparto por zona del área (coordenadas normalizadas: córner en y≈0, primer palo = lado del córner)
   const zonas = useMemo(() => {
@@ -87,7 +89,8 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
   const attC = ownAtt ? MINE : RIVAL, defC = ownAtt ? RIVAL : MINE
   const rr = (n: number) => 0.9 + 2.4 * Math.sqrt(n / cells.maxN)
   const who = (kind: 'att' | 'def', i: number) => Q?.[kind]?.[i]
-  const dots = showPlayers ? [
+  const verJug = showPlayers && lado !== 'ambos'
+  const dots = verJug ? [
     ...(V.defensores || []).map((p: number[], i: number) => ({ p, col: defC, own: !ownAtt, kind: 'def' as const, i })),
     ...(V.atacantes || []).map((p: number[], i: number) => ({ p, col: attC, own: ownAtt, kind: 'att' as const, i })),
   ].filter(d => d.p[0] >= 92) : []
@@ -112,9 +115,15 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
             </g>
           )
         })}
-        {showPlayers && V.portero && <g><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.9} fill="#0b1018" opacity={0.85} /><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.45} fill={ownAtt ? '#9ca3af' : MINE} /><text x={V.portero[0]} y={fy(V.portero[1]) + 0.75} fontSize={1.9} fontWeight={800} textAnchor="middle" fill="#0b1018" transform={`rotate(90 ${V.portero[0]} ${fy(V.portero[1])})`}>P</text></g>}
-        {/* cobrador y bandera */}
-        <circle cx={119.4} cy={fy(0.6)} r={0.9} fill="#fff" stroke="#111" strokeWidth={0.3} />
+        {verJug && V.portero && <g><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.9} fill="#0b1018" opacity={0.85} /><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.45} fill={ownAtt ? '#9ca3af' : MINE} /><text x={V.portero[0]} y={fy(V.portero[1]) + 0.75} fontSize={1.9} fontWeight={800} textAnchor="middle" fill="#0b1018" transform={`rotate(90 ${V.portero[0]} ${fy(V.portero[1])})`}>P</text></g>}
+        {/* quien cobra: en su córner (en «ambos», en los dos) */}
+        {(lado === 'ambos' ? [0.6, 79.4] : [fy(0.6)]).map((cy, i) => (
+          <g key={i} onMouseMove={e => tip.show(e, <><b>{side === 'favor' ? L('Cobrador', 'Corner taker') : L('Cobra el rival', 'Opponent takes it')}</b>{side === 'favor' && Q?.cob?.top?.length ? <><br />{Q.cob.top.map(([id, nom, p]: [number, string, number]) => <span key={id}>{jugadorCorto(id, nom)} {p}%<br /></span>)}</> : null}</>)} onMouseLeave={tip.hide}>
+            <circle cx={119.2} cy={cy} r={2.3} fill="#fff" fillOpacity={0.18} />
+            <circle cx={119.2} cy={cy} r={1.25} fill="#fff" stroke="#0b1018" strokeWidth={0.45} />
+            <path d={`M120.4 ${cy < 40 ? cy - 1.4 : cy + 1.4} l2.4 ${cy < 40 ? -1 : 1} l-2.4 ${cy < 40 ? -1 : 1}z`} fill="#f2b51b" />
+          </g>
+        ))}
       </Pitch>
       <div className="c3d-zones">
         <div className="c3d-zones-h">{L('A dónde manda los envíos', 'Where the deliveries go')}<span className="note">{L('% de sus córners · xG medio de cada zona', '% of his corners · average xG of each zone')}</span></div>
@@ -130,10 +139,12 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
       <div className="c3d-2d-key" aria-hidden="true">
         <div className="c3d-key-row"><span className="c3d-2d-sz"><i style={{ width: 8, height: 8 }} /><i style={{ width: 14, height: 14 }} /><i style={{ width: 22, height: 22 }} /></span>{L('Tamaño: cuántos envíos caen ahí', 'Size: how many deliveries land there')}</div>
         <div className="c3d-key-row c3d-key-scale"><span>xG</span><i style={{ background: `linear-gradient(90deg, ${xgColor(0)}, ${xgColor(0.33)}, ${xgColor(0.66)}, ${xgColor(1)})` }} /><span>{fmt(maxX, 2)}+</span></div>
-        {showPlayers && <div className="c3d-key-row c3d-key-dots">
+        {verJug && <div className="c3d-key-row c3d-key-dots">
           <span><i style={{ background: MINE }} />{side === 'favor' ? L('Su equipo ataca', 'His team attacks') : L('Su equipo defiende', 'His team defends')}</span>
           <span><i style={{ background: RIVAL }} />{L('Rival', 'Opponent')}</span>
         </div>}
+        {showPlayers && lado === 'ambos' && <div className="c3d-key-row note">{L('Para ver a los jugadores elige izquierda o derecha.', 'Pick left or right to see the players.')}</div>}
+        <div className="c3d-key-row"><span><i style={{ background: '#fff', border: '1px solid #0b1018' }} />{L('Cobrador', 'Corner taker')}</span></div>
       </div>
       {tip.el}
     </div>
@@ -144,7 +155,7 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
   const [data, setData] = useState<Any>(null)
   const [liga, setLiga] = useState<Any>(null)
   const [lado, setLado] = useState<Lado>('ambos')
-  const [showPlayers, setShowPlayers] = useState(true)
+  const [showPlayers, setShowPlayers] = useState(false)
   const [vista, setVista] = useState<'2d' | '3d'>('2d')
   const [rot, setRot] = useState({ yaw: 1.25, pitch: 0.82 })
   const [sim, setSim] = useState<Sim | null>(null)

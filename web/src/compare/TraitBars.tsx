@@ -30,7 +30,7 @@ function rankLine(dd: Any, k: string, A: Side, B: Side, modo: 'a' | 'v') {
 }
 
 /** Rasgo por rasgo: mancuernas en HTML (no se deforman en el móvil) con los dos valores y la brecha. Clic = abre sus campanas. */
-export default function TraitBars({ rows, lab, A, B, dd }: { rows: Row[]; lab: (k: string) => string; A: Side; B: Side; dd: Any }) {
+export default function TraitBars({ rows, lab, A, B, dd, gapDir, onGap }: { rows: Row[]; lab: (k: string) => string; A: Side; B: Side; dd: Any; gapDir?: 'desc' | 'asc'; onGap?: () => void }) {
   const [open, setOpen] = useState<string | null>(null)
   const peak = Math.max(1, ...rows.flatMap(o => [Math.abs(o.a), Math.abs(o.b)]))
   const M = Math.min(3, Math.ceil(peak * 1.1 * 2) / 2)
@@ -40,12 +40,12 @@ export default function TraitBars({ rows, lab, A, B, dd }: { rows: Row[]; lab: (
 
   return (
     <div className="vs-tb">
-      <div className="vs-tb-row vs-tb-axis" aria-hidden>
+      <div className="vs-tb-row vs-tb-axis" aria-hidden={onGap ? undefined : true}>
         <span className="vs-tb-lab" />
         <span className="vs-tb-track">
           {ticks.map(t => <span key={t} className="vs-tb-tick" style={{ left: `${P(t)}%` }}>{t === 0 ? <><span className="vs-tb-wide">{L('DT promedio', 'Average coach')}</span><span className="vs-tb-narrow">0</span></> : signed(t, 0)}</span>)}
         </span>
-        <span className="vs-tb-nums vs-tb-nh"><span title={A.name}><i style={{ background: A.color }} /><span className="vs-tb-wide">{apellido(A.name)}</span></span><span title={B.name}><i style={{ background: B.color }} /><span className="vs-tb-wide">{apellido(B.name)}</span></span><span><span className="vs-tb-wide">{L('Brecha', 'Gap')}</span><span className="vs-tb-narrow">{L('Dif.', 'Gap')}</span></span></span>
+        <span className="vs-tb-nums vs-tb-nh"><span title={A.name}><i style={{ background: A.color }} /><span className="vs-tb-wide">{apellido(A.name)}</span></span><span title={B.name}><i style={{ background: B.color }} /><span className="vs-tb-wide">{apellido(B.name)}</span></span><span>{onGap ? <button type="button" className="vs-tb-sort" onClick={onGap} title={L('Cambiar el orden: más distintos primero / más parecidos primero', 'Change order: most different first / most alike first')}><span className="vs-tb-wide">{L('Brecha', 'Gap')}</span><span className="vs-tb-narrow">{L('Dif.', 'Gap')}</span> {gapDir === 'asc' ? '▲' : '▼'}</button> : <><span className="vs-tb-wide">{L('Brecha', 'Gap')}</span><span className="vs-tb-narrow">{L('Dif.', 'Gap')}</span></>}</span></span>
       </div>
       {rows.map(o => {
         const isOpen = open === o.k

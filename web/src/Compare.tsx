@@ -162,18 +162,12 @@ export default function Compare({ art, glob, media, mapa, onOpen }: { art: Any; 
         <div className="vs-head">
           <div className="h3" style={{ margin: 0 }}>{L('Rasgo por rasgo', 'Trait by trait')}
             <Info wide>
-              <p>{L('Todos los rasgos, ordenados por la brecha entre sus estilos propios. Cambia el orden para ver primero en qué se parecen o en qué se separan. Haz clic en un rasgo para ver dónde quedan entre todos los DTs.', 'All traits, ordered by the gap between their own styles. Switch the order to see first where they are alike or where they differ. Click a trait to see where they sit among all coaches.')}</p>
+              <p>{L('Todos los rasgos, ordenados por la brecha entre sus estilos propios. Toca el encabezado «Brecha» para cambiar el orden: más distintos primero o más parecidos primero. Haz clic en un rasgo para ver dónde quedan entre todos los DTs.', 'All traits, ordered by the gap between their own styles. Tap the “Gap” header to switch the order: most different first or most alike first. Click a trait to see where they sit among all coaches.')}</p>
               <p>{L('Cómo leerlo: 0 es el DT promedio de la liga; +1 es que empuja el rasgo bastante más que lo normal, +2 muchísimo más, y los negativos lo contrario. Ya se descontó lo que aportan sus jugadores, el club y los rivales.', 'How to read it: 0 is the league’s average coach; +1 means he pushes the trait well above normal, +2 far above, and negatives the opposite. What his players, the club and opponents bring has been removed.')}</p>
             </Info>
           </div>
-          <label className="vs-ord">{L('Ordenar por', 'Order by')}
-            <select value={orden} onChange={e => setOrden(e.target.value as 'sep' | 'par')}>
-              <option value="sep">{L('Mayor brecha (más distintos primero)', 'Biggest gap (most different first)')}</option>
-              <option value="par">{L('Menor brecha (más parecidos primero)', 'Smallest gap (most alike first)')}</option>
-            </select>
-          </label>
         </div>
-        <TraitBars rows={shown} lab={lab} A={SA} B={SB} dd={dd} />
+        <TraitBars rows={shown} lab={lab} A={SA} B={SB} dd={dd} gapDir={orden === 'sep' ? 'desc' : 'asc'} onGap={() => setOrden(o => (o === 'sep' ? 'par' : 'sep'))} />
       </div>
 
       <DistGrid rows={rows} lab={lab} A={SA} B={SB} dd={dd} />
