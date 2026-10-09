@@ -203,7 +203,7 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
 function rules(view: string, coach: number | null) {
   const kp = Object.entries(glob.kpis as Record<string, Any>).map(([k, v]) => `${k}: ${kl(k)} (${v.familia})`).join('\n')
   const views = ['mapa', 'hub', ...TAB_KEYS].map(v => `${v}: ${VIEW_NAMES[v] ?? v}`).join('; ')
-  return `Eres el asistente de IA de Coach DNA, una app sobre el estilo de juego de los entrenadores de Liga MX (temporadas ${glob.muestra.temporadas[0]} a ${glob.muestra.temporadas.at(-1)}, datos StatsBomb, ${glob.muestra.partidos} partidos, ${DTS.length} DTs con perfil).
+  return `Eres Golito, el asistente de IA de Coach DNA (un balón simpático), una app sobre el estilo de juego de los entrenadores de Liga MX (temporadas ${glob.muestra.temporadas[0]} a ${glob.muestra.temporadas.at(-1)}, datos StatsBomb, ${glob.muestra.partidos} partidos, ${DTS.length} DTs con perfil).
 Responde en ${LANG === 'en' ? 'inglés' : 'español'}, en 1 a 3 frases, con tono natural y directo. Sin listas largas ni tablas.
 Reglas:
 - Todo número sale de las herramientas. Nunca inventes datos ni uses lo que sepas de fuera. Si algo no está en los datos, dilo.
@@ -277,10 +277,7 @@ export function Ball({ size = 44, mood = 'idle', look = [0, 0] }: { size?: numbe
   const id = useId().replace(/:/g, '')
   const [lx, ly] = EYES[mood].look ?? look
   const eye = (cx: number) => (
-    <g>
-      <ellipse cx={cx} cy="32" rx="4.7" ry="6.5" fill="#14201a" />
-      <circle cx={cx + 1.6} cy="29.2" r="1.9" fill="#fff" /><circle cx={cx - 1.3} cy="34.4" r="0.95" fill="#fff" opacity=".85" />
-    </g>
+    <g><circle cx={cx} cy="32" r="5.5" fill="#14201a" /><circle cx={cx + 1.9} cy="29.9" r="1.8" fill="#fff" /></g>
   )
   return (
     <svg className={`ball ball-${mood}`} width={size} height={size} viewBox="0 0 64 64" aria-hidden>
@@ -534,22 +531,22 @@ export default function Chat({ coach, view }: { coach: number | null; view: stri
 
   return (
     <>
-      <button ref={fabRef} className={`ai-fab${open ? ' is-open' : ''}`} data-mood={mood} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onFocus={() => setHover(true)} onBlur={() => setHover(false)} onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label={L('Abrir el chat con IA', 'Open the AI chat')}>
+      <button ref={fabRef} className={`ai-fab${open ? ' is-open' : ''}`} data-mood={mood} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onFocus={() => setHover(true)} onBlur={() => setHover(false)} onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label={L('Abrir el chat con Golito, asistente con IA', 'Open the chat with Golito, the AI assistant')}>
         <span className="ai-fab-ball"><Ball size={46} mood={mood} look={look} /></span>
-        <span className="ai-fab-txt"><b>{L('Pregúntale a la IA', 'Ask the AI')}</b><small>{L('chat sobre los datos', 'chat about the data')}</small></span>
+        <span className="ai-fab-txt"><b>{L('Pregúntale a Golito', 'Ask Golito')}</b><small>{L('asistente con IA', 'AI assistant')}</small></span>
         <span className="ai-fab-badge">IA</span>
       </button>
-      <section className={`ai-panel${open ? ' is-open' : ''}`} aria-hidden={!open} aria-label={L('Chat con IA', 'AI chat')}>
+      <section className={`ai-panel${open ? ' is-open' : ''}`} aria-hidden={!open} aria-label={L('Chat con Golito', 'Chat with Golito')}>
         <header className="ai-head">
           <Ball size={38} mood={mood} look={look} />
-          <div><b>{L('Asistente IA', 'AI assistant')}<span className="ai-spark">✦</span></b><small>{L('Responde sólo con los datos de Coach DNA y te lleva a la vista', 'Answers only from Coach DNA data and takes you to the view')}</small></div>
+          <div><b>Golito<span className="ai-tag">IA</span><span className="ai-spark">✦</span></b><small>{L('Asistente con IA: responde sólo con los datos de Coach DNA y te lleva a la vista', 'AI assistant: answers only from Coach DNA data and takes you to the view')}</small></div>
           {msgs.length > 0 && <button className="ai-x ai-new" onClick={() => { ctl.current?.abort(); setMsgs([]) }} title={L('Nueva conversación', 'New chat')}>↺</button>}
           <button className="ai-x" onClick={() => setOpen(false)} aria-label={L('Cerrar', 'Close')}>×</button>
         </header>
         <div className="ai-list" ref={listRef}>
           {empty && (
             <div className="ai-hello">
-              <p>{L('¡Hola! Pregúntame por cualquier DT, indicador o resultado de la Liga MX desde 2021.', 'Hi! Ask me about any coach, indicator or Liga MX result since 2021.')}</p>
+              <p>{L('¡Hola, soy Golito! Pregúntame por cualquier DT, indicador o resultado de la Liga MX desde 2021.', "Hi, I'm Golito! Ask me about any coach, indicator or Liga MX result since 2021.")}</p>
               <div className="ai-sugg">{sugg.map((s, i) => <button key={s} style={{ ['--i' as string]: i }} onClick={() => ask(s)}>{s}</button>)}</div>
             </div>
           )}

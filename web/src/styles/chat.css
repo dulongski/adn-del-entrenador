@@ -212,3 +212,5 @@
 .cc-date { grid-row: span 2; align-self: center; font-size: 10.5px; line-height: 1.25; color: var(--ink-3); }
 .cc-tn { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .cc-team { gap: 4px; }
+
+.ai-tag { margin-left: 2px; padding: 1px 6px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; color: #fff; background: linear-gradient(90deg, #8f6cf0, #3987e5); }
