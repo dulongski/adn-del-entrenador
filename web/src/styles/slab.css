@@ -1,4 +1,4 @@
-.slab { margin: 10px 0 14px; padding: 0; overflow: hidden; }
+.slab { margin: 10px 0 14px; padding: 0; overflow: visible; } .slab-h { border-radius: 10px; }
 .slab-h { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: linear-gradient(120deg, color-mix(in oklab, #8f6cf0 16%, var(--surface)), var(--surface)); border: 0; color: var(--ink); font: inherit; cursor: pointer; text-align: left; }
 .slab-h > span { flex: 1; display: flex; flex-direction: column; gap: 2px; } .slab-h b { font-size: 15px; } .slab-h small { color: var(--ink-2); font-size: 12.5px; }
 .slab-h i { font-style: normal; font-size: 20px; line-height: 1; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding-bottom: 3px; box-sizing: border-box; background: var(--surface-2); flex: none; }
@@ -13,3 +13,14 @@
 .slab-t input { position: absolute; inset: 0; width: 100%; margin: 0; background: transparent; accent-color: #8f6cf0; }
 .slab-zero { position: absolute; left: 50%; top: 4px; bottom: 4px; width: 1px; background: var(--ink-3); }
 .slab-orig { position: absolute; top: 2px; width: 3px; height: 18px; margin-left: -1px; border-radius: 2px; background: var(--ink); opacity: .55; pointer-events: none; }
+.slab-pick { position: relative; }
+.slab-pick-b { background: var(--surface-2); color: var(--ink); border: 1px solid var(--rule); border-radius: 10px; padding: 8px 12px; font: inherit; font-size: 13.5px; cursor: pointer; } .slab-pick-b i { font-style: normal; opacity: .6; margin-left: 4px; }
+.slab-pop { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; width: min(420px, calc(100vw - 48px)); background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; box-shadow: 0 18px 40px rgba(0,0,0,.45); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.slab-pop input { background: var(--surface-2); color: var(--ink); border: 1px solid var(--rule); border-radius: 9px; padding: 9px 12px; font: inherit; }
+.slab-sorts { display: flex; flex-wrap: wrap; gap: 6px; } .slab-sorts button { border: 1px solid var(--rule); background: transparent; color: var(--ink-2); border-radius: 99px; padding: 4px 10px; font: inherit; font-size: 12px; cursor: pointer; } .slab-sorts button[aria-pressed="true"] { background: #8f6cf0; color: #fff; border-color: #8f6cf0; }
+.slab-list { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.slab-opt { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; padding: 6px 8px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; border-radius: 9px; cursor: pointer; } .slab-opt:hover, .slab-opt.on { background: color-mix(in oklab, #8f6cf0 18%, transparent); }
+.slab-opt img, .slab-opt > i { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: var(--surface-2); display: grid; place-items: center; font-style: normal; font-weight: 800; }
+.slab-opt > span { display: flex; flex-direction: column; min-width: 0; } .slab-opt b { font-size: 13.5px; } .slab-opt small { display: flex; align-items: center; gap: 5px; color: var(--ink-3); font-size: 11.5px; }
+.slab-opt em { font-style: normal; font-weight: 800; font-family: var(--mono); } .slab-opt em small { display: inline; font-weight: 400; }
+.slab-clear { align-self: flex-start; background: none; border: 0; color: var(--ink-2); text-decoration: underline; cursor: pointer; font: inherit; font-size: 12.5px; }

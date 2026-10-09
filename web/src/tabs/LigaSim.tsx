@@ -39,6 +39,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
   const [season, setSeason] = useState<Season | null>(null)
   const [, tick] = useState(0)
   const [live, setLive] = useState<{ n: Next; res: MatchRes; m: number; end: number } | null>(null)
+  const [last, setLast] = useState<{ n: Next; res: MatchRes; m: number; end: number } | null>(null)
   const [probs, setProbs] = useState<{ you: Any; base: Any; n: number } | null>(null)
   const [busy, setBusy] = useState(false)
   const raf = useRef(0)
@@ -49,7 +50,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
   const teamsFor = (c: string, withCoach: boolean, style: Record<string, number> | null) => Object.fromEntries(clubs.map(k => [k, k === c && withCoach ? buildTeam(wi, ls, sx, k, art.id, style) : buildTeam(wi, ls, sx, k, wi.squads[k].dt, null)])) as Record<string, Team>
   const make = (withCoach: boolean) => new Season(clubs, teamsFor(club, withCoach, withCoach ? dz : null), ls.liga, pk.real, pk.cal, fresh, (ls as Any).real)
 
-  const start = () => { cancelAnimationFrame(raf.current); setLive(null); setProbs(null); setSeason(make(true)) }
+  const start = () => { cancelAnimationFrame(raf.current); setLive(null); setLast(null); setProbs(null); setSeason(make(true)) }
   useEffect(() => { setSeason(null); setLive(null); setProbs(null) }, [club, fresh])
   const S = season
 
@@ -71,7 +72,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
     }
     raf.current = requestAnimationFrame(loop)
   }
-  const finishLive = () => { if (!S || !live) return; cancelAnimationFrame(raf.current); S.commit(live.n, live.res); setLive(null); refresh() }
+  const finishLive = () => { if (!S || !live) return; cancelAnimationFrame(raf.current); S.commit(live.n, live.res); setLast({ ...live, m: live.end }); setLive(null); refresh() }
   const over = !!live && live.m >= live.end
   useEffect(() => { if (over) { const t = setTimeout(finishLive, 1100); return () => clearTimeout(t) } }, [over]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => cancelAnimationFrame(raf.current), [])
@@ -117,7 +118,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
           <div className="lg-note">{sameCoach ? L(`${coachName} ya dirige a ${club}.`, `${coachName} already coaches ${club}.`) : L(`Reemplaza a ${shortName(wi.squads[club].dt_nombre)} en ${club}, con la plantilla actual del club.`, `Replaces ${shortName(wi.squads[club].dt_nombre)} at ${club}, with the club's current squad.`)}</div>
           <Seg opts={[['act', L('Resto del torneo actual', 'Rest of the current tournament')], ['new', L('Torneo nuevo desde cero', 'New tournament from scratch')]]} v={fresh ? 'new' : 'act'} set={v => setFresh(v === 'new')} />
           <div className="lg-note">{fresh ? L('17 jornadas con el calendario oficial.', '17 rounds with the official schedule.') : L(`Se respetan los ${pk.real.length} partidos que ya se jugaron (hasta la jornada ${pk.lastRound}) y se simula el calendario oficial que falta.`, `The ${pk.real.length} matches already played (through round ${pk.lastRound}) are kept and the rest is simulated.`)}</div>
-          <StyleLab art={art} glob={null} onChange={(_, d) => setDz(Object.values(d).some(v => Math.abs(v) > 0.01) ? d : null)} />
+          <StyleLab art={art} media={media} onChange={(_, d) => setDz(Object.values(d).some(v => Math.abs(v) > 0.01) ? d : null)} />
           <button className="btn lg-go" onClick={start}>▶ {L('Empezar torneo', 'Start tournament')}</button>
         </div>
       )}
@@ -131,11 +132,11 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
               <button className="btn" disabled={!nxt || !!live} onClick={() => { const ph = S.phase, r0 = S.round(); runTo(s => s.phase !== ph || (ph === 'liga' && s.round() !== r0)) }}>{L('Terminar la jornada', 'Finish the round')}</button>
               <button className="btn" disabled={!nxt || S.phase !== 'liga'} onClick={() => runTo(s => s.phase !== 'liga')}>{L('Hasta la liguilla', 'To the playoffs')}</button>
               <button className="btn" disabled={!nxt} onClick={() => runTo(() => false)}>{L('Hasta la final', 'To the final')}</button>
-              <button className="btn lg-ghost" onClick={() => { cancelAnimationFrame(raf.current); setLive(null); setSeason(null) }}>↺ {L('Cambiar y reiniciar', 'Change & restart')}</button>
+              <button className="btn lg-ghost" onClick={() => { cancelAnimationFrame(raf.current); setLive(null); setLast(null); setSeason(null) }}>↺ {L('Cambiar y reiniciar', 'Change & restart')}</button>
             </div>
           </div>
 
-          {live && <LiveCard live={live} media={media} skip={finishLive} />}
+          {(live ?? last) && <LiveCard live={(live ?? last)!} media={media} skip={finishLive} done={!live} />}
           {S.champion && <Champion club={S.champion} media={media} mine={S.champion === club} coach={coachName} />}
 
           <div className="lg-cols">
@@ -174,7 +175,7 @@ function Score({ res, h, a, media, minute }: { res: MatchRes; h: string; a: stri
   return { gh, ga, ev, el: null as null, h, a, media }
 }
 
-function LiveCard({ live, media, skip }: { live: { n: Next; res: MatchRes; m: number; end: number }; media: Any; skip: () => void }) {
+function LiveCard({ live, media, skip, done }: { live: { n: Next; res: MatchRes; m: number; end: number }; media: Any; skip: () => void; done?: boolean }) {
   const { n, res, m, end } = live
   const sc = Score({ res, h: n.h, a: n.a, media, minute: m })
   const shown = Math.floor(m)
@@ -183,7 +184,7 @@ function LiveCard({ live, media, skip }: { live: { n: Next; res: MatchRes; m: nu
   const tie = n.kind === 'tie' ? n.tie : null
   return (
     <div className="card lg-live">
-      <div className="lg-live-top note">{tie ? `${L(FASES[tie.fase].es, FASES[tie.fase].en)} · ${tie.fase === 'playin' ? '' : tie.legs.length === 0 ? L('ida', 'first leg') : L('vuelta', 'second leg')}` : `${L('Jornada', 'Round')} ${rl((n as Any).fx)}`}</div>
+      <div className="lg-live-top note">{done ? `${L('Último partido', 'Last match')} · ` : ''}{tie ? `${L(FASES[tie.fase].es, FASES[tie.fase].en)} · ${tie.fase === 'playin' ? '' : tie.legs.length === 0 ? L('ida', 'first leg') : L('vuelta', 'second leg')}` : `${L('Jornada', 'Round')} ${rl((n as Any).fx)}`}</div>
       <div className="lg-score">
         <span className="r"><b>{n.h}</b><ClubLogo club={n.h} media={media} size={40} /></span>
         <div className="lg-sc"><b>{sc.gh}<i>–</i>{sc.ga}</b><span className={over ? 'ft' : 'clock'}>{over ? L('Final', 'Full time') : clock}</span></div>
@@ -193,7 +194,7 @@ function LiveCard({ live, media, skip }: { live: { n: Next; res: MatchRes; m: nu
       <div className="lg-ev">{sc.ev.map((e, i) => (
         <div key={i} className={`lg-e t${e.team}`}><span>{e.label}</span><em>{EV_ICON[e.type]}</em><b>{sName(e.pl)}{e.type === 'og' ? ` (${L('autogol', 'own goal')})` : ''}</b></div>
       ))}</div>
-      {!over && <button className="btn lg-skip" onClick={skip}>{L('Saltar al final', 'Skip to the end')}</button>}
+      {!over && !done && <button className="btn lg-skip" onClick={skip}>{L('Saltar al final', 'Skip to the end')}</button>}
     </div>
   )
 }
