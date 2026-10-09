@@ -20,6 +20,9 @@ export function rnd() {
   t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296
 }
+/** Con diez: el equipo anota ~28% menos y el rival ~30% más (por cada expulsado). */
+const RED_OWN = 0.72, RED_OPP = 1.3
+const P_RED = 0.09     // rojas por equipo y partido (directas + doble amarilla), como en la simulación minuto a minuto
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
 
 /** Tasas de un equipo: z = base + α(DT) + φ(club) + Σβ(XI) + cambio de estilo (como en «Llévalo a otro club»). */
@@ -43,7 +46,17 @@ export const lambdas = (h: Team, a: Team, L: Liga) => ({ lh: L.goles_local * cla
 const poisson = (l: number) => { const e = Math.exp(-l); let k = 0, p = 1; do { k++; p *= rnd() } while (p > e); return k - 1 }
 
 /** Partido rápido (sólo marcador, sin eventos): para miles de torneos. */
-export function quickMatch(h: Team, a: Team, L: Liga): [number, number] { const { lh, la } = lambdas(h, a, L); return [poisson(lh), poisson(la)] }
+export function quickMatch(h: Team, a: Team, L: Liga): [number, number] {
+  let { lh, la } = lambdas(h, a, L)
+  // las rojas también cambian el partido en las simulaciones rápidas: minuto de la roja (más probable en el segundo tiempo) y efecto sobre lo que queda
+  for (const t of [0, 1]) {
+    if (rnd() < P_RED) {
+      const m = 15 + 75 * Math.sqrt(rnd()), left = (90 - m) / 90
+      if (t === 0) { lh *= 1 - left * (1 - RED_OWN); la *= 1 + left * (RED_OPP - 1) } else { la *= 1 - left * (1 - RED_OWN); lh *= 1 + left * (RED_OPP - 1) }
+    }
+  }
+  return [poisson(lh), poisson(la)]
+}
 
 /** Partido minuto a minuto. */
 export function simMatch(h: Team, a: Team, L: Liga, opt: { extra?: boolean } = {}): MatchRes {
@@ -61,7 +74,7 @@ export function simMatch(h: Team, a: Team, L: Liga, opt: { extra?: boolean } = {
   for (let m = 1; m <= end; m++) {
     const bin = Math.min(17, Math.floor((m - 1) / 5))
     for (const t of [0, 1] as const) {
-      const f = (nRed[t] ? 0.82 ** nRed[t] : 1) * (nRed[1 - t] ? 1.12 ** nRed[1 - t] : 1)
+      const f = (nRed[t] ? RED_OWN ** nRed[t] : 1) * (nRed[1 - t] ? RED_OPP ** nRed[1 - t] : 1)
       if (rnd() < (lam[t] * L.goles_pdf5[bin] / 5) * f) {
         if (rnd() < 0.025) { const { ps, w } = wOf((1 - t) as 0 | 1, m, () => 1); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'og', team: t, pl: p }) }
         else { const { ps, w } = wOf(t, m, p => p.g); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'goal', team: t, pl: p }) }
