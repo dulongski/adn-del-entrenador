@@ -164,7 +164,7 @@ def _slots_360(res, OWN, sizes):
     veces cada jugador estuvo en cada hueco (línea, de izquierda a derecha) y se asignan los 10 huecos a los 10 de campo maximizando esas cuentas."""
     from scipy.optimize import linear_sum_assignment
     jug = [j for j in res["jugadores"] if not j["portero"]]
-    if len(jug) != 10 or OWN.n10.sum() < 40 or sum(sizes) != 10:
+    if len(jug) != 10 or OWN.n10.sum() < 20 or sum(sizes) != 10:
         return
     C = np.zeros((10, 10))
     for js in OWN.act:
@@ -173,19 +173,23 @@ def _slots_360(res, OWN, sizes):
                 for a, j in enumerate(jug):
                     if j["id"] == int(pid):
                         C[a, int(k)] += n
-    if C.sum() < 60:
+    if C.sum() < 30:
         return
-    # desempate: el orden por puesto de la alineación
+    # el puesto oficial de la alineación fija la LÍNEA (un lateral no puede acabar de delantero) y orienta el lado dentro de la línea
+    # (izquierda < centro < derecha); la evidencia del actor desempata entre vecinos de la misma línea
     order = sorted(range(10), key=lambda a: jug[a]["nominal"][0] if jug[a]["nominal"][0] is not None else 50)
     prior = np.zeros((10, 10))
+    allowed = np.zeros((10, 10), bool)
     i = 0
     for n in sizes:
         grp = sorted(order[i:i + n], key=lambda a: jug[a]["nominal"][1] if jug[a]["nominal"][1] is not None else 40)
         for r, a in enumerate(grp):
-            prior[a, i + r] = 0.5
+            prior[a, i + r] = 1.0
+            allowed[a, i:i + n] = True
         i += n
     share = C / np.maximum(C.sum(1, keepdims=True), 1)
-    ri, ci = linear_sum_assignment(-(share + prior * 0.3))
+    score = np.where(allowed, share + 0.8 * prior, -100.0)
+    ri, ci = linear_sum_assignment(-score)
     w = float(OWN.n10.sum())
     sl = np.array([[float(OWN[f"sx{k}"].sum() / w), float(OWN[f"sy{k}"].sum() / w)] for k in range(10)])
     diag = _diagram(sizes)
@@ -405,7 +409,7 @@ def main():
                 dsit[sid] = {"n": int(x.n.sum()), "n6": int(x.n6.sum()), "n9": int(x.n9.sum()), "n10": int(x.n10.sum()), "partidos": int(x.match_id.nunique()),
                              **vals, "liga": lg, "pct": pct, "bola": [r1(wavg(x, "bx") / KX), r1(wavg(x, "by") / KY)], "forma": forma,
                              "pocos": bool(any(frames(x, m) < MIN_FRAMES for m in VALID[sid]))}
-            blk = dsit.get("medio") or dsit.get("bajo") or {}
+            blk = dsit.get("bajo") if (dsit.get("bajo") or {}).get("forma") else (dsit.get("medio") or {})
             form["sin_360"] = bool(blk.get("forma") and asignar_bloque(form["jugadores"], blk["forma"], tam))
             por_club[club] = {"partidos": pj, "con360": int(dm.match_id.nunique()),
                               "ataque": {"cats": att, "ejemplos": ejemplos, "total_n": r1(len(ef) / pj, 2)},

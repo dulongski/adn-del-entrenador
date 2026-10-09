@@ -60,7 +60,7 @@ def _slots(pts: np.ndarray, sizes: list[int]) -> np.ndarray:
 
 
 def _match(args):
-    mid, sizes_by_team = args
+    mid, sizes_by_team, act_by_team = args
     p360, pev = DATA / "360" / f"{mid}.json.gz", DATA / "events" / f"{mid}.json.gz"
     if not (p360.exists() and pev.exists()):
         return []
@@ -108,7 +108,8 @@ def _match(args):
         if full_w:
             a["n9w"] += 1
             a["wid"].append(ys[o[:4]].max() - ys[o[:4]].min())
-        if len(ours) == 10 and full_w:
+        # los huecos sólo cuentan si ese día el equipo jugó la formación habitual del DT (si no, «hueco 4» no es el mismo puesto)
+        if len(ours) == 10 and full_w and act_by_team.get(d) == sizes_by_team.get(d, DEF_SIZES):
             a["slots"] += _slots(np.column_stack([xs, ys]), sizes_by_team.get(d, DEF_SIZES))
             a["n10"] += 1
     rows = []
@@ -144,12 +145,23 @@ def modal_sizes() -> dict:
     return out
 
 
+def actual_sizes() -> dict:
+    """(match_id) -> {team_id: tamaños de línea} con la formación que de verdad jugó ese equipo en ese partido (inicio del partido)."""
+    LU = pd.read_parquet(PROC / "lineups.parquet", columns=["match_id", "team_id", "period", "ts", "formation"])
+    first = LU[LU.period == 1].sort_values("ts").drop_duplicates(["match_id", "team_id"])
+    out: dict = {}
+    for r in first.itertuples():
+        out.setdefault(int(r.match_id), {})[int(r.team_id)] = _sizes(r.formation)
+    return out
+
+
 def run(refresh: bool = False) -> pd.DataFrame:
     """Incremental: sólo procesa los partidos 360 que aún no están en la caché (refresh=True los rehace todos)."""
     old = None
     if OUT.exists() and not refresh:
         old = pd.read_parquet(OUT)
     sizes = modal_sizes()
+    act = actual_sizes()
     mids = sorted(int(p.name.split(".")[0]) for p in (DATA / "360").glob("*.json.gz"))
     if old is not None:
         done = set(old.match_id.unique())
@@ -158,7 +170,7 @@ def run(refresh: bool = False) -> pd.DataFrame:
             return old
     rows = []
     with ProcessPoolExecutor() as ex:
-        for i, r in enumerate(ex.map(_match, [(m, sizes.get(m, {})) for m in mids], chunksize=4)):
+        for i, r in enumerate(ex.map(_match, [(m, sizes.get(m, {}), act.get(m, {})) for m in mids], chunksize=4)):
             rows += r
             if i % 200 == 0:
                 print(f"{i}/{len(mids)}", flush=True)
@@ -178,7 +190,7 @@ def _own(args):
     """Por (partido, equipo): posición media de cada hueco cuando el equipo tiene el balón (cuadros de SUS eventos en juego abierto con los
     10 jugadores de campo visibles y la cámara viendo todo el ancho) y, con el actor del evento (que sí trae identidad), cuántas veces
     cada jugador ocupó cada hueco. Esto reemplaza el dibujo «de manual»: la forma y el puesto salen de los datos."""
-    mid, sizes_by_team = args
+    mid, sizes_by_team, act_by_team = args
     p360, pev = DATA / "360" / f"{mid}.json.gz", DATA / "events" / f"{mid}.json.gz"
     if not (p360.exists() and pev.exists()):
         return []
@@ -189,9 +201,11 @@ def _own(args):
         if e is None or e["type"]["name"] not in EV_OK or e.get("period", 1) >= 5 or "location" not in e or "player" not in e:
             continue
         pp = e.get("play_pattern", {}).get("name", "")
-        if pp in SET_PATTERNS or pp == "From Kick Off":
-            continue
+        if pp in SET_PATTERNS or pp in ("From Kick Off", "From Counter") or e["location"][0] < 60:
+            continue       # ataque claro: balón en campo rival y sin contragolpe (en las transiciones el equipo está a medio camino)
         att = e["team"]["id"]
+        if act_by_team.get(att) != sizes_by_team.get(att, DEF_SIZES):
+            continue
         pl = [p for p in fr["freeze_frame"] if p["teammate"] and not p["keeper"]]
         if len(pl) != 10:
             continue
@@ -222,6 +236,7 @@ def _own(args):
 def run_own(refresh: bool = False) -> pd.DataFrame:
     old = pd.read_parquet(OWN) if OWN.exists() and not refresh else None
     sizes = modal_sizes()
+    act = actual_sizes()
     mids = sorted(int(p.name.split(".")[0]) for p in (DATA / "360").glob("*.json.gz"))
     if old is not None:
         mids = [m for m in mids if m not in set(old.match_id.unique())]
@@ -229,7 +244,7 @@ def run_own(refresh: bool = False) -> pd.DataFrame:
             return old
     rows = []
     with ProcessPoolExecutor() as ex:
-        for i, r in enumerate(ex.map(_own, [(m, sizes.get(m, {})) for m in mids], chunksize=4)):
+        for i, r in enumerate(ex.map(_own, [(m, sizes.get(m, {}), act.get(m, {})) for m in mids], chunksize=4)):
             rows += r
             if i % 200 == 0:
                 print(f"own {i}/{len(mids)}", flush=True)
