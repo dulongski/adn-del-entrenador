@@ -1,6 +1,7 @@
-import { decide, legsTotal, mkTie, nextLeg, quickMatch, remaining, roundRobin, simMatch, table, type Fx, type Liga, type MatchRes, type Pl, type Team, type Tie } from './engine'
+import type { Any } from '../lib'
+import { decide, legsTotal, mkTie, nextLeg, quickMatch, simMatch, table, type Fx, type Liga, type MatchRes, type Pl, type Team, type Tie } from './engine'
 
-export type Phase = 'liga' | 'playin' | 'qf' | 'sf' | 'final' | 'done'
+export type Phase = 'liga' | 'qf' | 'sf' | 'final' | 'done'
 export type Next = { kind: 'fx'; fx: Fx; h: string; a: string } | { kind: 'tie'; tie: Tie; h: string; a: string }
 export type Scorer = { pl: Pl; club: string; g: number; y: number; r: number }
 
@@ -15,9 +16,10 @@ export class Season {
   champion?: string
   scorers = new Map<number, Scorer>()
   log: { fx: Fx; res: MatchRes }[] = []
-  constructor(public clubs: string[], public teams: Record<string, Team>, public L: Liga, real: { h: string; a: string; gh: number; ga: number }[], fresh: boolean, firstRound: number) {
+  /** real: partidos ya jugados (con su jornada); cal: calendario oficial de lo que falta. «fresh» rehace todo el torneo con el mismo calendario. */
+  constructor(public clubs: string[], public teams: Record<string, Team>, public L: Liga, real: { h: string; a: string; gh: number; ga: number; r: number }[], cal: { r: number; j?: number; h: string; a: string }[], fresh: boolean) {
     this.played = fresh ? [] : real
-    this.fixtures = fresh ? roundRobin(clubs) : remaining(clubs, real, firstRound)
+    this.fixtures = (fresh ? [...real.map(x => ({ r: x.r, h: x.h, a: x.a })), ...cal] : cal).map(f => ({ h: f.h, a: f.a, round: f.r, j: (f as Any).j })).sort((x, y) => x.round - y.round)
   }
   team = (c: string) => this.teams[c]
   games() { return [...this.played, ...this.fixtures.filter(f => f.res).map(f => ({ h: f.h, a: f.a, gh: f.res!.gh, ga: f.res!.ga }))] }
@@ -31,6 +33,24 @@ export class Season {
     if (!t) return null
     const [h, a] = nextLeg(t)
     return { kind: 'tie', tie: t, h, a }
+  }
+  /** El siguiente partido de un club (fase regular o serie de liguilla); null si ya no le toca jugar en la fase actual. */
+  nextOf(club: string): Next | null {
+    if (this.phase === 'liga') { const f = this.fxLeft().find(f => f.h === club || f.a === club); return f ? { kind: 'fx', fx: f, h: f.h, a: f.a } : null }
+    const t = this.ties.find(t => (t.hi === club || t.lo === club) && !t.winner && t.legs.length < legsTotal(t))
+    if (!t) return null
+    const [h, a] = nextLeg(t)
+    return { kind: 'tie', tie: t, h, a }
+  }
+  /** Simula de golpe todo lo que debe jugarse antes (o a la par) del partido `mine`: el resto de la jornada o de la ronda. */
+  playOthers(mine: Next) {
+    for (let guard = 0; guard < 400; guard++) {
+      let n: Next | null = null
+      if (mine.kind === 'fx') { const f = this.fixtures.find(f => !f.res && f !== mine.fx && f.round <= mine.fx.round); if (f) n = { kind: 'fx', fx: f, h: f.h, a: f.a } }
+      else { const t = this.ties.find(t => t !== mine.tie && !t.winner && t.legs.length <= mine.tie.legs.length && t.legs.length < legsTotal(t)); if (t) { const [h, a] = nextLeg(t); n = { kind: 'tie', tie: t, h, a } } }
+      if (!n) break
+      this.commit(n, this.compute(n))
+    }
   }
   private tally(res: MatchRes, h: string, a: string) {
     for (const e of res.ev) {
@@ -59,24 +79,8 @@ export class Season {
     if (this.phase === 'liga' && !this.fxLeft().length) {
       this.seeds = this.table().map(r => r.club)
       const S = this.seeds
-      this.phase = 'playin'
-      this.ties = [mkTie('pi1', 'playin', [S[6], 7], [S[7], 8], '7 vs 8'), mkTie('pi2', 'playin', [S[8], 9], [S[9], 10], '9 vs 10')]
-      return
-    }
-    if (this.phase === 'playin') {
-      const [p1, p2] = this.ties
-      if (this.ties.length === 2 && p1.winner && p2.winner) {
-        const l1 = p1.winner === p1.hi ? p1.lo : p1.hi
-        this.ties.push(mkTie('pi3', 'playin', [l1, this.seedNo(l1)], [p2.winner, this.seedNo(p2.winner)], L8))
-      }
-      const p3 = this.ties[2]
-      if (p3?.winner) {
-        const S = this.seeds, seven = p1.winner!, eight = p3.winner
-        const b = [S[0], S[1], S[2], S[3], S[4], S[5], seven, eight]
-        this.done.push(...this.ties)
-        this.phase = 'qf'
-        this.ties = [[0, 7], [1, 6], [2, 5], [3, 4]].map(([i, j], k) => mkTie(`qf${k + 1}`, 'qf', [b[i], this.seedNo(b[i])], [b[j], this.seedNo(b[j])], `${i + 1} vs ${j + 1}`))
-      }
+      this.phase = 'qf'
+      this.ties = [[0, 7], [1, 6], [2, 5], [3, 4]].map(([i, j], k) => mkTie(`qf${k + 1}`, 'qf', [S[i], i + 1], [S[j], j + 1], `${i + 1} vs ${j + 1}`))
       return
     }
     if (this.phase === 'qf' || this.phase === 'sf') {
@@ -95,7 +99,6 @@ export class Season {
     for (let n = this.next(); n && guard < 4000; n = this.next(), guard++) { this.play(n, quick); if (stop(this, n)) break }
   }
 }
-const L8 = '8.º lugar'
 
 /** Miles de torneos rápidos: probabilidad de cada club de avanzar a liguilla y de ser campeón. */
 export function manySeasons(make: () => Season, n: number) {
@@ -107,8 +110,8 @@ export function manySeasons(make: () => Season, n: number) {
     const finalists = new Set(s.done.filter(t => t.fase === 'final').flatMap(t => [t.hi, t.lo]))
     s.seeds.forEach((c, k) => {
       const o = (out[c] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0 })
-      if (k < 6) o.top6++
-      if (k < 8 || all.some(t => t.fase === 'qf' && (t.hi === c || t.lo === c))) o.liguilla += (k < 6 || all.some(t => t.fase === 'qf' && (t.hi === c || t.lo === c))) ? 1 : 0
+      if (k < 4) o.top6++
+      if (k < 8) o.liguilla++
       if (finalists.has(c)) o.final++
       if (s.champion === c) o.title++
     })

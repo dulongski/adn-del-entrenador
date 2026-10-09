@@ -1,0 +1,15 @@
+.slab { margin: 10px 0 14px; padding: 0; overflow: hidden; }
+.slab-h { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: linear-gradient(120deg, color-mix(in oklab, #8f6cf0 16%, var(--surface)), var(--surface)); border: 0; color: var(--ink); font: inherit; cursor: pointer; text-align: left; }
+.slab-h > span { flex: 1; display: flex; flex-direction: column; gap: 2px; } .slab-h b { font-size: 15px; } .slab-h small { color: var(--ink-2); font-size: 12.5px; }
+.slab-h i { font-style: normal; font-size: 20px; line-height: 1; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding-bottom: 3px; box-sizing: border-box; background: var(--surface-2); flex: none; }
+.slab-badge { font-style: normal; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: #8f6cf0; color: #fff; }
+.slab-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; padding: 12px 18px 4px; }
+.slab-bar label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
+.slab-bar select { background: var(--surface-2); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 6px 10px; font: inherit; }
+.slab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 6px 26px; padding: 8px 18px 16px; }
+.slab-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.slab-row.on .slab-v { color: #8f6cf0; font-weight: 700; } .slab-l { font-size: 13px; } .slab-v { font-size: 12.5px; color: var(--ink-2); }
+.slab-t { grid-column: 1 / -1; position: relative; height: 22px; }
+.slab-t input { position: absolute; inset: 0; width: 100%; margin: 0; background: transparent; accent-color: #8f6cf0; }
+.slab-zero { position: absolute; left: 50%; top: 4px; bottom: 4px; width: 1px; background: var(--ink-3); }
+.slab-orig { position: absolute; top: 2px; width: 3px; height: 18px; margin-left: -1px; border-radius: 2px; background: var(--ink); opacity: .55; pointer-events: none; }

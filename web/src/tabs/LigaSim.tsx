@@ -10,15 +10,16 @@ import { manySeasons, Season, type Next } from '../sim/season'
 import { loadStyle, type StyleX } from '../sim/styleModel'
 import '../styles/liga.css'
 
-type Pack = { wi: Any; sx: StyleX; ls: { liga: Liga; jugadores: Any }; real: { h: string; a: string; gh: number; ga: number }[]; lastRound: number }
+type Pack = { wi: Any; sx: StyleX; ls: { liga: Liga; jugadores: Any }; real: { h: string; a: string; gh: number; ga: number; r: number }[]; cal: Any[]; lastRound: number }
 let packP: Promise<Pack> | null = null
-const loadPack = () => (packP ??= Promise.all([loadStyle(), getJSON(dataUrl('liga_sim.json')), getJSON(dataUrl('partidos.json'))]).then(([{ sx, wi }, ls, P]: Any) => {
+const loadPack = () => (packP ??= Promise.all([loadStyle(), getJSON(dataUrl('liga_sim.json')), getJSON(dataUrl('partidos.json')), getJSON(dataUrl('calendario.json'))]).then(([{ sx, wi }, ls, P, cal]: Any) => {
   const C: string[] = P.cols, I = (c: string) => C.indexOf(c)
   const rows = (P.rows as Any[][]).filter(r => r[I('temporada')] === '2026/27' && r[I('torneo')] === 'Apertura')
-  return { wi, sx, ls, real: rows.map(r => ({ h: r[I('local')], a: r[I('visita')], gh: r[I('gl')], ga: r[I('gv')] })), lastRound: Math.max(...rows.map(r => r[I('jornada')])) }
+  return { wi, sx, ls, real: rows.map(r => ({ h: r[I('local')], a: r[I('visita')], gh: r[I('gl')], ga: r[I('gv')], r: r[I('jornada')] })), cal, lastRound: Math.max(...rows.map(r => r[I('jornada')])) }
 }))
 
 const EV_ICON: Record<Ev['type'], string> = { goal: '⚽', og: '⚽', yellow: '🟨', red: '🟥', red2: '🟨🟥' }
+const rl = (f?: Any) => (f ? (f.j ? `${f.j}*` : f.round) : '')
 const sName = (p: Any) => jugadorCorto(p.id, p.name)
 
 export function LigaSim({ art, media }: { art: Any; media: Any }) {
@@ -46,18 +47,20 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
   const realCoach: number = wi.squads[club].dt
   const sameCoach = realCoach === art.id
   const teamsFor = (c: string, withCoach: boolean, style: Record<string, number> | null) => Object.fromEntries(clubs.map(k => [k, k === c && withCoach ? buildTeam(wi, ls, sx, k, art.id, style) : buildTeam(wi, ls, sx, k, wi.squads[k].dt, null)])) as Record<string, Team>
-  const make = (withCoach: boolean) => new Season(clubs, teamsFor(club, withCoach, withCoach ? dz : null), ls.liga, pk.real, fresh, pk.lastRound + 1)
+  const make = (withCoach: boolean) => new Season(clubs, teamsFor(club, withCoach, withCoach ? dz : null), ls.liga, pk.real, pk.cal, fresh)
 
   const start = () => { cancelAnimationFrame(raf.current); setLive(null); setProbs(null); setSeason(make(true)) }
   useEffect(() => { setSeason(null); setLive(null); setProbs(null) }, [club, fresh])
   const S = season
 
   // reloj de un partido: 90' + descuento en ~7 s
-  const playOne = (animate = true) => {
+  const mine = S?.nextOf(club) ?? null
+  const playOne = () => {
     if (!S || live) return
-    const n = S.next(); if (!n) return
+    const n = S.nextOf(club)
+    if (!n) { runTo(s => s.phase !== S.phase || !!s.champion); return }
+    S.playOthers(n)                 // el resto de la jornada (o de la ronda) se juega de golpe, sin verlo
     const res = S.compute(n)
-    if (!animate) { S.commit(n, res); refresh(); return }
     const end = res.ev.length ? Math.max(94, ...res.ev.map(e => e.min)) : 94
     const t0 = performance.now(), dur = 7000
     setLive({ n, res, m: 0, end })
@@ -84,13 +87,13 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
   }
 
   const nxt = S?.next() ?? null
-  const phaseName = S ? (S.phase === 'liga' ? L(`Jornada ${S.round()}`, `Round ${S.round()}`) : S.phase === 'done' ? L('Campeón', 'Champion') : L(FASES[S.phase].es, FASES[S.phase].en)) : ''
+  const phaseName = S ? (S.phase === 'liga' ? L(`Jornada ${rl(S.fxLeft()[0])}`, `Round ${rl(S.fxLeft()[0])}`) : S.phase === 'done' ? L('Campeón', 'Champion') : L(FASES[S.phase].es, FASES[S.phase].en)) : ''
   const TB = S?.table() ?? []
   const color = clubColor(club, media)
 
   return (
     <div className="lg">
-      <h3 className="h2">{L('Simulador de liga', 'League simulator')} <Info wide><p>{L('Pon a este DT en un club (con su plantilla actual: no se puede editar), mueve su estilo si quieres y juega el resto del torneo —o uno nuevo desde cero— con liguilla incluida. Los demás clubes siguen con su DT actual.', 'Put this coach at a club (with its current squad, which cannot be edited), move his style if you like, and play the rest of the tournament —or a new one from scratch— including the playoffs. All other clubs keep their current coach.')}</p><p>{L('Cada partido se juega minuto a minuto: los goles caen según el xG esperado de cada equipo (modelo «Llévalo a otro club») y los anota quien suele rematar en esa plantilla; las amarillas y rojas siguen las tasas de cada jugador. Sin sustituciones ni lesiones.', 'Each match is played minute by minute: goals follow each team\'s expected xG (the "Move him to another club" model) and are scored by whoever usually shoots in that squad; yellow and red cards follow each player\'s rates. No substitutions or injuries.')}</p><p>{L('Reglas supuestas: 6 directos a cuartos, 7–10 play-in a un partido (empate: avanza el mejor ubicado), series a ida y vuelta (empate global: avanza el mejor ubicado; en la final, tiempos extra y penales). El calendario de los partidos que faltan lo armamos nosotros: el real no está en los datos.', 'Assumed rules: top 6 go straight to the quarter-finals, 7–10 play a one-match play-in (draw: the better-placed team goes through), two-leg ties (aggregate draw: the better-placed team goes through; in the final, extra time and penalties). The schedule of the remaining matches is ours: the real one is not in the data.')}</p></Info></h3>
+      <h3 className="h2">{L('Simulador de liga', 'League simulator')} <Info wide><p>{L('Pon a este DT en un club (con su plantilla actual: no se puede editar), mueve su estilo si quieres y juega el resto del torneo —o uno nuevo desde cero— con liguilla incluida. Los demás clubes siguen con su DT actual.', 'Put this coach at a club (with its current squad, which cannot be edited), move his style if you like, and play the rest of the tournament —or a new one from scratch— including the playoffs. All other clubs keep their current coach.')}</p><p>{L('Cada partido se juega minuto a minuto: los goles caen según el xG esperado de cada equipo (modelo «Llévalo a otro club») y los anota quien suele rematar en esa plantilla; las amarillas y rojas siguen las tasas de cada jugador. Sin sustituciones ni lesiones.', 'Each match is played minute by minute: goals follow each team\'s expected xG (the "Move him to another club" model) and are scored by whoever usually shoots in that squad; yellow and red cards follow each player\'s rates. No substitutions or injuries.')}</p><p>{L('Reglas del Apertura 2026: los 8 primeros de la tabla pasan directo a cuartos (sin play-in), series a ida y vuelta 1-8, 2-7, 3-6, 4-5; empate global: avanza el mejor ubicado; en la final, tiempos extra y penales. Desempate de la tabla: diferencia de gol, goles, goles de visita, sorteo (no simulamos fair play). Calendario: el oficial (los 2 partidos aplazados de la jornada 7 llevan * y se colocan por su fecha).', 'Apertura 2026 rules: the top 8 go straight to the quarter-finals (no play-in), two-leg ties 1-8, 2-7, 3-6, 4-5; aggregate draw: the better-placed team goes through; in the final, extra time and penalties. Table tie-breaks: goal difference, goals, away goals, draw (fair play not simulated). Schedule: the official one (the 2 postponed round-7 matches carry a * and are placed by date).')}</p></Info></h3>
 
       {!S && (
         <div className="card lg-setup">
@@ -102,7 +105,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
           </div>
           <div className="lg-note">{sameCoach ? L(`${coachName} ya dirige a ${club}.`, `${coachName} already coaches ${club}.`) : L(`Reemplaza a ${shortName(wi.squads[club].dt_nombre)} en ${club}, con la plantilla actual del club.`, `Replaces ${shortName(wi.squads[club].dt_nombre)} at ${club}, with the club's current squad.`)}</div>
           <Seg opts={[['act', L('Resto del torneo actual', 'Rest of the current tournament')], ['new', L('Torneo nuevo desde cero', 'New tournament from scratch')]]} v={fresh ? 'new' : 'act'} set={v => setFresh(v === 'new')} />
-          <div className="lg-note">{fresh ? L('17 jornadas, todos contra todos.', '17 rounds, round robin.') : L(`Se respetan los ${pk.real.length} partidos que ya se jugaron (hasta la jornada ${pk.lastRound}) y se simula el resto.`, `The ${pk.real.length} matches already played (through round ${pk.lastRound}) are kept and the rest is simulated.`)}</div>
+          <div className="lg-note">{fresh ? L('17 jornadas con el calendario oficial.', '17 rounds with the official schedule.') : L(`Se respetan los ${pk.real.length} partidos que ya se jugaron (hasta la jornada ${pk.lastRound}) y se simula el calendario oficial que falta.`, `The ${pk.real.length} matches already played (through round ${pk.lastRound}) are kept and the rest is simulated.`)}</div>
           <StyleLab art={art} glob={null} onChange={(_, d) => setDz(Object.values(d).some(v => Math.abs(v) > 0.01) ? d : null)} />
           <button className="btn lg-go" onClick={start}>▶ {L('Empezar torneo', 'Start tournament')}</button>
         </div>
@@ -113,7 +116,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
           <div className="lg-bar card">
             <div className="lg-bar-t"><ClubLogo club={club} media={media} size={26} /><b>{coachName} · {club}</b><span className="note">{phaseName}{S.phase === 'liga' ? ` · ${S.fxLeft().length} ${L('partidos por jugar', 'matches to play')}` : ''}</span></div>
             <div className="lg-btns">
-              <button className="btn" disabled={!nxt || !!live} onClick={() => playOne(true)}>▶ {L('Siguiente partido', 'Next match')}</button>
+              <button className="btn" disabled={!nxt || !!live} onClick={playOne}>▶ {mine ? L(`Jugar el partido de ${club}`, `Play ${club}'s match`) : L('Simular lo que sigue', 'Simulate what comes next')}</button>
               <button className="btn" disabled={!nxt || !!live} onClick={() => { const ph = S.phase, r0 = S.round(); runTo(s => s.phase !== ph || (ph === 'liga' && s.round() !== r0)) }}>{L('Terminar la jornada', 'Finish the round')}</button>
               <button className="btn" disabled={!nxt || S.phase !== 'liga'} onClick={() => runTo(s => s.phase !== 'liga')}>{L('Hasta la liguilla', 'To the playoffs')}</button>
               <button className="btn" disabled={!nxt} onClick={() => runTo(() => false)}>{L('Hasta la final', 'To the final')}</button>
@@ -129,10 +132,10 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
               <div className="h3">{L('Tabla', 'Table')}</div>
               <table><thead><tr><th>#</th><th>{L('Club', 'Club')}</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr></thead>
                 <tbody>{TB.map((r, i) => (
-                  <tr key={r.club} className={`${r.club === club ? 'me' : ''} ${i < 6 ? 'q' : i < 10 ? 'pi' : ''}`}>
+                  <tr key={r.club} className={`${r.club === club ? 'me' : ''} ${i < 8 ? 'q' : ''}`}>
                     <td>{i + 1}</td><td className="lg-cl"><ClubLogo club={r.club} media={media} size={18} />{r.club}</td><td>{r.pj}</td><td>{r.g}</td><td>{r.e}</td><td>{r.p}</td><td>{r.gf}</td><td>{r.gc}</td><td>{r.gf - r.gc > 0 ? '+' : ''}{r.gf - r.gc}</td><td><b>{r.pts}</b></td>
                   </tr>))}</tbody></table>
-              <div className="lg-leg note"><i className="q" />{L('liguilla directa', 'direct to playoffs')} <i className="pi" />{L('play-in', 'play-in')}</div>
+              <div className="lg-leg note"><i className="q" />{L('liguilla (los 8 primeros, sin play-in)', 'playoffs (top 8, no play-in)')}</div>
             </div>
             <div className="lg-side">
               {S.phase === 'liga' ? <Fixtures S={S} media={media} club={club} /> : <Bracket S={S} media={media} club={club} />}
@@ -169,7 +172,7 @@ function LiveCard({ live, media, skip }: { live: { n: Next; res: MatchRes; m: nu
   const tie = n.kind === 'tie' ? n.tie : null
   return (
     <div className="card lg-live">
-      <div className="lg-live-top note">{tie ? `${L(FASES[tie.fase].es, FASES[tie.fase].en)} · ${tie.fase === 'playin' ? '' : tie.legs.length === 0 ? L('ida', 'first leg') : L('vuelta', 'second leg')}` : `${L('Jornada', 'Round')} ${(n as Any).fx.round}`}</div>
+      <div className="lg-live-top note">{tie ? `${L(FASES[tie.fase].es, FASES[tie.fase].en)} · ${tie.fase === 'playin' ? '' : tie.legs.length === 0 ? L('ida', 'first leg') : L('vuelta', 'second leg')}` : `${L('Jornada', 'Round')} ${rl((n as Any).fx)}`}</div>
       <div className="lg-score">
         <span className="r"><b>{n.h}</b><ClubLogo club={n.h} media={media} size={40} /></span>
         <div className="lg-sc"><b>{sc.gh}<i>–</i>{sc.ga}</b><span className={over ? 'ft' : 'clock'}>{over ? L('Final', 'Full time') : clock}</span></div>
@@ -190,7 +193,7 @@ function Fixtures({ S, media, club }: { S: Season; media: Any; club: string }) {
   const last = S.log.slice(-6).reverse()
   return (
     <div className="card lg-fx">
-      <div className="h3">{L('Jornada', 'Round')} {r}</div>
+      <div className="h3">{L('Jornada', 'Round')} {rl(cur[0])}</div>
       {cur.map(f => (
         <div key={f.h + f.a} className={`lg-f${f.h === club || f.a === club ? ' me' : ''}`}>
           <span className="r">{f.h}<ClubLogo club={f.h} media={media} size={18} /></span>
@@ -205,20 +208,20 @@ function Fixtures({ S, media, club }: { S: Season; media: Any; club: string }) {
 
 function TieRow({ t, media, club }: { t: Tie; media: Any; club: string }) {
   const g = (i: number) => t.legs[i]
-  const agg = () => { let a = 0, b = 0; t.legs.forEach((m, i) => { const homeIsHi = t.fase === 'playin' ? true : i === 1; a += homeIsHi ? m.gh : m.ga; b += homeIsHi ? m.ga : m.gh }); return [a, b] }
+  const agg = () => { let a = 0, b = 0; t.legs.forEach((m, i) => { const homeIsHi = i === 1; a += homeIsHi ? m.gh : m.ga; b += homeIsHi ? m.ga : m.gh }); return [a, b] }
   const [a, b] = agg()
   return (
     <div className={`lg-tie${t.hi === club || t.lo === club ? ' me' : ''}`}>
       <span className={t.winner === t.hi ? 'w' : t.winner ? 'l' : ''}><ClubLogo club={t.hi} media={media} size={20} />{t.hi}</span>
-      <span className="lg-legs">{t.legs.length === 0 ? 'vs' : t.fase === 'playin' ? `${g(0).gh}–${g(0).ga}` : <>{g(0) ? `${g(0).ga}–${g(0).gh}` : '·'} <i>|</i> {g(1) ? `${g(1).gh}–${g(1).ga}` : '·'}</>}{t.legs.length >= legsN(t) && t.fase !== 'playin' && <small> ({a}–{b}{t.pens ? `, ${L('pen.', 'pens')} ${t.pens[0]}–${t.pens[1]}` : t.legs.at(-1)?.et ? `, ${L('t. extra', 'extra time')}` : ''})</small>}{t.fase === 'playin' && t.legs.length === 1 && a === b && <small> ({L('mejor ubicado', 'better seed')})</small>}</span>
+      <span className="lg-legs">{t.legs.length === 0 ? 'vs' : <>{g(0) ? `${g(0).ga}–${g(0).gh}` : '·'} <i>|</i> {g(1) ? `${g(1).gh}–${g(1).ga}` : '·'}</>}{t.legs.length >= legsN(t) && <small> ({a}–{b}{t.pens ? `, ${L('pen.', 'pens')} ${t.pens[0]}–${t.pens[1]}` : t.legs.at(-1)?.et ? `, ${L('t. extra', 'extra time')}` : ''})</small>}</span>
       <span className={t.winner === t.lo ? 'w' : t.winner ? 'l' : ''}>{t.lo}<ClubLogo club={t.lo} media={media} size={20} /></span>
     </div>
   )
 }
-const legsN = (t: Tie) => (t.fase === 'playin' ? 1 : 2)
+const legsN = (_t: Tie) => 2
 
 function Bracket({ S, media, club }: { S: Season; media: Any; club: string }) {
-  const groups: [string, Tie[]][] = (['playin', 'qf', 'sf', 'final'] as const).map(f => [f, [...new Map([...S.done, ...S.ties].map(t => [t.id, t])).values()].filter(t => t.fase === f)] as [string, Tie[]]).filter(([, t]) => t.length)
+  const groups: [string, Tie[]][] = (['qf', 'sf', 'final'] as const).map(f => [f, [...new Map([...S.done, ...S.ties].map(t => [t.id, t])).values()].filter(t => t.fase === f)] as [string, Tie[]]).filter(([, t]) => t.length)
   return (
     <div className="card lg-br">
       <div className="h3">{L('Liguilla', 'Playoffs')}</div>

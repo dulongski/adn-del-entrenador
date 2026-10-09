@@ -4,7 +4,7 @@ import { kpiLabel } from './i18n/data'
 import { nombreDT, shortName, type Any } from './lib'
 import Info from './Info'
 import { loadStyle, SLIDERS, fxOf, type Fx, type StyleX } from './sim/styleModel'
-import './styles/lab.css'
+import './styles/slab.css'
 
 /** Editor de estilo: mueve el estilo propio del DT (en σ de la liga) o cópialo de otro entrenador. Avisa con un factor de xG (no se muestra el xG). */
 export default function StyleLab({ art, glob, onChange }: { art: Any; glob: Any; onChange: (fx: Fx | null, dz: Record<string, number>) => void }) {

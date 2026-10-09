@@ -51,3 +51,6 @@
 .lg-pr-t { display: flex; flex-direction: column; gap: 4px; } .lg-pr-r { display: grid; grid-template-columns: 20px minmax(80px, 150px) 1fr 56px 90px; gap: 8px; align-items: center; font-size: 13px; } .lg-pr-r.me { font-weight: 800; }
 .lg-pr-r .bar { height: 8px; border-radius: 5px; background: var(--surface-2); overflow: hidden; } .lg-pr-r .bar i { display: block; height: 100%; background: var(--c-dt); border-radius: 5px; } .lg-pr-r b { text-align: right; font-family: var(--mono); } .lg-pr-r small { color: var(--ink-3); }
 @media (max-width: 620px) { .lg-pr-r { grid-template-columns: 20px 1fr 52px; } .lg-pr-r .bar, .lg-pr-r small { display: none; } .lg-sc b { font-size: 48px; } .lg-score > span { font-size: 14px; } }
+
+.lg-setup .seg, .lg-setup .slab { align-self: flex-start; width: fit-content; max-width: 100%; }
+.lg-setup .slab { align-self: stretch; width: auto; }

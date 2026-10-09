@@ -55,11 +55,11 @@ export function simMatch(h: Team, a: Team, L: Liga, opt: { extra?: boolean } = {
         if (Math.random() < 0.025) { const { ps, w } = wOf((1 - t) as 0 | 1, m, () => 1); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'og', team: t, pl: p }) }
         else { const { ps, w } = wOf(t, m, p => p.g); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'goal', team: t, pl: p }) }
       }
-      if (Math.random() < (L.amarillas_por_equipo * L.amarillas_pdf5[bin] / 5)) {
+      if (Math.random() < (0.85 * L.amarillas_por_equipo * L.amarillas_pdf5[bin] / 5)) {
         const { ps, w } = wOf(t, m, p => p.y); const p = pick(ps, w)
         if (yel[t].has(p.id)) { ev.push({ min: m, label: lab(m), type: 'red2', team: t, pl: p }); off[t].add(p.id); nRed[t]++ } else { yel[t].add(p.id); ev.push({ min: m, label: lab(m), type: 'yellow', team: t, pl: p }) }
       }
-      if (Math.random() < (L.rojas_por_equipo * 0.45) / 90) {
+      if (Math.random() < 0.06 / 90) {
         const { ps, w } = wOf(t, m, p => p.r + 0.01); const p = pick(ps, w); off[t].add(p.id); nRed[t]++; ev.push({ min: m, label: lab(m), type: 'red', team: t, pl: p })
       }
     }
@@ -69,7 +69,7 @@ export function simMatch(h: Team, a: Team, L: Liga, opt: { extra?: boolean } = {
 }
 
 /* ------------------------------------------------------------ calendario */
-export type Fx = { h: string; a: string; round: number; res?: MatchRes }
+export type Fx = { h: string; a: string; round: number; j?: number; res?: MatchRes }
 /** Todos contra todos (método del círculo): cada par se juega una vez. */
 export function roundRobin(clubs: string[]): Fx[] {
   const n = clubs.length, arr = [...clubs]
@@ -102,40 +102,36 @@ export function remaining(clubs: string[], played: { h: string; a: string }[], f
 }
 
 /* ------------------------------------------------------------ tabla */
-export type Row = { club: string; pj: number; g: number; e: number; p: number; gf: number; gc: number; pts: number }
+export type Row = { club: string; pj: number; g: number; e: number; p: number; gf: number; gc: number; pts: number; gfa: number }
 export function table(clubs: string[], games: { h: string; a: string; gh: number; ga: number }[]): Row[] {
-  const R: Record<string, Row> = Object.fromEntries(clubs.map(c => [c, { club: c, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 }]))
+  const R: Record<string, Row> = Object.fromEntries(clubs.map(c => [c, { club: c, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0, gfa: 0 }]))
   for (const m of games) {
     const h = R[m.h], a = R[m.a]; if (!h || !a) continue
-    h.pj++; a.pj++; h.gf += m.gh; h.gc += m.ga; a.gf += m.ga; a.gc += m.gh
+    h.pj++; a.pj++; a.gfa += m.ga; h.gf += m.gh; h.gc += m.ga; a.gf += m.ga; a.gc += m.gh
     if (m.gh > m.ga) { h.g++; h.pts += 3; a.p++ } else if (m.gh < m.ga) { a.g++; a.pts += 3; h.p++ } else { h.e++; a.e++; h.pts++; a.pts++ }
   }
   const tie = Object.fromEntries(clubs.map(c => [c, Math.random()]))
-  return Object.values(R).sort((x, y) => y.pts - x.pts || (y.gf - y.gc) - (x.gf - x.gc) || y.gf - x.gf || tie[y.club] - tie[x.club])
+  return Object.values(R).sort((x, y) => y.pts - x.pts || (y.gf - y.gc) - (x.gf - x.gc) || y.gf - x.gf || y.gfa - x.gfa || tie[y.club] - tie[x.club])
 }
 
 /* ------------------------------------------------------------ liguilla */
-export type Tie = { id: string; fase: 'playin' | 'qf' | 'sf' | 'final'; hi: string; lo: string; seedHi: number; seedLo: number; legs: MatchRes[]; pens?: [number, number]; winner?: string; label: string }
-/** Play-in: 7v8 y 9v10 a un partido en casa del mejor ubicado (empate: avanza el mejor ubicado). Liguilla: ida y vuelta; empate global: avanza el mejor
- *  ubicado en la tabla; en la final, tiempos extra y penales. */
-export const FASES = { playin: { es: 'Play-in', en: 'Play-in' }, qf: { es: 'Cuartos de final', en: 'Quarter-finals' }, sf: { es: 'Semifinales', en: 'Semi-finals' }, final: { es: 'Final', en: 'Final' } }
+export type Tie = { id: string; fase: 'qf' | 'sf' | 'final'; hi: string; lo: string; seedHi: number; seedLo: number; legs: MatchRes[]; pens?: [number, number]; winner?: string; label: string }
+/** Liguilla de 8 (sin play-in): ida y vuelta; empate global: avanza el mejor ubicado en la tabla; en la final, tiempos extra y penales. */
+export const FASES = { qf: { es: 'Cuartos de final', en: 'Quarter-finals' }, sf: { es: 'Semifinales', en: 'Semi-finals' }, final: { es: 'Final', en: 'Final' } }
 export function mkTie(id: string, fase: Tie['fase'], a: [string, number], b: [string, number], label: string): Tie {
   const [hi, lo] = a[1] < b[1] ? [a, b] : [b, a]
   return { id, fase, hi: hi[0], lo: lo[0], seedHi: hi[1], seedLo: lo[1], legs: [], label }
 }
 /** Un juego de la serie: el siguiente a jugar es [local, visita]. */
 export function nextLeg(t: Tie): [string, string] {
-  if (t.fase === 'playin') return [t.hi, t.lo]
   return t.legs.length === 0 ? [t.lo, t.hi] : [t.hi, t.lo]
 }
-export const legsTotal = (t: Tie) => (t.fase === 'playin' ? 1 : 2)
+export const legsTotal = (_t: Tie) => 2
 /** Resuelve la serie cuando ya se jugaron todos sus partidos; devuelve el ganador (o undefined si falta). */
 export function decide(t: Tie, team: (c: string) => Team, L: Liga): string | undefined {
   if (t.legs.length < legsTotal(t)) return undefined
-  const first = t.fase === 'playin' ? t.hi : t.lo     // local de la ida
-  let gHi = 0, gLo = 0
-  t.legs.forEach((m, i) => { const homeIsHi = t.fase === 'playin' ? true : i === 1; gHi += homeIsHi ? m.gh : m.ga; gLo += homeIsHi ? m.ga : m.gh })
-  void first
+    let gHi = 0, gLo = 0
+  t.legs.forEach((m, i) => { const homeIsHi = i === 1; gHi += homeIsHi ? m.gh : m.ga; gLo += homeIsHi ? m.ga : m.gh })
   if (gHi !== gLo) return gHi > gLo ? t.hi : t.lo
   if (t.fase !== 'final') return t.hi
   // final: tiempos extra (30 min) y penales

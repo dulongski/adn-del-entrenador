@@ -1,15 +1,76 @@
-.slab { margin: 10px 0 14px; padding: 0; overflow: hidden; }
-.slab-h { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: linear-gradient(120deg, color-mix(in oklab, #8f6cf0 16%, var(--surface)), var(--surface)); border: 0; color: var(--ink); font: inherit; cursor: pointer; text-align: left; }
-.slab-h > span { flex: 1; display: flex; flex-direction: column; gap: 2px; } .slab-h b { font-size: 15px; } .slab-h small { color: var(--ink-2); font-size: 12.5px; }
-.slab-h i { font-style: normal; font-size: 22px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); }
-.slab-badge { font-style: normal; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: #8f6cf0; color: #fff; }
-.slab-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; padding: 12px 18px 4px; }
-.slab-bar label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
-.slab-bar select { background: var(--surface-2); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 6px 10px; font: inherit; }
-.slab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 6px 26px; padding: 8px 18px 16px; }
-.slab-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); }
-.slab-row.on .slab-v { color: #8f6cf0; font-weight: 700; } .slab-l { font-size: 13px; } .slab-v { font-size: 12.5px; color: var(--ink-2); }
-.slab-t { grid-column: 1 / -1; position: relative; height: 22px; }
-.slab-t input { position: absolute; inset: 0; width: 100%; margin: 0; background: transparent; accent-color: #8f6cf0; }
-.slab-zero { position: absolute; left: 50%; top: 4px; bottom: 4px; width: 1px; background: var(--ink-3); }
-.slab-orig { position: absolute; top: 2px; width: 3px; height: 18px; margin-left: -1px; border-radius: 2px; background: var(--ink); opacity: .55; pointer-events: none; }
+/* Laboratorio: selector de partido, cuadrícula de marcadores y detalles del simulador */
+.mp { --res-G: #2f9e5b; --res-E: #8a8f98; --res-P: #d2483f; position: relative; margin: 0 0 14px; min-width: 0; }
+.mp-bar { display: flex; align-items: stretch; gap: 6px; min-width: 0; }
+.mp-step { flex: none; width: 40px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 10px; font-size: 22px; line-height: 1; cursor: pointer; }
+.mp-step:hover:not(:disabled) { background: var(--surface-2); }
+.mp-step:disabled { opacity: .35; cursor: default; }
+.mp-closed { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 10px;
+  background: var(--surface); color: var(--ink); cursor: pointer; text-align: left; font: inherit; transition: border-color .15s, box-shadow .15s; }
+.mp-closed:hover, .mp-closed.open { border-color: color-mix(in oklab, var(--ink) 40%, var(--rule)); }
+.mp-closed.open { box-shadow: 0 0 0 3px color-mix(in oklab, var(--c-dt) 25%, transparent); }
+.mp-lab { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+.mp-date { font-family: var(--mono); font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.mp-rival { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.mp-rname { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.mp-closed .mp-rival { flex: 1; font-size: 16px; }
+.mp-res { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-weight: 700; font-size: 14px; white-space: nowrap; padding: 2px 8px 2px 2px; border-radius: 999px;
+  background: color-mix(in oklab, var(--rc) 20%, var(--surface)); color: var(--ink); }
+.mp-res i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; background: var(--rc); color: #fff; font-family: var(--body); }
+.mp-res.r-G { --rc: var(--res-G); } .mp-res.r-E { --rc: var(--res-E); } .mp-res.r-P { --rc: var(--res-P); }
+.mp-xg { font-family: var(--mono); font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.mp-change { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+
+.mp-pop { position: absolute; z-index: 4; top: calc(100% + 6px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.35); padding: 12px; display: grid; gap: 10px; animation: mpin .14s ease-out; }
+@keyframes mpin { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.mp-tools { display: grid; gap: 8px; }
+.mp-search { width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); font-size: 15px; }
+.mp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mp-chips button { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--rule); background: var(--surface-2); color: var(--ink-2); font-size: 13px; font-weight: 600; cursor: pointer; }
+.mp-chips button small { font-family: var(--mono); font-size: 11px; color: var(--ink-3); font-weight: 400; }
+.mp-chips button[aria-pressed='true'] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.mp-chips button[aria-pressed='true'] small { color: color-mix(in oklab, var(--surface) 75%, transparent); }
+.mp-chips button.rf-G::before, .mp-chips button.rf-E::before, .mp-chips button.rf-P::before { content: ''; width: 8px; height: 8px; border-radius: 50%; }
+.mp-chips button.rf-G::before { background: var(--res-G); } .mp-chips button.rf-E::before { background: var(--res-E); } .mp-chips button.rf-P::before { background: var(--res-P); }
+.mp-list { list-style: none; margin: 0; padding: 2px; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px; max-height: min(360px, 52vh); overflow-y: auto; }
+.mp-card { display: grid; gap: 6px; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--rule); background: var(--bg); cursor: pointer; min-width: 0; }
+.mp-card.act { border-color: var(--ink-3); background: var(--surface-2); }
+.mp-card.cur { box-shadow: inset 3px 0 0 var(--c-dt); }
+.mp-meta { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; color: var(--ink-3); font-family: var(--mono); }
+.mp-ha { font-family: var(--body); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.mp-ha.h { color: var(--ink-2); }
+.mp-card .mp-rival { font-size: 14.5px; }
+.mp-foot { display: flex; align-items: center; gap: 8px; }
+.mp-foot .mp-res { font-size: 13px; }
+.mp-club { margin-left: auto; display: inline-flex; }
+.mp-empty { padding: 10px; grid-column: 1 / -1; }
+.mp-hint { font-size: 12px; margin: 0; }
+@media (max-width: 640px) {
+  .mp-closed { gap: 8px; padding: 8px 10px; flex-wrap: wrap; row-gap: 4px; }
+  .mp-lab, .mp-hide-sm { display: none; }
+  .mp-closed .mp-rival { flex-basis: 100%; order: -1; font-size: 15px; }
+  .mp-change { margin-left: auto; }
+  .mp-step { width: 34px; }
+  .mp-pop { left: -4px; right: -4px; padding: 10px; }
+  .mp-list { grid-template-columns: 1fr 1fr; max-height: 50vh; }
+  .mp-card { padding: 7px 8px; }
+  .mp-card .mp-rival { font-size: 13.5px; }
+  .mp-card .mp-xg { display: none; }
+  .mp-hint { display: none; }
+}
+
+/* cuadrícula de marcadores */
+.sg-axis { font-size: 12px; fill: var(--ink-3); font-weight: 600; }
+.sg-num { font-size: 12.5px; fill: var(--ink-2); font-family: var(--mono); font-weight: 700; }
+.sim-grid .sg-cell { cursor: default; }
+.sim-grid .sg-cell:hover rect { stroke: var(--ink-3); stroke-width: 1.5; }
+
+/* tiros con tooltip */
+.sim-shot { cursor: pointer; }
+.sim-shot:hover circle:first-child { stroke-width: .8; }
+.sim-tip b { display: block; }
+.sim-tip .note { margin: 0; }
+/* la leyenda de la rejugada pone inline-flex a todos sus <span>: el globo del "i" vuelve a ser un bloque normal */
+.msim-legend .info { display: inline-flex; gap: 0; }
+.msim-legend .info-i { display: grid; }
+.msim-legend .info-pop { display: block; }
