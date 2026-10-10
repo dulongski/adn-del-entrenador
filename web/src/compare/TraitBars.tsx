@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react'
+import { Ico } from '../icons'
 import Dist, { rankOf, toValues } from '../Dist'
 import { fmt, type Any } from '../lib'
 import { apellido, rawFormat, signed } from './util'
@@ -99,8 +100,8 @@ export function DistGrid({ rows, lab, A, B, dd }: { rows: Row[]; lab: (k: string
           </Info>
         </div>
         <div className="seg" style={{ margin: 0 }}>
-          <button aria-pressed={modo === 'a'} onClick={() => setModo('a')}>{L('Sello propio', 'Own stamp')}</button>
-          <button aria-pressed={modo === 'v'} onClick={() => setModo('v')}>{L('En sus partidos', 'In his matches')}</button>
+          <button aria-pressed={modo === 'a'} onClick={() => setModo('a')}><Ico name="person" />{L('Sello propio', 'Own stamp')}</button>
+          <button aria-pressed={modo === 'v'} onClick={() => setModo('v')}><Ico name="eye" />{L('En sus partidos', 'In his matches')}</button>
         </div>
       </div>
       <div className="vs-dg">

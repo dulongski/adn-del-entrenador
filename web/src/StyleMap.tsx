@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Ico } from './icons'
 import { asset, initials, shortName, sig, type Any } from './lib'
 import MapSearch, { searchCoaches } from './MapSearch'
 import { L } from './settings'
@@ -75,12 +76,12 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
 
       <div className="smap-ctrl" onPointerDown={e => e.stopPropagation()}>
         <div className="seg sm" role="group" aria-label={L('Dimensiones', 'Dimensions')}>
-          <button aria-pressed={dim === '2d'} onClick={() => setDim('2d')}>2D</button>
-          <button aria-pressed={dim === '3d'} onClick={() => setDim('3d')}>3D</button>
+          <button aria-pressed={dim === '2d'} onClick={() => setDim('2d')}><Ico name="square" />2D</button>
+          <button aria-pressed={dim === '3d'} onClick={() => setDim('3d')}><Ico name="cube" />3D</button>
         </div>
         <div className="seg sm" role="group" aria-label={L('Qué define los ejes', 'What defines the axes')}>
-          <button aria-pressed={mode === 'pca'} onClick={() => setMode('pca')}>{L('Ejes PCA', 'PCA axes')}</button>
-          <button aria-pressed={mode === 'vars'} onClick={() => setMode('vars')}>{L('Elegir variables', 'Pick variables')}</button>
+          <button aria-pressed={mode === 'pca'} onClick={() => setMode('pca')}><Ico name="compare" />{L('Ejes PCA', 'PCA axes')}</button>
+          <button aria-pressed={mode === 'vars'} onClick={() => setMode('vars')}><Ico name="list" />{L('Elegir variables', 'Pick variables')}</button>
         </div>
         {mode === 'vars' && (
           <div className="smap-vars">

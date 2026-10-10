@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Ico } from './icons'
 import { ClubLogo, ClubName, Pitch, PosTag } from './charts'
 import { type Any, dataUrl, fmt, getJSON, jugadorCorto, posTag, shortName } from './lib'
 import { L, LANG } from './settings'
@@ -404,8 +405,8 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
         <div className="wi-table-head">
           <div className="h3" style={{ margin: 0 }}>{L('Estilo previsto', 'Predicted style')}<Info wide>{L(`Valores previstos en sus unidades para un partido promedio (mitad local, mitad visitante, marcador y minuto típicos). ▲▼ = cambio frente a ${club} hoy; ＝ si es menor a 0.15 desviaciones típicas.`, `Predicted values in their own units for an average match (half home, half away, typical score and minute). ▲▼ = change vs ${club} today; ＝ if under 0.15 standard deviations.`)}</Info></div>
           <div className="seg" style={{ margin: 0 }}>
-            <button aria-pressed={!showAll} onClick={() => setShowAll(false)}>{L('Rasgos clave', 'Key traits')}</button>
-            <button aria-pressed={showAll} onClick={() => setShowAll(true)}>{L('Todos', 'All')} ({kpis.length})</button>
+            <button aria-pressed={!showAll} onClick={() => setShowAll(false)}><Ico name="sparkle" />{L('Rasgos clave', 'Key traits')}</button>
+            <button aria-pressed={showAll} onClick={() => setShowAll(true)}><Ico name="all" />{L('Todos', 'All')} ({kpis.length})</button>
           </div>
         </div>
         <div className="tbl-wrap">

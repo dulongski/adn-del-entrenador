@@ -545,3 +545,13 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 .sim-delta { font-size: 13px; color: var(--ink-2); margin-top: 8px; } .sim-delta .up { color: var(--div-pos); } .sim-delta .dn { color: var(--div-neg); }
 .vs-ord { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); } .vs-ord select { background: var(--surface-2); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 6px 10px; font: inherit; }
 .vs-tb-sort { background: none; border: 0; padding: 2px 6px; margin: -2px -6px; border-radius: 6px; color: var(--ink); font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; } .vs-tb-sort:hover { background: var(--surface-2); }
+
+/* iconos en los selectores */
+.seg button { display: inline-flex; align-items: center; gap: 7px; }
+.seg button .ico { flex: none; opacity: .62; transition: opacity .15s, transform .15s, color .15s; }
+.seg button:hover .ico { opacity: .95; transform: translateY(-1px); }
+.seg button[aria-pressed='true'] .ico { opacity: 1; color: var(--c-dt); }
+.seg.sm button .ico { width: 14px; height: 14px; }
+@media (max-width: 480px) { .seg button .ico { width: 14px; height: 14px; } .seg button { gap: 5px; } }
+.att-fams button { display: inline-flex; align-items: center; gap: 8px; }
+.att-fams button .ico { opacity: .62; flex: none; transition: opacity .15s, transform .15s; } .att-fams button:hover .ico { opacity: .95; transform: translateY(-1px); } .att-fams button[aria-pressed='true'] .ico { opacity: 1; color: var(--c-dt); }

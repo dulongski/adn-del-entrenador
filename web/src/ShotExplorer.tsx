@@ -1,4 +1,5 @@
 import Info from './Info'
+import { Ico } from './icons'
 import { useEffect, useMemo, useState } from 'react'
 import { fmt, jugadorCorto, type Any } from './lib'
 import { ClubLogo, Pitch, useTip } from './charts'
@@ -60,8 +61,8 @@ export function ShotExplorer({ shots, color, media }: { shots: Shot[]; color: st
     <div className="st">
       <div className="st-top">
         <div className="seg sm" role="group">
-          <button aria-pressed={filtro === 'todos'} onClick={() => setFiltro('todos')}>{L('Todos', 'All')} ({shots.length})</button>
-          <button aria-pressed={filtro === 'goles'} onClick={() => setFiltro('goles')}>{L('Goles', 'Goals')} ({goles})</button>
+          <button aria-pressed={filtro === 'todos'} onClick={() => setFiltro('todos')}><Ico name="all" />{L('Todos', 'All')} ({shots.length})</button>
+          <button aria-pressed={filtro === 'goles'} onClick={() => setFiltro('goles')}><Ico name="ball" />{L('Goles', 'Goals')} ({goles})</button>
         </div>
         {ranked.length > 0 && (
           <div className="carousel sm">

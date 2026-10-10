@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react'
+import { Ico, iconFor } from '../icons'
 import { COMP, fmt, pct, shortName, sig, type Any } from '../lib'
 import { ClubName, HBar, How, Legend, PrismDetail, prismSentence, useTip } from '../charts'
 import { FAM_ORDER, type P } from './common'
@@ -35,7 +36,7 @@ export function DtVsPlantilla({ art, glob }: P) {
           Hacia la derecha lo sube, hacia la izquierda lo baja. <b>Toca una fila</b> para ver dónde queda entre todos los DTs.</>}</Info></h3>
       <div className="att-fams" role="group" aria-label={L('Filtrar por familia', 'Filter by family')}>
         {[['todas', L('Todas', 'All')], ...FAM_ORDER.filter(f => byFam.some(([g, rs]) => g === f && rs.length)).map(f => [f, famLabel(f)])].map(([k, l]) => (
-          <button key={k} type="button" aria-pressed={fam === k} onClick={() => setFam(k)}>{l}</button>
+          <button key={k} type="button" aria-pressed={fam === k} onClick={() => setFam(k)}>{(() => { const n = iconFor(k, l); return n ? <Ico name={n} /> : null })()}{l}</button>
         ))}
       </div>
       <Legend items={[{ key: 'obs', label: L('Lo que se ve', 'What we see'), color: 'var(--ink)' }, ...COMP.map(c => ({ ...c, label: WHO[c.key] ?? c.label }))]} />

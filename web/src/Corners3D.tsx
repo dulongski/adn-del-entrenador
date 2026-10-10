@@ -1,5 +1,6 @@
 /* ================================================================ CÓRNERS 3D */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Ico } from './icons'
 import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, pct, type Any } from './lib'
 import { L } from './settings'
 import Info from './Info'
@@ -440,17 +441,17 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
     <div className="c3d">
       <div className="c3d-ctrl">
         <div className="seg sm" role="group" aria-label={L('Córners a favor o en contra', 'Attacking or defending corners')}>
-          <button aria-pressed={side === 'favor'} onClick={() => onSide('favor')}>{L('A favor', 'Attacking')}</button>
-          <button aria-pressed={side === 'contra'} onClick={() => onSide('contra')}>{L('En contra', 'Defending')}</button>
+          <button aria-pressed={side === 'favor'} onClick={() => onSide('favor')}><Ico name="flame" />{L('A favor', 'Attacking')}</button>
+          <button aria-pressed={side === 'contra'} onClick={() => onSide('contra')}><Ico name="shield" />{L('En contra', 'Defending')}</button>
         </div>
         <div className="seg sm" role="group" aria-label={L('Lado desde el que se cobra el córner', 'Side the corner is taken from')}>
-          <button aria-pressed={lado === 'ambos'} onClick={() => setLado('ambos')}>{L('Ambos', 'Both')}</button>
-          <button aria-pressed={lado === 'izq'} onClick={() => setLado('izq')}>{L('Desde la izquierda', 'From the left')}</button>
-          <button aria-pressed={lado === 'der'} onClick={() => setLado('der')}>{L('Desde la derecha', 'From the right')}</button>
+          <button aria-pressed={lado === 'ambos'} onClick={() => setLado('ambos')}><Ico name="all" />{L('Ambos', 'Both')}</button>
+          <button aria-pressed={lado === 'izq'} onClick={() => setLado('izq')}><Ico name="left" />{L('Desde la izquierda', 'From the left')}</button>
+          <button aria-pressed={lado === 'der'} onClick={() => setLado('der')}><Ico name="right" />{L('Desde la derecha', 'From the right')}</button>
         </div>
         <div className="seg sm" role="group" aria-label={L('Vista 2D o 3D', '2D or 3D view')}>
-          <button aria-pressed={vista === '2d'} onClick={() => setVista('2d')}>2D</button>
-          <button aria-pressed={vista === '3d'} onClick={() => setVista('3d')}>3D</button>
+          <button aria-pressed={vista === '2d'} onClick={() => setVista('2d')}><Ico name="square" />2D</button>
+          <button aria-pressed={vista === '3d'} onClick={() => setVista('3d')}><Ico name="cube" />3D</button>
         </div>
         <label className="smap-activos" htmlFor="c3d-players"><input id="c3d-players" type="checkbox" checked={showPlayers} onChange={e => setShowPlayers(e.target.checked)} /> {L('Jugadores (360)', 'Players (360)')}</label>
         {vista === '3d' && <button className="btn c3d-play" onClick={runOne}>▶ {L('Simular un córner', 'Simulate a corner')}</button>}

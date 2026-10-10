@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Ico } from '../icons'
 import { clubColor, fmt, type Any } from '../lib'
 import Corners3D, { type Side } from '../Corners3D'
 import { L } from '../settings'
@@ -65,8 +66,8 @@ export function BalonParado({ art, media }: { art: Any; media?: Any }) {
             </Info>
           </div>
           <div className="seg sm" role="group" aria-label={L('Indicadores a favor o en contra', 'Attacking or defending indicators')}>
-            <button aria-pressed={side === 'favor'} onClick={() => setSide('favor')}>{L('A favor', 'Attacking')}</button>
-            <button aria-pressed={side === 'contra'} onClick={() => setSide('contra')}>{L('En contra', 'Defending')}</button>
+            <button aria-pressed={side === 'favor'} onClick={() => setSide('favor')}><Ico name="flame" />{L('A favor', 'Attacking')}</button>
+            <button aria-pressed={side === 'contra'} onClick={() => setSide('contra')}><Ico name="shield" />{L('En contra', 'Defending')}</button>
           </div>
         </div>
         <div className="bp-grid">
