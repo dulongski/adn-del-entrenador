@@ -22,7 +22,7 @@ const XY: Record<string, [number, number]> = {
   'Left Wing': [88, 11], 'Right Wing': [88, 69],
   'Center Forward': [101, 40], 'Left Center Forward': [99, 29], 'Right Center Forward': [99, 51], 'Secondary Striker': [91, 40],
 }
-const GROUP_COLOR: Record<string, string> = { por: '#2a78d6', def: '#eda100', med: '#0ca30c', del: '#d03b3b', none: 'var(--ink-3)' }
+const GROUP_COLOR: Record<string, string> = { por: '#2a78d6', def: '#eda100', med: '#0a8a0a', del: '#d03b3b', none: 'var(--ink-3)' }
 
 function coords(once: Any[]) {
   const set = new Set(once.map(o => o.pos))

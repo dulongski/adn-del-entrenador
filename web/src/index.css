@@ -195,7 +195,7 @@ table.att td.obs .num { color: var(--ink); font-weight: 600; }
 .pos { display: inline-block; min-width: 40px; text-align: center; font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: .04em; padding: 1px 8px; border-radius: 999px; color: #fff; }
 .pos-por { background: #2a78d6; }
 .pos-def { background: #eda100; color: #1b1400; }
-.pos-med { background: #0ca30c; }
+.pos-med { background: #0a8a0a; }
 .pos-del { background: #d03b3b; }
 .pos-none { background: var(--surface-2); color: var(--ink-2); }
 .coach-btn .club-logo, .coach-btn .logo-fallback { vertical-align: -3px; }
@@ -494,7 +494,8 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
   .msearch { top: 104px; width: calc(100% - 24px); }
   .smap-ctrl { top: 158px !important; bottom: auto !important; right: 12px !important; left: 12px; max-width: none; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
   .smap-ctrl > .note { display: none; }
-  .ax-top { top: 236px !important; }
+  .ax-top { top: 284px !important; }
+  .smap-axis.ax-left, .smap-axis.ax-right { opacity: .55; font-size: 10px; }
   .msearch-box { height: 46px; } .msearch-fam, .msearch-kbd { display: none; } .msearch-row { grid-template-columns: auto 1fr auto; } }
 @media (prefers-reduced-motion: reduce) { .msearch-box::before { animation: none; } }
 @media (max-width: 700px) { .smap-zoom { display: none !important; } }

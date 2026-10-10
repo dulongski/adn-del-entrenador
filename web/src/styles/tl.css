@@ -2,7 +2,7 @@
 .tl-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .tl-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
 .tl-kpi { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); }
-.tl-kpi b { font-family: var(--display); font-size: 36px; line-height: 1; } .tl-kpi b i { font-style: normal; font-size: 13px; margin-left: 6px; vertical-align: 6px; } .tl-kpi b i.up { color: var(--div-pos); } .tl-kpi b i.dn { color: var(--div-neg); }
+.tl-kpi b { font-family: var(--display); font-size: 36px; line-height: 1; } .tl-kpi b i { font-style: normal; font-size: 13px; margin-left: 6px; vertical-align: 6px; } .tl-kpi b i.up { color: color-mix(in oklab, var(--div-pos) 72%, var(--ink)); } .tl-kpi b i.dn { color: color-mix(in oklab, var(--div-neg) 78%, var(--ink)); }
 .tl-kpi small { color: var(--ink-3); font-size: 12px; }
 .tl-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 900px) { .tl-grid { grid-template-columns: 1fr; } }

@@ -45,3 +45,4 @@
   .on-map .cfg { left: 12px; }
   .cfg-panel { top: auto; bottom: 52px; left: 0; width: calc(100vw - 28px); max-height: calc(100vh - 120px); }
 }
+@media (max-width: 700px) { .cfg, .home-btn { transition: transform .25s, opacity .25s; } body.fabs-hide .cfg, body.fabs-hide .home-btn { transform: translateX(-70px); opacity: 0; pointer-events: none; } }

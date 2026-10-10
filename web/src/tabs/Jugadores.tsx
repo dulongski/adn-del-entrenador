@@ -105,7 +105,7 @@ export function Jugadores({ art, glob, media }: P) {
             <div className="jg-side">
               <div className="card">
                 <div className="note">{fm === sel.dibujo ? L('Dibujo inicial más usado', 'Most used starting formation') : L('Dibujo elegido', 'Chosen formation')} {quien}</div>
-                <div className="big" style={{ color }}>{dibujo(view!.dibujo)}</div>
+                <div className="big" style={{ color: `color-mix(in oklab, ${color} 62%, var(--ink))` }}>{dibujo(view!.dibujo)}</div>
                 <div className="note jg-gap">{L(`Arrancó así ${view!.partidos_dibujo} de ${sel.partidos} partidos.`, `Started this way in ${view!.partidos_dibujo} of ${sel.partidos} matches.`)}</div>
                 <FormList forms={sel.formaciones} total={sel.partidos} color={color} value={fm} onPick={f => setFmSel({ key: fmKey, f })} />
               </div>

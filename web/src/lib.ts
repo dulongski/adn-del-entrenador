@@ -144,3 +144,19 @@ export function matchColors(club: string, rival: string, media: Any): [string, s
   if (A && B && Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]) < 120) return [a, '#f2f2f2']
   return [a, b === 'var(--c-dt)' ? '#eb6834' : b]
 }
+
+/** Color de texto con buen contraste sobre un fondo hex (blanco u oscuro); para var(--x) devuelve blanco. */
+export const onColor = (bg: string) => { const m = /^#?([0-9a-f]{6})$/i.exec(bg); if (!m) return '#fff'; const n = parseInt(m[1], 16); const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }; const L = 0.2126 * f(n >> 16 & 255) + 0.7152 * f(n >> 8 & 255) + 0.0722 * f(n & 255); return 1.05 / (L + 0.05) >= (L + 0.05) / 0.06 ? '#fff' : '#14100a' }
+
+/** Resuelve var(--x) (o cualquier color CSS) a #rrggbb con el tema activo; si no puede, devuelve el original. */
+export function cssHex(c: string): string {
+  try {
+    const m = /^var\((--[\w-]+)\)$/.exec(c)
+    const v = m ? getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() : c
+    if (/^#[0-9a-f]{6}$/i.test(v)) return v
+    const el = document.createElement('span'); el.style.color = v; document.body.appendChild(el)
+    const rgb = getComputedStyle(el).color; el.remove()
+    const n = /(\d+)[, ]+(\d+)[, ]+(\d+)/.exec(rgb)
+    return n ? '#' + [n[1], n[2], n[3]].map(x => (+x).toString(16).padStart(2, '0')).join('') : c
+  } catch { return c }
+}

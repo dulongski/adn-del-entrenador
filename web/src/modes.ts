@@ -38,7 +38,7 @@ export const MODES: Mode[] = [
 ]
 
 /** Texto legible sobre el color del modo (oscuro sobre amarillo, blanco sobre el resto). */
-export const inkOn = (hex: string) => { const n = parseInt(hex.slice(1), 16); const l = (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; return l > 0.6 ? '#14100a' : '#fff' }
+export const inkOn = (hex: string) => { const n = parseInt(hex.slice(1), 16); const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }; const L = 0.2126 * f(n >> 16 & 255) + 0.7152 * f(n >> 8 & 255) + 0.0722 * f(n & 255); return 1.05 / (L + 0.05) >= (L + 0.05) / 0.06 ? '#fff' : '#14100a' }   // el de mayor contraste (WCAG)
 
 /** Título que depende del DT: "Su ADN en dos ideas" si su resumen tiene dos rasgos claros, etc. */
 export function modeTitle(m: Mode, art?: { narrativa?: { principios?: unknown[] } } | null) {

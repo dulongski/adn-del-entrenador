@@ -205,7 +205,7 @@ export function TirosLibres({ art, media }: { art: Any; media?: Any }) {
           ))}
         </div>
       </div>
-      <p className="note" style={{ color }}>{L('Datos StatsBomb de Liga MX 2021/22 a 2026/27. Un centro «acaba en remate» si su equipo remata en la misma posesión.', 'StatsBomb data from Liga MX 2021/22 to 2026/27. A cross “ends in a shot” if his team shoots in the same possession.')}</p>
+      <p className="note">{L('Datos StatsBomb de Liga MX 2021/22 a 2026/27. Un centro «acaba en remate» si su equipo remata en la misma posesión.', 'StatsBomb data from Liga MX 2021/22 to 2026/27. A cross “ends in a shot” if his team shoots in the same possession.')}</p>
     </div>
   )
 }

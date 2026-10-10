@@ -37,6 +37,13 @@ export default function App() {
   const [art, setArt] = useState<Any>(null)
   const [q, setQ] = useState('')
   const [activos, setActivos] = useState<boolean>(() => { try { return localStorage.getItem('soloActivos') === '1' } catch { return false } })
+  // en el móvil, los botones flotantes (mapa y ajustes) se esconden al bajar y reaparecen al subir: no tapan el contenido
+  useEffect(() => {
+    let last = window.scrollY
+    const f = () => { const y = window.scrollY; document.body.classList.toggle('fabs-hide', y > last + 4 && y > 120); if (y < last - 4 || y < 120) document.body.classList.remove('fabs-hide'); last = y }
+    window.addEventListener('scroll', f, { passive: true })
+    return () => window.removeEventListener('scroll', f)
+  }, [])
   useEffect(() => { try { localStorage.setItem('soloActivos', activos ? '1' : '0') } catch { /* sin almacenamiento */ } }, [activos])
   const nActivos = useMemo(() => (glob?.dts || []).filter((d: Any) => media.dts?.[d.id]?.vigente).length, [glob, media])
   const mapa: Any = (boot as Any).mapa

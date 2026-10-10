@@ -6,7 +6,7 @@
 .arq-name small { display: block; font-size: 11.5px; font-weight: 400; color: var(--ink-3); line-height: 1.25; }
 .arq-val small { display: block; font-size: 10.5px; color: var(--ink-3); font-weight: 600; }
 .jt-sit { grid-template-columns: minmax(130px, 1fr) 1fr 58px; }
-.jt-warn { color: var(--c-rival); }
+.jt-warn { color: color-mix(in oklab, var(--c-rival) 62%, var(--ink)); }
 
 .jt-def { display: grid; grid-template-columns: minmax(200px, 300px) minmax(0, 1fr); gap: 20px; align-items: start; }
 .jt-pitch { min-width: 0; }

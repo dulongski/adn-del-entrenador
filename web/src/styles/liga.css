@@ -54,3 +54,4 @@
 
 .lg-setup .seg, .lg-setup .slab { align-self: flex-start; width: fit-content; max-width: 100%; }
 .lg-setup .slab { align-self: stretch; width: auto; }
+@media (max-width: 520px) { .lg-table th:nth-child(7), .lg-table td:nth-child(7), .lg-table th:nth-child(8), .lg-table td:nth-child(8) { display: none; } .lg-table table { min-width: 0; } .lg-table td, .lg-table th { padding: 6px 4px; } }

@@ -333,6 +333,20 @@ def main(workers: int = 8):
             use_club = len(own) >= WHO_MIN_CORNERS
             res[key] = summarize(recs, MAX_ENT_DT, is_fav, names, own if use_club else recs)
             res[key]["quien_club"] = club_name.get(int(cur)) if use_club else None
+        # por club: lo mismo pero sólo con los partidos de cada club que dirigió (la web lo elige con los escudos)
+        res["por_club"] = {}
+        for team in sorted(set(s.coach_team)):
+            sc = s[s.coach_team == team]
+            cn = club_name.get(int(team))
+            pc: dict = {}
+            for key, is_fav in (("favor", True), ("contra", False)):
+                recs = [allrecs[i] for i in sc[sc.favor == is_fav].i]
+                pc[key] = summarize(recs, min(MAX_ENT_DT, 700), is_fav, names, recs)
+                pc[key]["quien_club"] = cn
+            npc = int(coach_side[(coach_side.coach_id == cid) & (coach_side.coach_team == team) & coach_side.match_id.isin(mids)].match_id.nunique())
+            pc["favor"]["partidos"] = pc["contra"]["partidos"] = npc
+            if cn and npc:
+                res["por_club"][cn] = pc
         # partidos = partidos dirigidos con datos, no sólo con córner
         npart = int(coach_side[(coach_side.coach_id == cid) & coach_side.match_id.isin(mids)].match_id.nunique())
         res["favor"]["partidos"] = res["contra"]["partidos"] = npart

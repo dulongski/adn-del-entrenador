@@ -1,4 +1,4 @@
-import { fmt, type Any } from '../lib'
+import { cssHex, fmt, onColor, type Any } from '../lib'
 import { L } from '../settings'
 import { td } from '../i18n/data'
 
@@ -55,7 +55,7 @@ export function TipoCambios({ data }: { data: Record<string, Any> }) {
             <span className="cm-stack">
               {TIPOS.map(([k, , , c]) => {
                 const n = v[k] ?? 0, pc = (100 * n) / tot
-                return n ? <span key={k} style={{ width: `${pc}%`, background: c }} title={`${n} · ${fmt(pc, 0)}%`}>{pc >= 9 ? `${fmt(pc, 0)}%` : ''}</span> : null
+                return n ? <span key={k} style={{ width: `${pc}%`, background: c, color: onColor(cssHex(c)) }} title={`${n} · ${fmt(pc, 0)}%`}>{pc >= 9 ? `${fmt(pc, 0)}%` : ''}</span> : null
               })}
             </span>
           </div>

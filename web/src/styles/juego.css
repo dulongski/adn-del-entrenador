@@ -86,7 +86,7 @@
 .ctx-hero-k { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
 .ctx-hero-n { font-family: var(--display); font-size: 44px; line-height: .95; letter-spacing: .01em; }
 .ctx-hero-n small { font-size: 20px; margin-left: 2px; }
-.ctx-hero-n.up { color: var(--div-pos); } .ctx-hero-n.dn { color: var(--div-neg); }
+.ctx-hero-n.up { color: color-mix(in oklab, var(--div-pos) 74%, var(--ink)); } .ctx-hero-n.dn { color: color-mix(in oklab, var(--div-neg) 78%, var(--ink)); }
 .ctx-hero-t { font-size: 12.5px; color: var(--ink); }
 .ctx-hero-s { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em; }
 @keyframes ctx-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -111,5 +111,5 @@
 .ctx-dbar { display: block; height: 8px; border-radius: 6px; background: var(--surface-2); overflow: hidden; } .ctx-dbar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--c-dt), color-mix(in oklab, var(--c-dt) 60%, #fff)); }
 .ctx-sc { width: 120px; height: 48px; background: var(--surface-2); border-radius: 8px; }
 .ctx-dir { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 800; } .ctx-dir small { font-size: 12px; font-weight: 500; color: var(--ink-2); line-height: 1.15; }
-.ctx-dir.up { color: var(--div-pos); } .ctx-dir.dn { color: var(--div-neg); } .ctx-dir.flat { color: var(--ink-3); }
+.ctx-dir.up { color: color-mix(in oklab, var(--div-pos) 74%, var(--ink)); } .ctx-dir.dn { color: color-mix(in oklab, var(--div-neg) 78%, var(--ink)); } .ctx-dir.flat { color: var(--ink-3); }
 @media (max-width: 620px) { .ctx-drv2 { grid-template-columns: 22px minmax(0, 1fr) 92px; } .ctx-drv2 .ctx-dir { grid-column: 2 / -1; } .ctx-sc { width: 92px; } .ctx-hero-n { font-size: 36px; } }

@@ -1,7 +1,7 @@
 import Info from './Info'
 import { Ico } from './icons'
 import { useEffect, useMemo, useState } from 'react'
-import { fmt, jugadorCorto, type Any } from './lib'
+import { fmt, jugadorCorto, type Any, onColor } from './lib'
 import { ClubLogo, Pitch, useTip } from './charts'
 import { fecha, RES_ES } from './PlayAnim'
 import './styles/juego.css'
@@ -93,7 +93,7 @@ export function ShotExplorer({ shots, color, media }: { shots: Shot[]; color: st
       {sel ? (
         <div className="st-detail">
           <div className="st-info">
-            <div className="st-who"><b>{sel.jugador}</b><span className={`st-res${sel.gol ? ' gol' : ''}`} style={sel.gol ? { background: color } : undefined}>{RES_ES[sel.res] ?? sel.res}</span></div>
+            <div className="st-who"><b>{sel.jugador}</b><span className={`st-res${sel.gol ? ' gol' : ''}`} style={sel.gol ? { background: color, color: onColor(color), textShadow: 'none' } : undefined}>{RES_ES[sel.res] ?? sel.res}</span></div>
             <div className="st-row"><ClubLogo club={sel.p[1]} media={media} size={16} /><span>vs {sel.p[1]}</span></div>
             <div className="note">{fecha(sel.p[0])} · {sel.p[2] ? L('local', 'home') : L('visita', 'away')} · min {sel.min + 1}'{sel.gp != null ? ` · ${L('iban', 'score was')} ${sel.gp}-${sel.gr}` : ''} · {L('terminó', 'final')} {sel.p[3]}-{sel.p[4]}</div>
             <div className="note">xG {fmt(sel.xg, 2)}{sel.cuerpo ? ` · ${CUERPO_ES[sel.cuerpo]}` : ''}{TIPO_ES[sel.tipo] ? ` · ${TIPO_ES[sel.tipo]}` : ''}</div>
@@ -129,7 +129,7 @@ export function ShotExplorer({ shots, color, media }: { shots: Shot[]; color: st
                 <span className="mono">{fmt(s.xg, 2)}</span>
                 <span className="st-next-name">{s.jugador}</span>
                 <ClubLogo club={s.p[1]} media={media} size={14} />
-                <span className={`st-res${s.gol ? ' gol' : ''}`} style={s.gol ? { background: color } : undefined}>{RES_ES[s.res] ?? s.res}</span>
+                <span className={`st-res${s.gol ? ' gol' : ''}`} style={s.gol ? { background: color, color: onColor(color), textShadow: 'none' } : undefined}>{RES_ES[s.res] ?? s.res}</span>
               </button>
             )
           })}

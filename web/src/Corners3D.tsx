@@ -6,6 +6,8 @@ import { L } from './settings'
 import Info from './Info'
 import { Pitch, pitchXY, useTip } from './charts'
 import './styles/bp.css'
+import './styles/jugadores.css'
+import { CARRERA, ClubSwitch } from './tabs/JugOnce'
 
 /* Córners en 3D (datos: pipeline/corners.py, todos los córners normalizados como si se cobraran
    desde la esquina y≈0, atacando hacia x=120; los de la derecha se vuelven a reflejar al dibujar):
@@ -171,7 +173,17 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
   const figs = useRef<Fig[]>([])
   const [, force] = useState(0)
   const drag = useRef<{ x: number; y: number; moved: number } | null>(null)
-  const club = media?.dts?.[art.id]?.club ?? art.etapas?.at(-1)?.club
+  const [pickC, setPickC] = useState<{ id: number; club: string } | null>(null)
+  const curClub = media?.dts?.[art.id]?.club ?? art.etapas?.at(-1)?.club
+  const pcs: Record<string, Any> = data?.por_club ?? {}
+  const clubes: string[] = useMemo(() => {
+    const ks = Object.keys(pcs)
+    if (!ks.length) return []
+    const first = ks.includes(curClub) ? curClub : ks.includes(data?.favor?.quien_club) ? data.favor.quien_club : [...ks].sort((a, b) => (pcs[b].favor?.partidos ?? 0) - (pcs[a].favor?.partidos ?? 0))[0]
+    return [first, ...ks.filter(k => k !== first)]
+  }, [data]) // eslint-disable-line react-hooks/exhaustive-deps
+  const selC = pickC && pickC.id === art.id && (pickC.club === CARRERA || clubes.includes(pickC.club)) ? pickC.club : clubes[0] ?? CARRERA
+  const club = selC !== CARRERA && selC ? selC : curClub
   const tc = solid(clubColor(club, media))
   const rivalC = luminance(tc) > 0.8 ? '#e0605a' : '#f2f2f2'
   const gkRival = '#9aa39e'
@@ -181,8 +193,9 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
     getJSON(dataUrl(`corners_${art.id}.json`)).then(setData).catch(() => setErr(L('Aún no hay datos de córners 3D para este DT.', 'No 3D corner data for this coach yet.')))
     getJSON(dataUrl('corners_liga.json')).then(setLiga).catch(() => {})
   }, [art.id])
-  useEffect(() => { setSim(null); setHover(null) }, [side, lado, art.id])
-  const D = data?.[side]
+  useEffect(() => { setSim(null); setHover(null) }, [side, lado, art.id, selC])
+  const root = selC === CARRERA || !pcs[selC] ? data : pcs[selC]
+  const D = root?.[side]
   const V = D?.lados?.[lado]
   // con la cámara por defecto el córner y≈0 cae a la derecha de la imagen: se refleja para que
   // «izquierda» (y ambos, normalizados a la izquierda) se vean desde la izquierda del atacante
@@ -444,6 +457,7 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
 
   return (
     <div className="c3d">
+      {clubes.length > 0 && <ClubSwitch clubes={clubes} value={selC} set={c => setPickC({ id: art.id, club: c })} media={media} partidos={Object.fromEntries(clubes.map(c => [c, pcs[c].favor?.partidos ?? 0]))} carrera={data.favor.partidos} />}
       <div className="c3d-ctrl">
         <div className="seg sm" role="group" aria-label={L('Córners a favor o en contra', 'Attacking or defending corners')}>
           <button aria-pressed={side === 'favor'} onClick={() => onSide('favor')}><Ico name="sword" />{L('A favor', 'Attacking')}</button>
