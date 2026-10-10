@@ -441,7 +441,7 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
     <div className="c3d">
       <div className="c3d-ctrl">
         <div className="seg sm" role="group" aria-label={L('Córners a favor o en contra', 'Attacking or defending corners')}>
-          <button aria-pressed={side === 'favor'} onClick={() => onSide('favor')}><Ico name="flame" />{L('A favor', 'Attacking')}</button>
+          <button aria-pressed={side === 'favor'} onClick={() => onSide('favor')}><Ico name="sword" />{L('A favor', 'Attacking')}</button>
           <button aria-pressed={side === 'contra'} onClick={() => onSide('contra')}><Ico name="shield" />{L('En contra', 'Defending')}</button>
         </div>
         <div className="seg sm" role="group" aria-label={L('Lado desde el que se cobra el córner', 'Side the corner is taken from')}>

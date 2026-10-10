@@ -66,7 +66,7 @@ export function BalonParado({ art, media }: { art: Any; media?: Any }) {
             </Info>
           </div>
           <div className="seg sm" role="group" aria-label={L('Indicadores a favor o en contra', 'Attacking or defending indicators')}>
-            <button aria-pressed={side === 'favor'} onClick={() => setSide('favor')}><Ico name="flame" />{L('A favor', 'Attacking')}</button>
+            <button aria-pressed={side === 'favor'} onClick={() => setSide('favor')}><Ico name="sword" />{L('A favor', 'Attacking')}</button>
             <button aria-pressed={side === 'contra'} onClick={() => setSide('contra')}><Ico name="shield" />{L('En contra', 'Defending')}</button>
           </div>
         </div>
