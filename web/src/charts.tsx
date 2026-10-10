@@ -19,7 +19,7 @@ export function useTip() {
 export const pitchXY = (x: number, y: number, vertical?: boolean): [number, number] => (vertical ? [y, 120 - x] : [x, y])
 export function Pitch({ children, labels, half = false, vertical = false, w = '100%', crop }: { children?: ReactNode; labels?: ReactNode; half?: boolean; vertical?: boolean; w?: string; crop?: [number, number] }) {
   // crop: tramo de la cancha a mostrar [x0, x1] (sólo vertical): acerca la vista a donde pasa la acción
-  const vb = vertical ? (crop ? `-2 ${118 - crop[1]} 84 ${crop[1] - crop[0] + 4}` : half ? '-2 -2 84 64' : '-2 -2 84 124') : (half ? '60 -2 62 84' : '-2 -2 124 84')
+  const vb = vertical ? (crop ? `-5 ${118 - crop[1]} 90 ${crop[1] - crop[0] + 4}` : half ? '-2 -2 84 64' : '-2 -2 84 124') : (half ? '60 -2 62 84' : '-2 -2 124 84')
   return (
     <svg viewBox={vb} style={{ width: w, display: 'block', maxWidth: '100%' }} role="img">
       <g transform={vertical ? 'matrix(0 -1 1 0 0 120)' : undefined}>

@@ -95,10 +95,9 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
     ...(V.defensores || []).map((p: number[], i: number) => ({ p, col: defC, own: !ownAtt, kind: 'def' as const, i })),
     ...(V.atacantes || []).map((p: number[], i: number) => ({ p, col: attC, own: ownAtt, kind: 'att' as const, i })),
   ].filter(d => d.p[0] >= 92) : []
-  const [lx, ly] = pitchXY(119.5, 1, true)
   return (
     <div className="c3d-2d">
-      <Pitch vertical crop={[88, 121]} labels={<text x={lx} y={ly} fontSize={2.6} fill="var(--ink-3)">{L('portería ↑', 'goal ↑')}</text>}>
+      <Pitch vertical crop={[88, 121]} >
         {cells.arr.map(c => {
           const cx = 92 + (c.i + 0.5) * CX, cy = fy((c.j + 0.5) * (80 / CYN)), t = c.v / maxX
           return (
@@ -118,13 +117,19 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
         })}
         {verJug && V.portero && <g><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.9} fill="#0b1018" opacity={0.85} /><circle cx={V.portero[0]} cy={fy(V.portero[1])} r={1.45} fill={ownAtt ? '#9ca3af' : MINE} /><text x={V.portero[0]} y={fy(V.portero[1]) + 0.75} fontSize={1.9} fontWeight={800} textAnchor="middle" fill="#0b1018" transform={`rotate(90 ${V.portero[0]} ${fy(V.portero[1])})`}>P</text></g>}
         {/* quien cobra: en su córner (en «ambos», en los dos) */}
-        {(lado === 'ambos' ? [0.6, 79.4] : [fy(0.6)]).map((cy, i) => (
-          <g key={i} onMouseMove={e => tip.show(e, <><b>{side === 'favor' ? L('Cobrador', 'Corner taker') : L('Cobra el rival', 'Opponent takes it')}</b>{side === 'favor' && Q?.cob?.top?.length ? <><br />{Q.cob.top.map(([id, nom, p]: [number, string, number]) => <span key={id}>{jugadorCorto(id, nom)} {p}%<br /></span>)}</> : null}</>)} onMouseLeave={tip.hide}>
-            <circle cx={119.2} cy={cy} r={2.3} fill="#fff" fillOpacity={0.18} />
-            <circle cx={119.2} cy={cy} r={1.25} fill="#fff" stroke="#0b1018" strokeWidth={0.45} />
-            <path d={`M120.4 ${cy < 40 ? cy - 1.4 : cy + 1.4} l2.4 ${cy < 40 ? -1 : 1} l-2.4 ${cy < 40 ? -1 : 1}z`} fill="#f2b51b" />
-          </g>
-        ))}
+        {(lado === 'ambos' ? [0, 80] : [fy(0)]).map((edge, i) => {
+          const dir = edge < 40 ? -1 : 1            // hacia afuera de la banda
+          return (
+            <g key={i} onMouseMove={e => tip.show(e, <><b>{side === 'favor' ? L('Cobrador', 'Corner taker') : L('Cobra el rival', 'Opponent takes it')}</b>{side === 'favor' && Q?.cob?.top?.length ? <><br />{Q.cob.top.map(([id, nom, p]: [number, string, number]) => <span key={id}>{jugadorCorto(id, nom)} {p}%<br /></span>)}</> : null}</>)} onMouseLeave={tip.hide}>
+              {/* arco del córner, banderín, balón y cobrador (apenas fuera de la banda) */}
+              <path d={`M${120 - 1.6} ${edge} A1.6 1.6 0 0 ${dir < 0 ? 0 : 1} 120 ${edge - dir * 1.6}`} fill="none" stroke="var(--pitch-line)" strokeWidth={0.4} />
+              <path d={`M120 ${edge} l-2.6 ${dir * 0.7} l0 ${dir * -1.5}z`} fill="#f2b51b" opacity={0.95} />
+              <circle cx={119.1} cy={edge + dir * 2.6} r={1.6} fill="#fff" stroke="#0b1018" strokeWidth={0.5} />
+              <circle cx={119.1} cy={edge + dir * 2.6} r={0.6} fill="#0b1018" opacity={0.75} />
+              <circle cx={119.5} cy={edge - dir * 0.7} r={0.7} fill="#fff" stroke="#0b1018" strokeWidth={0.3} />
+            </g>
+          )
+        })}
       </Pitch>
       <div className="c3d-zones">
         <div className="c3d-zones-h">{L('A dónde manda los envíos', 'Where the deliveries go')}<span className="note">{L('% de sus córners · xG medio de cada zona', '% of his corners · average xG of each zone')}</span></div>
