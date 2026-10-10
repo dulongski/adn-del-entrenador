@@ -10,6 +10,7 @@ import Info from './Info'
 import { L, LOCALE, SETTINGS } from './settings'
 import WhatIf from './WhatIf'
 import { LigaSim } from './tabs/LigaSim'
+import { TirosLibres } from './tabs/TirosLibres'
 import { Resumen, DtVsPlantilla, Transferencia, Fases, Contexto, Jugadores, BalonParado, Simulador, Metodo } from './tabs'
 
 import Hub from './Hub'
@@ -183,6 +184,7 @@ export default function App() {
                 {tab === 'contexto' && <Contexto art={art} glob={glob} media={media} />}
                 {tab === 'jugadores' && <Jugadores art={art} glob={glob} media={media} />}
                 {tab === 'bp' && <BalonParado art={art} media={media} />}
+                {tab === 'tl' && <TirosLibres art={art} media={media} />}
                 {tab === 'sim' && <Simulador art={art} media={media} glob={glob} />}
                 {tab === 'whatif' && <WhatIf art={art} glob={glob} media={media} />}
                 {tab === 'liga' && <LigaSim art={art} media={media} />}
@@ -254,6 +256,7 @@ function SubIcon({ k }: { k: TabKey }) {
     fases: <><rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" strokeWidth="1.8" /><path d="M12 5v14" fill="none" strokeWidth="1.8" /><circle cx="12" cy="12" r="2.6" fill="none" strokeWidth="1.8" /></>,
     contexto: <><circle cx="12" cy="12" r="8" fill="none" strokeWidth="1.8" /><path d="M12 7v5l3.5 2" fill="none" strokeWidth="2" strokeLinecap="round" /></>,
     sim: <><path d="M19 12a7 7 0 1 1-2.1-5" fill="none" strokeWidth="2" strokeLinecap="round" /><path d="M17.5 3.5v4h-4" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="12" r="2.2" /></>,
+    tl: <><path d="M6 21V4" fill="none" strokeWidth="1.8" strokeLinecap="round" /><path d="M6 5h11l-2 4 2 4H6" fill="none" strokeWidth="1.8" strokeLinejoin="round" /></>,
     liga: <><path d="M7 4h10v5a5 5 0 0 1-10 0z" fill="none" strokeWidth="1.8" strokeLinejoin="round" /><path d="M12 14v4m-4 2h8" fill="none" strokeWidth="1.8" strokeLinecap="round" /></>,
     whatif: <><path d="M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3h-2a2 2 0 0 1-4 0z" fill="none" strokeWidth="1.7" strokeLinejoin="round" /></>,
   }

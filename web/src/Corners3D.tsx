@@ -27,7 +27,7 @@ const BALL: V3 = [119.3, 0.75, 0.22], TAKER: [number, number] = [119.0, -0.9]
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
 
 /** Escala secuencial de xG (amarillo pálido → rojo oscuro), legible en ambos temas. */
-function xgColor(t: number, shade = 1) {
+export function xgColor(t: number, shade = 1) {
   const s = [[255, 237, 160], [254, 178, 76], [240, 59, 32], [150, 0, 38]]
   const u = clamp(t, 0, 1) * (s.length - 1), i = Math.min(s.length - 2, Math.floor(u)), f = u - i
   const c = s[i].map((v, k) => v + (s[i + 1][k] - v) * f).map(v => Math.round(v * shade))
