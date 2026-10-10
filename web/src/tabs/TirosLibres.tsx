@@ -6,8 +6,10 @@ import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, type Any } from '../lib
 import { L } from '../settings'
 import Info from '../Info'
 import { Seg } from './common'
+import { CARRERA, ClubSwitch } from './JugOnce'
 import '../styles/bp.css'
 import '../styles/tl.css'
+import '../styles/jugadores.css'
 
 /* Tiros libres (pipeline/freekicks.py, dentro de corners_<id>.json bajo «tl»). Coordenadas StatsBomb: ataca hacia x = 120, y 0 = banda izquierda.
    Cada tiro libre es: tiro directo, centro al área (pase con centro, o alto que cae en el área) o pase corto / en juego (el resto). */
@@ -20,16 +22,25 @@ const KC: Record<K, string> = { tiro: '#f2b51b', centro: '#38bdf8', corto: '#9aa
 const KN: Record<K, [string, string]> = { tiro: ['Tiro directo', 'Direct shot'], centro: ['Centro al área', 'Cross into the box'], corto: ['Pase corto o en juego', 'Short / in play'] }
 const XMIN = 72    // por debajo de esta línea son reanudaciones lejos del área, no jugadas de balón parado
 const dist = (x: number, y: number) => Math.hypot(120 - x, 40 - y) * 0.9144     // metros al centro del arco
-type Row = { k: K; min: number; st: number; x: number; y: number; ex?: number; ey?: number; ez?: number; xg: number; gol: boolean; res?: number; jug: number; post?: number; cen?: boolean }
+type Row = { club: number; k: K; min: number; st: number; x: number; y: number; ex?: number; ey?: number; ez?: number; xg: number; gol: boolean; res?: number; jug: number; post?: number; cen?: boolean }
 
 export function TirosLibres({ art, media }: { art: Any; media?: Any }) {
   const [D, setD] = useState<Any>(null)
   const [liga, setLiga] = useState<Any>(null)
   const [side, setSide] = useState<Side>('favor')
   const [filtro, setFiltro] = useState<'todos' | K>('todos')
+  const [pick, setPick] = useState<{ id: number; club: string } | null>(null)
   useEffect(() => { setD(null); getJSON(dataUrl(`corners_${art.id}.json`)).then(o => setD(o.tl ?? false)).catch(() => setD(false)) }, [art.id])
   useEffect(() => { getJSON(dataUrl('corners_liga.json')).then(o => setLiga(o.tl ?? null)).catch(() => {}) }, [])
-  const club = media?.dts?.[art.id]?.club ?? art.etapas?.at(-1)?.club
+  const clubs: string[] = useMemo(() => {
+    const all: string[] = (D?.clubes ?? []).map((c: Any) => c.club)
+    const cur = media?.dts?.[art.id]?.club ?? art.etapas?.at(-1)?.club
+    const first = all.includes(cur) ? cur : all[all.length - 1]
+    return all.length ? [first, ...all.filter(c => c !== first)] : []
+  }, [D, media, art])
+  const sel = pick && pick.id === art.id && (pick.club === CARRERA || clubs.includes(pick.club)) ? pick.club : clubs[0]
+  const cidxOf = (c: string) => (D?.clubes ?? []).findIndex((q: Any) => q.club === c)
+  const club = sel === CARRERA ? media?.dts?.[art.id]?.club : sel
   const color = clubColor(club, media)
   const names: Record<number, [number, string]> = useMemo(() => (D ? Object.fromEntries((D.jugadores as [number, string][]).map(([id, n], i) => [i, [id, n] as [number, string]])) : {}), [D])
 
@@ -37,16 +48,18 @@ export function TirosLibres({ art, media }: { art: Any; media?: Any }) {
     if (!D) return [] as Row[]
     const S = D[side]
     const out: Row[] = []
-    for (const t of S.tiros) out.push({ k: 'tiro', min: t[0], st: t[1], x: t[2], y: t[3], ey: t[4], ez: t[5], xg: t[6], gol: t[7] === 0, res: t[7], jug: t[8] })
+    for (const t of S.tiros) out.push({ club: t[9], k: 'tiro', min: t[0], st: t[1], x: t[2], y: t[3], ey: t[4], ez: t[5], xg: t[6], gol: t[7] === 0, res: t[7], jug: t[8] })
     for (const p of S.pases) {
       const cross = p[6] === 1 || (p[7] === 2 && inBox(p[4], p[5]))
-      out.push({ k: cross ? 'centro' : 'corto', min: p[0], st: p[1], x: p[2], y: p[3], ex: p[4], ey: p[5], xg: p[9], gol: p[10] === 1, jug: p[11], post: p[9], cen: p[8] === 1 })
+      out.push({ club: p[12], k: cross ? 'centro' : 'corto', min: p[0], st: p[1], x: p[2], y: p[3], ex: p[4], ey: p[5], xg: p[9], gol: p[10] === 1, jug: p[11], post: p[9], cen: p[8] === 1 })
     }
     return out
   }, [D, side])
-  const rows = useMemo(() => todos.filter(r => r.x >= XMIN), [todos])
-  const lejos = todos.length - rows.length
-  const n = rows.length, partidos = D?.partidos ?? 1
+  const ci = sel && sel !== CARRERA ? cidxOf(sel) : -1
+  const delClub = useMemo(() => (ci < 0 ? todos : todos.filter(r => r.club === ci)), [todos, ci])
+  const rows = useMemo(() => delClub.filter(r => r.x >= XMIN), [delClub])
+  const lejos = delClub.length - rows.length
+  const n = rows.length, partidos = ci >= 0 ? D?.clubes?.[ci]?.partidos ?? 1 : D?.partidos ?? 1
   const tiros = rows.filter(r => r.k === 'tiro'), cent = rows.filter(r => r.k === 'centro')
 
   if (D === false) return <div className="card note">{L('Aún no hay datos de tiros libres para este DT.', 'No free-kick data for this coach yet.')}</div>
@@ -98,6 +111,7 @@ export function TirosLibres({ art, media }: { art: Any; media?: Any }) {
 
   return (
     <div className="tl">
+      {D.clubes?.length > 0 && <ClubSwitch clubes={clubs} value={sel ?? clubs[0]} set={c => setPick({ id: art.id, club: c })} media={media} partidos={Object.fromEntries(D.clubes.map((c: Any) => [c.club, c.partidos]))} carrera={D.partidos} />}
       <div className="tl-ctrl">
         <div className="seg sm" role="group"><button aria-pressed={side === 'favor'} onClick={() => setSide('favor')}><Ico name="sword" />{L('A favor', 'Attacking')}</button><button aria-pressed={side === 'contra'} onClick={() => setSide('contra')}><Ico name="shield" />{L('En contra', 'Defending')}</button></div>
         <span className="note">{n} {L('tiros libres en zona de ataque', 'free kicks in the attacking zone')} · {partidos} {L('partidos', 'matches')}{side === 'contra' ? ` · ${L('los que le cobran', 'those taken against him')}` : ''}<Info>{L(`Sólo cuentan los tiros libres que se cobran en el último 40% de la cancha (balón a más de 72 de 120). Los ${lejos} restantes son reanudaciones lejos del área y no se muestran.`, `Only free kicks taken in the final 40% of the pitch count (ball beyond 72 of 120). The other ${lejos} are restarts far from goal and are not shown.`)}</Info></span>

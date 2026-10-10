@@ -256,7 +256,8 @@ function SubIcon({ k }: { k: TabKey }) {
     fases: <><rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" strokeWidth="1.8" /><path d="M12 5v14" fill="none" strokeWidth="1.8" /><circle cx="12" cy="12" r="2.6" fill="none" strokeWidth="1.8" /></>,
     contexto: <><circle cx="12" cy="12" r="8" fill="none" strokeWidth="1.8" /><path d="M12 7v5l3.5 2" fill="none" strokeWidth="2" strokeLinecap="round" /></>,
     sim: <><path d="M19 12a7 7 0 1 1-2.1-5" fill="none" strokeWidth="2" strokeLinecap="round" /><path d="M17.5 3.5v4h-4" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="12" r="2.2" /></>,
-    tl: <><path d="M6 21V4" fill="none" strokeWidth="1.8" strokeLinecap="round" /><path d="M6 5h11l-2 4 2 4H6" fill="none" strokeWidth="1.8" strokeLinejoin="round" /></>,
+    bp: <><path d="M6 21V4" fill="none" strokeWidth="1.8" strokeLinecap="round" /><path d="M6 5h11l-2 4 2 4H6" fill="none" strokeWidth="1.8" strokeLinejoin="round" /></>,
+    tl: <><circle cx="8.5" cy="14.5" r="4.6" fill="none" strokeWidth="1.8" /><path d="M12.2 11.4L21 9.2v3.8h-7.2" fill="none" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="8.5" cy="14.5" r="1.1" /><path d="M5.2 7.2l1.3 1.9M9.5 5.5l.2 2.1" fill="none" strokeWidth="1.6" strokeLinecap="round" /></>,
     liga: <><path d="M7 4h10v5a5 5 0 0 1-10 0z" fill="none" strokeWidth="1.8" strokeLinejoin="round" /><path d="M12 14v4m-4 2h8" fill="none" strokeWidth="1.8" strokeLinecap="round" /></>,
     whatif: <><path d="M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3h-2a2 2 0 0 1-4 0z" fill="none" strokeWidth="1.7" strokeLinejoin="round" /></>,
   }

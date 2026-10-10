@@ -91,8 +91,14 @@ def main():
     for d in glob["dts"]:
         c = int(d["id"])
         mym = M[(M.home_coach_id == c) | (M.away_coach_id == c)]
-        mine = {(int(r.match_id), int(r.home_id if r.home_coach_id == c else r.away_id)) for r in mym.itertuples()}
-        opp = {(int(r.match_id), int(r.away_id if r.home_coach_id == c else r.home_id)) for r in mym.itertuples()}
+        mine = {(int(r.match_id), int(r.home_id if r.home_coach_id == c else r.away_id)): (r.home if r.home_coach_id == c else r.away) for r in mym.itertuples()}
+        opp = {(int(r.match_id), int(r.away_id if r.home_coach_id == c else r.home_id)): (r.home if r.home_coach_id == c else r.away) for r in mym.itertuples()}
+        last = {}
+        for r in mym.sort_values("date").itertuples():
+            last[r.home if r.home_coach_id == c else r.away] = str(r.date)[:10]
+        clubes = sorted(set(mine.values()), key=lambda k: last[k])      # del más antiguo al más reciente
+        cidx = {k: i for i, k in enumerate(clubes)}
+        npart = {k: sum(1 for v in mine.values() if v == k) for k in clubes}
         names: dict = {}
         jug: dict = {}
 
@@ -102,16 +108,17 @@ def main():
         out = {}
         for side, keys in (("favor", mine), ("contra", opp)):
             tiros, pases = [], []
-            for k in keys:
+            for k, cn in keys.items():
                 for r in by.get(k, []):
                     if r[2] == "S":
-                        tiros.append([r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], J(r[11], r[12])])
+                        tiros.append([r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], J(r[11], r[12]), cidx[cn]])
                     else:
-                        pases.append([r[3], r[4], r[5], r[6], r[7], r[8], r[9], HEIGHT.index(r[10]) if r[10] in HEIGHT else 2, r[11], r[12], r[13], J(r[14], r[15])])
+                        pases.append([r[3], r[4], r[5], r[6], r[7], r[8], r[9], HEIGHT.index(r[10]) if r[10] in HEIGHT else 2, r[11], r[12], r[13], J(r[14], r[15]), cidx[cn]])
             out[side] = {"tiros": tiros, "pases": pases}
         out["jugadores"] = [[pid, names[pid]] for pid in jug]
         out["partidos"] = len(mine)
-        out["cols"] = {"tiro": ["min", "marcador", "x", "y", "fin_y", "fin_z", "xg", "res", "jug"], "pase": ["min", "marcador", "x", "y", "fin_x", "fin_y", "centro", "altura", "completo", "xg_post", "gol_post", "jug"], "res": RES}
+        out["clubes"] = [{"club": k, "partidos": npart[k]} for k in clubes]
+        out["cols"] = {"tiro": ["min", "marcador", "x", "y", "fin_y", "fin_z", "xg", "res", "jug", "club"], "pase": ["min", "marcador", "x", "y", "fin_x", "fin_y", "centro", "altura", "completo", "xg_post", "gol_post", "jug", "club"], "res": RES}
         f = OUT / f"corners_{c}.json"
         if f.exists():
             obj = json.load(open(f))

@@ -42,6 +42,7 @@ const P: Record<string, ReactNode> = {
   card: <><rect x="6" y="3.5" width="12" height="17" rx="2" /></>,
   left: <><path d="M19 12H5" /><path d="M11 6l-6 6 6 6" /></>,
   right: <><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></>,
+  whistle: <><circle cx="8.5" cy="14.5" r="4.6" /><path d="M12.2 11.4L21 9.2v3.8h-7.2" /><circle cx="8.5" cy="14.5" r="1.1" fill="currentColor" /><path d="M5.2 7.2l1.3 1.9M9.5 5.5l.2 2.1" /></>,
   swapfeet: <><path d="M7 7h10l-3-3M17 17H7l3 3" /></>,
 }
 export type IconName = keyof typeof P
@@ -63,7 +64,8 @@ const RULES: [RegExp, IconName][] = [
   [/presion|press|pressing|ppda/, 'press'],
   [/transicion|transition|contra(ataque| )|counter|cambios?\b.*(dibujo|formation)/, 'swap'],
   [/dominio|domination|possession|posesion|territor/, 'crown'],
-  [/balon parado|set piece|corner|tiros libres/, 'flag'],
+  [/tiros? libres?|free kicks?/, 'whistle'],
+  [/balon parado|set piece|corner/, 'flag'],
   [/lo que se ve|what we see|observado|su valor|his value|en sus partidos/, 'eye'],
   [/el \(dt\)|\bdt\b|coach|su sello|his imprint|estilo propio/, 'person'],
   [/jugadores|players|plantilla|squad|alineacion|line-?up/, 'users'],
