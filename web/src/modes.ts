@@ -2,7 +2,7 @@
    no por nombre técnico. Cada modo tiene su color (tarjeta, barra fija y subpestañas). */
 import { L } from './settings'
 
-export type TabKey = 'resumen' | 'dt' | 'transfer' | 'fases' | 'contexto' | 'jugadores' | 'bp' | 'sim' | 'whatif' | 'liga' | 'vs' | 'metodo'
+export type TabKey = 'resumen' | 'dt' | 'transfer' | 'fases' | 'contexto' | 'jugadores' | 'bp' | 'sim' | 'whatif' | 'liga' | 'tl' | 'vs' | 'metodo'
 export type View = TabKey | 'hub'
 
 export type Mode = {

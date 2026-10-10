@@ -3,10 +3,10 @@
 import type { Any } from '../lib'
 import { xgShift, type StyleX } from './styleModel'
 
-export type Pl = { id: number; name: string; pos: string; g: number; y: number; r: number }
+export type Pl = { id: number; name: string; pos: string; g: number; y: number; r: number; gk?: boolean }
 export type Team = { club: string; coach: number; att: number; def: number; xi: Pl[]; bench: Pl[] }
-export type Ev = { min: number; label: string; type: 'goal' | 'og' | 'yellow' | 'red' | 'red2'; team: 0 | 1; pl: Pl }
-export type MatchRes = { gh: number; ga: number; ev: Ev[]; et?: boolean; pens?: [number, number] }
+export type Ev = { min: number; label: string; type: 'goal' | 'og' | 'yellow' | 'red' | 'red2' | 'sub' | 'inj'; team: 0 | 1; pl: Pl; pl2?: Pl }   // en «sub»: pl = el que sale, pl2 = el que entra
+export type MatchRes = { gh: number; ga: number; ev: Ev[]; et?: boolean; pens?: [number, number]; injured?: { team: 0 | 1; pl: Pl }[] }
 export type Liga = { xg_mean: number; goles_local: number; goles_visita: number; goles_pdf5: number[]; amarillas_pdf5: number[]; amarillas_por_equipo: number; rojas_por_equipo: number }
 const M0 = 1.073        // xG medio por 90 sin penales (escala de los indicadores xg_90 y xg_contra_90)
 let seed: number | null = null
@@ -35,9 +35,9 @@ export function buildTeam(wi: Any, ls: Any, sx: StyleX, club: string, coach: num
   for (const p of sq.xi) add(wi.players[p]?.b ?? wi.otros)
   const raw = (k: string) => kp[ix(k)].mean + z[ix(k)] * kp[ix(k)].sd
   const sh = dz ? xgShift(dz, sx) : { dFor: 0, dAgainst: 0 }
-  const mk = (id: number): Pl => { const r = ls.jugadores[id] ?? [0.05, 0.12, 0.004, 0]; return { id, name: wi.players[id]?.n ?? String(id), pos: sq.pos?.[id] ?? wi.players[id]?.pos ?? '', g: r[0], y: r[1], r: r[2] } }
+  const mk = (id: number): Pl => { const r = ls.jugadores[id] ?? [0.05, 0.12, 0.004, 0]; const pos = sq.pos?.[id] ?? wi.players[id]?.pos ?? ''; return { id, name: wi.players[id]?.n ?? String(id), pos, g: r[0], y: r[1], r: r[2], gk: pos === 'Portero' } }
   const xi: Pl[] = sq.xi.map(mk)
-  const bench: Pl[] = (sq.jugadores as [number, number][]).map(([p]) => p).filter((p: number) => !sq.xi.includes(p)).slice(0, 5).map(mk)
+  const bench: Pl[] = (sq.jugadores as [number, number][]).map(([p]) => p).filter((p: number) => !sq.xi.includes(p)).map(mk).filter(p => !p.gk).slice(0, 7)
   return { club, coach, att: clamp(raw('xg_90') + sh.dFor, 0.5, 2.2), def: clamp(raw('xg_contra_90') + sh.dAgainst, 0.5, 2.2), xi, bench }
 }
 
@@ -55,10 +55,15 @@ export function quickMatch(h: Team, a: Team, L: Liga): [number, number] {
       if (t === 0) { lh *= 1 - left * (1 - RED_OWN); la *= 1 + left * (RED_OPP - 1) } else { la *= 1 - left * (1 - RED_OWN); lh *= 1 + left * (RED_OPP - 1) }
     }
   }
+  for (const t of [0, 1]) if (rnd() < P_INJ) { const left = 1 - rnd() * 0.9; if (t === 0) lh *= 1 - 0.03 * left; else la *= 1 - 0.03 * left }
   return [poisson(lh), poisson(la)]
 }
 
-/** Partido minuto a minuto. */
+const P_INJ = 0.10        // una lesión que obliga a cambio en ~1 de cada 10 partidos por equipo (baja a propósito)
+const INJ_FACTOR = 0.012   // cada titular lesionado baja un poco el ataque y la defensa mientras está fuera
+export { P_INJ, INJ_FACTOR }
+
+/** Partido minuto a minuto: goles, amarillas/rojas, cambios (hasta 5 por equipo) y, de vez en cuando, una lesión que obliga a cambiar. */
 export function simMatch(h: Team, a: Team, L: Liga, opt: { extra?: boolean } = {}): MatchRes {
   const { lh, la } = lambdas(h, a, L)
   const T = [h, a], lam = [lh, la]
@@ -67,29 +72,58 @@ export function simMatch(h: Team, a: Team, L: Liga, opt: { extra?: boolean } = {
   const g = [0, 0]
   const add = opt.extra ? 3 : 2 + Math.floor(rnd() * 5)
   const end = 90 + add
-  const nRed = [0, 0]
-  const onPitch = (t: 0 | 1, m: number) => [...T[t].xi, ...(m >= 58 ? T[t].bench.slice(0, 3) : [])].filter(p => !off[t].has(p.id))
-  const wOf = (t: 0 | 1, m: number, f: (p: Pl) => number) => { const ps = onPitch(t, m); return { ps, w: ps.map(p => f(p) * (T[t].xi.includes(p) ? 1 : 0.45)) } }
+  const nRed = [0, 0], short = [0, 0]
+  const cur: Pl[][] = [[...h.xi], [...a.xi]]
+  const bench: Pl[][] = [h.bench.filter(p => !p.gk), a.bench.filter(p => !p.gk)]
+  const subsLeft = [5, 5]
+  const injured: { team: 0 | 1; pl: Pl }[] = []
+  const plan: { t: 0 | 1; m: number; forced: boolean }[] = []
+  for (const t of [0, 1] as const) {
+    const n = rnd() < 0.65 ? 5 : rnd() < 0.6 ? 4 : 3
+    const mins = new Set<number>()
+    while (mins.size < n) mins.add(46 + Math.floor(rnd() * 43))
+    mins.forEach(m => plan.push({ t, m, forced: false }))
+    if (rnd() < P_INJ) plan.push({ t, m: 8 + Math.floor(rnd() * 76), forced: true })
+  }
+  const live = (t: 0 | 1) => cur[t].filter(p => !off[t].has(p.id))
+  const wOf = (t: 0 | 1, f: (p: Pl) => number) => { const ps = live(t); return { ps, w: ps.map(p => f(p)) } }
   const lab = (m: number) => (m <= 90 ? `${m}'` : `90+${m - 90}'`)
+  const swap = (t: 0 | 1, m: number, out: Pl) => {
+    if (subsLeft[t] <= 0 || !bench[t].length) { short[t]++; return }
+    const inn = bench[t].shift()!
+    cur[t] = cur[t].map(p => (p.id === out.id ? inn : p)); subsLeft[t]--
+    ev.push({ min: m, label: lab(m), type: 'sub', team: t, pl: out, pl2: inn })
+  }
   for (let m = 1; m <= end; m++) {
     const bin = Math.min(17, Math.floor((m - 1) / 5))
+    for (const pl of plan.filter(x => x.m === m)) {
+      const t = pl.t
+      const subbedIn = new Set(ev.filter(e => e.type === 'sub' && e.team === t).map(e => e.pl2!.id))
+      // los que ya entraron de cambio no vuelven a salir por decisión táctica (sí por lesión); y quien salió no vuelve: la banca sólo se va gastando
+      const cand = live(t).filter(p => !p.gk && (pl.forced || !subbedIn.has(p.id)))
+      if (cand.length < 5) continue
+      const out = cand[Math.floor(rnd() * cand.length)]
+      if (pl.forced) { injured.push({ team: t, pl: out }); ev.push({ min: m, label: lab(m), type: 'inj', team: t, pl: out }) }
+      swap(t, m, out)
+    }
     for (const t of [0, 1] as const) {
-      const f = (nRed[t] ? RED_OWN ** nRed[t] : 1) * (nRed[1 - t] ? RED_OPP ** nRed[1 - t] : 1)
+      const f = (nRed[t] ? RED_OWN ** nRed[t] : 1) * (nRed[1 - t] ? RED_OPP ** nRed[1 - t] : 1) * (short[t] ? 0.9 ** short[t] : 1)
       if (rnd() < (lam[t] * L.goles_pdf5[bin] / 5) * f) {
-        if (rnd() < 0.025) { const { ps, w } = wOf((1 - t) as 0 | 1, m, () => 1); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'og', team: t, pl: p }) }
-        else { const { ps, w } = wOf(t, m, p => p.g); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'goal', team: t, pl: p }) }
+        if (rnd() < 0.025) { const { ps, w } = wOf((1 - t) as 0 | 1, () => 1); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'og', team: t, pl: p }) }
+        else { const { ps, w } = wOf(t, p => p.g); const p = pick(ps, w); g[t]++; ev.push({ min: m, label: lab(m), type: 'goal', team: t, pl: p }) }
       }
       if (rnd() < (0.85 * L.amarillas_por_equipo * L.amarillas_pdf5[bin] / 5)) {
-        const { ps, w } = wOf(t, m, p => p.y); const p = pick(ps, w)
+        const { ps, w } = wOf(t, p => p.y); const p = pick(ps, w)
         if (yel[t].has(p.id)) { ev.push({ min: m, label: lab(m), type: 'red2', team: t, pl: p }); off[t].add(p.id); nRed[t]++ } else { yel[t].add(p.id); ev.push({ min: m, label: lab(m), type: 'yellow', team: t, pl: p }) }
       }
       if (rnd() < 0.06 / 90) {
-        const { ps, w } = wOf(t, m, p => p.r + 0.01); const p = pick(ps, w); off[t].add(p.id); nRed[t]++; ev.push({ min: m, label: lab(m), type: 'red', team: t, pl: p })
+        const { ps, w } = wOf(t, p => p.r + 0.01); const p = pick(ps, w); off[t].add(p.id); nRed[t]++; ev.push({ min: m, label: lab(m), type: 'red', team: t, pl: p })
       }
     }
   }
   ev.sort((x, y) => x.min - y.min)
-  return { gh: g[0], ga: g[1], ev }
+  void T
+  return { gh: g[0], ga: g[1], ev, injured }
 }
 
 /* ------------------------------------------------------------ calendario */

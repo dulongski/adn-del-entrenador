@@ -131,7 +131,7 @@ function Defensa({ pc, liga, color }: { pc: Any; liga: Any; color: string }) {
 }
 
 /** Cancha vertical (ataque hacia arriba, su portería abajo) con el bloque medio: 10 puntos por hueco, unidos por línea. */
-function BlockPitch({ d, tam, color }: { d: Any; tam: number[]; color: string }) {
+export function BlockPitch({ d, tam, color }: { d: Any; tam: number[]; color: string }) {
   const forma: number[][] | null = d.forma
   const bola: number[] | null = d.bola?.[0] != null ? d.bola : null
   const lines: number[][][] = []
@@ -211,7 +211,7 @@ function layoutLabels(nodes: { id: number; x: number; y: number; t: string }[], 
   return out
 }
 
-function FormPitch({ nodes, color }: { nodes: { id: number; x: number; y: number; t: string; n?: number; gk?: boolean; tip?: string }[]; color: string }) {
+export function FormPitch({ nodes, color }: { nodes: { id: number; x: number; y: number; t: string; n?: number; gk?: boolean; tip?: string }[]; color: string }) {
   const tip = useTip()
   const labels = layoutLabels(nodes, 2.7)
   return (

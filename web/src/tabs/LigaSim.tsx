@@ -5,20 +5,13 @@ import { L } from '../settings'
 import Info from '../Info'
 import StyleLab from '../StyleLab'
 import { Seg } from './common'
-import { buildTeam, FASES, type Ev, type Liga, type MatchRes, type Team, type Tie } from '../sim/engine'
-import { manySeasons, Season, type Next } from '../sim/season'
-import { loadStyle, type StyleX } from '../sim/styleModel'
+import { FASES, type Ev, type MatchRes, type Tie } from '../sim/engine'
+import { manySeasons, type Season, type Next } from '../sim/season'
 import '../styles/liga.css'
 
-type Pack = { wi: Any; sx: StyleX; ls: { liga: Liga; jugadores: Any }; real: { h: string; a: string; gh: number; ga: number; r: number }[]; cal: Any[]; lastRound: number }
-let packP: Promise<Pack> | null = null
-const loadPack = () => (packP ??= Promise.all([loadStyle(), getJSON(dataUrl('liga_sim.json')), getJSON(dataUrl('partidos.json')), getJSON(dataUrl('calendario.json'))]).then(([{ sx, wi }, ls, P, cal]: Any) => {
-  const C: string[] = P.cols, I = (c: string) => C.indexOf(c)
-  const rows = (P.rows as Any[][]).filter(r => r[I('temporada')] === '2026/27' && r[I('torneo')] === 'Apertura')
-  return { wi, sx, ls, real: rows.map(r => ({ h: r[I('local')], a: r[I('visita')], gh: r[I('gl')], ga: r[I('gv')], r: r[I('jornada')] })), cal, lastRound: Math.max(...rows.map(r => r[I('jornada')])) }
-}))
+import { buildSeason, clubsOf, loadPack, type Pack } from '../sim/pack'
 
-const EV_ICON: Record<Ev['type'], string> = { goal: '⚽', og: '⚽', yellow: '🟨', red: '🟥', red2: '🟨🟥' }
+const EV_ICON: Record<Ev['type'], string> = { goal: '⚽', og: '⚽', yellow: '🟨', red: '🟥', red2: '🟨🟥', sub: '🔄', inj: '🩹' }
 const rl = (f?: Any) => (f ? (f.j ? `${f.j}*` : f.round) : '')
 const sName = (p: Any) => jugadorCorto(p.id, p.name)
 
@@ -31,7 +24,7 @@ export function LigaSim({ art, media }: { art: Any; media: Any }) {
 
 function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
   const { wi, sx, ls } = pk
-  const clubs: string[] = useMemo(() => Object.keys(wi.squads).filter(c => wi.squads[c].temporada === '2026/27').sort((a, b) => a.localeCompare(b, 'es')), [wi])
+  const clubs: string[] = useMemo(() => clubsOf(pk), [pk])
   const cur: string | undefined = media?.dts?.[art.id]?.club
   const [club, setClub] = useState<string>(cur && clubs.includes(cur) ? cur : clubs[0])
   const [fresh, setFresh] = useState(false)
@@ -47,8 +40,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
   const coachName = shortName(nombreDT(art.id)?.corto ?? art.nombre)
   const realCoach: number = wi.squads[club].dt
   const sameCoach = realCoach === art.id
-  const teamsFor = (c: string, withCoach: boolean, style: Record<string, number> | null) => Object.fromEntries(clubs.map(k => [k, k === c && withCoach ? buildTeam(wi, ls, sx, k, art.id, style) : buildTeam(wi, ls, sx, k, wi.squads[k].dt, null)])) as Record<string, Team>
-  const make = (withCoach: boolean) => new Season(clubs, teamsFor(club, withCoach, withCoach ? dz : null), ls.liga, pk.real, pk.cal, fresh, (ls as Any).real)
+  const make = (withCoach: boolean) => buildSeason(pk, club, art.id, dz, fresh, withCoach)
 
   const start = () => { cancelAnimationFrame(raf.current); setLive(null); setLast(null); setProbs(null); setSeason(make(true)) }
   useEffect(() => { setSeason(null); setLive(null); setProbs(null) }, [club, fresh])
@@ -105,7 +97,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
 
   return (
     <div className="lg">
-      <h3 className="h2">{L('Simulador de liga', 'League simulator')} <Info wide><p>{L('Pon a este DT en un club (con su plantilla actual: no se puede editar), mueve su estilo si quieres y juega el resto del torneo —o uno nuevo desde cero— con liguilla incluida. Los demás clubes siguen con su DT actual.', 'Put this coach at a club (with its current squad, which cannot be edited), move his style if you like, and play the rest of the tournament —or a new one from scratch— including the playoffs. All other clubs keep their current coach.')}</p><p>{L('Cada partido se juega minuto a minuto: los goles caen según el xG esperado de cada equipo (modelo «Llévalo a otro club») y los anota quien suele rematar en esa plantilla; las amarillas y rojas siguen las tasas de cada jugador. Sin sustituciones ni lesiones.', 'Each match is played minute by minute: goals follow each team\'s expected xG (the "Move him to another club" model) and are scored by whoever usually shoots in that squad; yellow and red cards follow each player\'s rates. No substitutions or injuries.')}</p><p>{L('Reglas del Apertura 2026: los 8 primeros de la tabla pasan directo a cuartos (sin play-in), series a ida y vuelta 1-8, 2-7, 3-6, 4-5; empate global: avanza el mejor ubicado; en la final, tiempos extra y penales. Desempate de la tabla: diferencia de gol, goles, goles de visita, sorteo (no simulamos fair play). Calendario: el oficial (los 2 partidos aplazados de la jornada 7 llevan * y se colocan por su fecha).', 'Apertura 2026 rules: the top 8 go straight to the quarter-finals (no play-in), two-leg ties 1-8, 2-7, 3-6, 4-5; aggregate draw: the better-placed team goes through; in the final, extra time and penalties. Table tie-breaks: goal difference, goals, away goals, draw (fair play not simulated). Schedule: the official one (the 2 postponed round-7 matches carry a * and are placed by date).')}</p></Info></h3>
+      <h3 className="h2">{L('Simulador de liga', 'League simulator')} <Info wide><p>{L('Pon a este DT en un club (con su plantilla actual: no se puede editar), mueve su estilo si quieres y juega el resto del torneo —o uno nuevo desde cero— con liguilla incluida. Los demás clubes siguen con su DT actual.', 'Put this coach at a club (with its current squad, which cannot be edited), move his style if you like, and play the rest of the tournament —or a new one from scratch— including the playoffs. All other clubs keep their current coach.')}</p><p>{L('Cada partido se juega minuto a minuto: los goles caen según el xG esperado de cada equipo (modelo «Llévalo a otro club») y los anota quien suele rematar en esa plantilla; las amarillas y rojas siguen las tasas de cada jugador. Hay cambios (3 a 5 por equipo, entre el minuto 46 y el 88) y lesiones poco frecuentes (~1 de cada 10 partidos por equipo; el lesionado falta de 1 a 4 partidos).', 'Each match is played minute by minute: goals follow each team\'s expected xG (the "Move him to another club" model) and are scored by whoever usually shoots in that squad; yellow and red cards follow each player\'s rates. There are substitutions (3 to 5 per team, from minute 46 to 88) and rare injuries (~1 in 10 matches per team; the player misses 1 to 4 games).')}</p><p>{L('Reglas del Apertura 2026: los 8 primeros de la tabla pasan directo a cuartos (sin play-in), series a ida y vuelta 1-8, 2-7, 3-6, 4-5; empate global: avanza el mejor ubicado; en la final, tiempos extra y penales. Desempate de la tabla: diferencia de gol, goles, goles de visita, sorteo (no simulamos fair play). Calendario: el oficial (los 2 partidos aplazados de la jornada 7 llevan * y se colocan por su fecha).', 'Apertura 2026 rules: the top 8 go straight to the quarter-finals (no play-in), two-leg ties 1-8, 2-7, 3-6, 4-5; aggregate draw: the better-placed team goes through; in the final, extra time and penalties. Table tie-breaks: goal difference, goals, away goals, draw (fair play not simulated). Schedule: the official one (the 2 postponed round-7 matches carry a * and are placed by date).')}</p></Info></h3>
 
       {!S && (
         <div className="card lg-setup">
@@ -151,6 +143,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
             </div>
             <div className="lg-side">
               {S.phase === 'liga' ? <Fixtures S={S} media={media} club={club} /> : <Bracket S={S} media={media} club={club} />}
+              <Injuries S={S} media={media} club={club} />
               <Scorers S={S} media={media} />
             </div>
           </div>
@@ -193,7 +186,7 @@ function LiveCard({ live, media, skip, done }: { live: { n: Next; res: MatchRes;
       </div>
       <div className="lg-prog"><i style={{ width: `${(m / end) * 100}%` }} /></div>
       <div className="lg-ev">{sc.ev.map((e, i) => (
-        <div key={i} className={`lg-e t${e.team}`}><span>{e.label}</span><em>{EV_ICON[e.type]}</em><b>{sName(e.pl)}{e.type === 'og' ? ` (${L('autogol', 'own goal')})` : ''}</b></div>
+        <div key={i} className={`lg-e t${e.team}`}><span>{e.label}</span><em>{EV_ICON[e.type]}</em><b>{e.type === 'sub' ? <>{sName(e.pl2!)} <small className="lg-out">{L('por', 'for')} {sName(e.pl)}</small></> : <>{sName(e.pl)}{e.type === 'og' ? ` (${L('autogol', 'own goal')})` : ''}{e.type === 'inj' ? <small className="lg-out"> {L('se lesiona', 'injured')}</small> : null}</>}</b></div>
       ))}</div>
       {!over && !done && <button className="btn lg-skip" onClick={skip}>{L('Saltar al final', 'Skip to the end')}</button>}
     </div>
@@ -250,6 +243,21 @@ function Champion({ club, media, mine, coach }: { club: string; media: Any; mine
     <div className={`card lg-champ${mine ? ' mine' : ''}`}>
       <ClubLogo club={club} media={media} size={64} />
       <div><span className="note">{L('Campeón', 'Champion')}</span><b>{club}</b>{mine && <em>{L(`¡${coach} lo logró!`, `${coach} did it!`)}</em>}</div>
+    </div>
+  )
+}
+
+function Injuries({ S, media, club }: { S: Season; media: Any; club: string }) {
+  const mine = S.inj[club] ?? []
+  const others = Object.entries(S.inj).filter(([c]) => c !== club).flatMap(([c, a]) => a.map(o => ({ c, ...o })))
+  if (!mine.length && !others.length) return null
+  return (
+    <div className="card lg-sc2">
+      <div className="h3">{L('Bajas por lesión', 'Injured')} <Info>{L('Pocas y de corta duración: ~1 de cada 10 partidos por equipo termina con un jugador que se lesiona y obliga a cambio, y falta de 1 a 4 partidos (rara vez más). Quien falta lo reemplaza la banca y el equipo se resiente un poquito.', 'Few and short: ~1 in 10 matches per team ends with a player getting hurt and forcing a sub, and he misses 1 to 4 games (rarely more). The bench covers and the team loses a little strength.')}</Info></div>
+      {[...mine.map(o => ({ c: club, ...o })), ...others.slice(0, 5)].map(o => (
+        <div key={o.pl.id} className="lg-s"><span className="n">🩹</span><ClubLogo club={o.c} media={media} size={16} /><b>{sName(o.pl)}</b><span className="note">{o.c}</span><em>{o.left}</em></div>
+      ))}
+      <div className="note lg-sub">{L('número = partidos que le faltan', 'number = matches still to miss')}</div>
     </div>
   )
 }

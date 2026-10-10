@@ -1,5 +1,5 @@
 import type { Any } from '../lib'
-import { decide, setSeed, legsTotal, mkTie, nextLeg, quickMatch, simMatch, table, type Fx, type Liga, type MatchRes, type Pl, type Team, type Tie } from './engine'
+import { decide, INJ_FACTOR, rnd, setSeed, legsTotal, mkTie, nextLeg, quickMatch, simMatch, table, type Fx, type Liga, type MatchRes, type Pl, type Team, type Tie } from './engine'
 
 export type Phase = 'liga' | 'qf' | 'sf' | 'final' | 'done'
 export type Next = { kind: 'fx'; fx: Fx; h: string; a: string } | { kind: 'tie'; tie: Tie; h: string; a: string }
@@ -16,6 +16,7 @@ export class Season {
   champion?: string
   scorers = new Map<number, Scorer>()
   log: { fx: Fx; res: MatchRes }[] = []
+  inj: Record<string, { pl: Pl; left: number }[]> = {}   // bajas por lesión: quién y cuántos partidos le faltan
   /** real: partidos ya jugados (con su jornada); cal: calendario oficial de lo que falta. «fresh» rehace todo el torneo con el mismo calendario. */
   constructor(public clubs: string[], public teams: Record<string, Team>, public L: Liga, real: { h: string; a: string; gh: number; ga: number; r: number }[], cal: { r: number; j?: number; h: string; a: string }[], fresh: boolean, init: [number, string, string, number, number, number][] = []) {
     // si el torneo ya va a la mitad, goleo y tarjetas arrancan con lo que ya pasó de verdad
@@ -65,13 +66,28 @@ export class Season {
       if (e.type !== 'og') this.scorers.set(e.pl.id, s)
     }
   }
+  /** El equipo tal como sale hoy: los lesionados son baja (entran los de la banca) y el equipo se resiente un poco. */
+  teamFor(club: string): Team {
+    const base = this.teams[club], out = this.inj[club] ?? []
+    if (!out.length) return base
+    const ids = new Set(out.map(o => o.pl.id))
+    const free = base.bench.filter(p => !ids.has(p.id) && !p.gk)
+    const used = new Set<number>()
+    const xi = base.xi.map(p => { if (!ids.has(p.id)) return p; const r = free.find(q => !used.has(q.id)); if (r) { used.add(r.id); return r } return p })
+    const k = out.filter(o => base.xi.some(p => p.id === o.pl.id)).length
+    return { ...base, xi, bench: base.bench.filter(p => !used.has(p.id) && !ids.has(p.id)), att: base.att * (1 - INJ_FACTOR * k), def: base.def * (1 + INJ_FACTOR * k) }
+  }
   compute(n: Next, quick = false): MatchRes {
-    const H = this.teams[n.h], A = this.teams[n.a]
+    const H = quick ? this.teams[n.h] : this.teamFor(n.h), A = quick ? this.teams[n.a] : this.teamFor(n.a)
     return quick ? (([gh, ga]) => ({ gh, ga, ev: [] }))(quickMatch(H, A, this.L)) : simMatch(H, A, this.L, { extra: n.kind === 'tie' && n.tie.fase === 'final' })
   }
   /** Aplica un resultado y avanza el torneo. */
   commit(n: Next, res: MatchRes, quick = false) {
-    if (!quick) this.tally(res, n.h, n.a)
+    if (!quick) {
+      this.tally(res, n.h, n.a)
+      for (const c of [n.h, n.a]) this.inj[c] = (this.inj[c] ?? []).map(o => ({ ...o, left: o.left - 1 })).filter(o => o.left > 0)
+      for (const x of res.injured ?? []) { const c = x.team === 0 ? n.h : n.a; (this.inj[c] ??= []).push({ pl: x.pl, left: rnd() < 0.08 ? 6 + Math.floor(rnd() * 3) : 1 + Math.floor(rnd() * 4) }) }
+    }
     if (n.kind === 'fx') { n.fx.res = res; this.log.push({ fx: n.fx, res }) } else { n.tie.legs.push(res); const w = decide(n.tie, this.team, this.L); if (w) n.tie.winner = w }
     this.refill()
   }

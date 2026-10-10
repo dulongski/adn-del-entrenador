@@ -305,7 +305,7 @@ def main():
             {"id": eje, "es": es_b, "en": en_b, "cats": [
                 {"id": i, "es": es, "en": en, "desc_es": de, "desc_en": dn,
                  "n": r1(league_att.loc[(eje, i), "n"], 2), "share": r1(league_share[(eje, i)], 1)} for i, es, en, de, dn in cats]}
-            for eje, es_b, en_b, cats in (("arma", "Cómo la arma", "How it is built", jg.BUILD), ("termina", "Cómo la termina", "How it ends", jg.FINISH))],
+            for eje, es_b, en_b, cats in (("arma", "Cómo se arma", "How it is built", jg.BUILD), ("termina", "Cómo la termina", "How it ends", jg.FINISH))],
         "sits": [{"id": i, "es": es, "en": en, "desc_es": de, "desc_en": dn,
                   **{m: r1(league_def.get((i, m)), 1) for m in VALID[i]}} for i, es, en, de, dn in SITS],
         "min_partidos": MIN_SPELL,

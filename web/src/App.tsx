@@ -16,6 +16,7 @@ import { Resumen, DtVsPlantilla, Transferencia, Fases, Contexto, Jugadores, Balo
 import Hub from './Hub'
 import Chat from './Chat'
 import Compare from './Compare'
+import { PdfMenu } from './report/Export'
 import { MODES, TAB_KEYS, inkOn, modeOf, modeTitle, type TabKey, type View } from './modes'
 
 function readHash() {
@@ -240,6 +241,7 @@ function CoachBar({ art, media, tab, setTab }: { art: Any; media: Any; tab: View
             </button>
           ))}
         </nav>
+        <PdfMenu art={art} modeK={hub ? '' : mode.k} modeName={mode.name} />
       </div>
       {!hub && (
         <div className="cb-subrow">

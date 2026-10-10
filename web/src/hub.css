@@ -4,11 +4,11 @@
 @media (min-width: 1500px) { .coachbar { padding-left: max(72px, calc((100% - min(2000px, 90vw)) / 2)) !important; padding-right: max(24px, calc((100% - min(2000px, 90vw)) / 2)); } }
 .shell:not(.side-open) .coachbar { padding-left: max(72px, calc((100% - 1240px) / 2)); }
 .cb-row { display: flex; align-items: center; gap: 16px; min-width: 0; }
-.cb-id { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 2px 8px 2px 2px; border-radius: 999px; cursor: pointer; text-align: left; flex: none; max-width: 300px; }
+.cb-id { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 2px 14px 2px 2px; border-radius: 999px; cursor: pointer; text-align: left; flex: 0 0 auto; max-width: min(340px, 100%); }
 .cb-id:hover { background: var(--surface-2); }
 .cb-id .coach-photo { border-width: 2px; box-shadow: 0 0 0 2px var(--mc); }
-.cb-who { display: grid; min-width: 0; }
-.cb-name { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 22px; line-height: .95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cb-who { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.cb-name { min-width: 0; font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 22px; line-height: .95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cb-name .light { font-weight: 500; color: var(--ink-3); }
 .cb-club { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
 .cb-modes { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; min-width: 0; margin-left: auto; padding: 2px; }
@@ -114,3 +114,21 @@
 .cb-sub-ic { width: 18px; height: 18px; flex: none; }
 .cb-subs button[aria-selected='true'] .cb-sub-ic { color: var(--mt, #fff); }
 @media (max-width: 700px) { .cb-subs button { padding: 6px 12px 6px 10px; font-size: 14px; } }
+
+/* móvil: la barra del DT se encoge al bajar (queda foto y nombre) y vuelve completa al subir */
+@media (max-width: 700px) {
+  .cb-modes, .cb-subrow { max-height: 80px; transition: max-height .25s ease, opacity .2s ease, margin .25s ease; }
+  body.fabs-hide .cb-modes, body.fabs-hide .cb-subrow { max-height: 0; opacity: 0; margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; pointer-events: none; }
+}
+
+/* menú PDF de la barra del DT */
+.pdf-wrap { position: relative; flex: none; }
+.pdf-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 5px 11px; font: 700 12px var(--body, inherit); cursor: pointer; }
+.pdf-btn:hover { border-color: var(--mc); background: var(--surface-2); }
+.pdf-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; min-width: 230px; display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 12px; border: 1px solid var(--rule); background: var(--surface); box-shadow: 0 12px 36px rgb(0 0 0 / .35); }
+.pdf-pop > b { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding: 4px 8px; }
+.pdf-pop button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; border: 0; background: none; color: var(--ink); text-align: left; padding: 8px 10px; border-radius: 8px; cursor: pointer; font: 700 13px var(--body, inherit); }
+.pdf-pop button:hover:not(:disabled) { background: var(--surface-2); }
+.pdf-pop button:disabled { opacity: .6; cursor: progress; }
+.pdf-pop small { font-weight: 500; color: var(--ink-3); font-size: 11.5px; }
+@media (max-width: 760px) { .pdf-btn span { display: none; } .pdf-btn { padding: 6px 8px; } .pdf-pop { position: fixed; left: 12px; right: 12px; top: 64px; } }

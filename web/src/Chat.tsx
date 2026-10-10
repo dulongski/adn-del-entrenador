@@ -5,7 +5,8 @@
    búsqueda simple sobre nombres de DTs, clubes e indicadores. */
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import boot from './boot.json'
-import { asset, dataUrl, fmt, getJSON, nombreDT, shortName, type Any } from './lib'
+import { asset, dataUrl, fmt, getJSON, jugadorCorto, nombreDT, shortName, type Any } from './lib'
+const jugadorShort = (id: number, nm: string) => jugadorCorto(id, nm)
 import { ClubLogo } from './charts'
 import { L, LANG } from './settings'
 import { kpiLabel } from './i18n/data'
@@ -259,6 +260,75 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
       },
     },
     {
+      name: 'set_pieces',
+      description: 'Balón parado de un DT: kind "corners" (córners a favor: cuántos por partido, xG por córner, % que acaban en remate, primer contacto, % en corto, a dónde caen los envíos por zona y quién los cobra) o kind "free_kicks" (tiros libres en zona de ataque: por partido, % tiro directo / centro / pase corto, gol por tiro directo, xG por centro, cobradores). Con club filtra a ese club (opcional); lo compara con la liga. Para llevar al usuario a la vista, usa open_view con view "bp" (córners) o "tl" (tiros libres).',
+      inputSchema: { type: 'object', properties: { coach_id: { type: 'number' }, kind: { type: 'string', enum: ['corners', 'free_kicks'] }, club: { type: 'string' } }, required: ['coach_id', 'kind'] },
+      execute: async ({ coach_id, kind, club }: Any) => {
+        const id = Number(coach_id); if (!DT_BY_ID.has(id)) throw new Error('coach_id desconocido: usa find_coach')
+        status(L('Revisando su balón parado…', 'Checking his set pieces…'))
+        const [o, lg] = await Promise.all([getJSON(dataUrl(`corners_${id}.json`)), getJSON(dataUrl('corners_liga.json'))])
+        const names = (top: Any[] | undefined) => (top ?? []).slice(0, 3).map(([pid, nm, pc]: Any) => `${jugadorShort(pid, nm)} ${pc}%`)
+        if (kind === 'corners') {
+          const pcs: Record<string, Any> = o.por_club ?? {}
+          const key = club ? Object.keys(pcs).find(k => norm(k).includes(norm(String(club)))) : undefined
+          const root = key ? pcs[key] : o
+          const D = root.favor
+          const E: number[][] = D.entregas
+          const mean = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null)
+          const fcs = E.filter(e => e[2] >= 0).map(e => (e[2] === 1 ? 1 : 0))
+          const zona = (e: number[]) => (e[5] ? 'corto' : e[0] < 102 || e[1] < 18 || e[1] > 62 ? 'fuera del área' : e[0] < 110 && e[1] >= 30 && e[1] <= 50 ? 'punto penal' : e[1] < 36 ? 'primer palo' : e[1] <= 44 ? 'centro del área chica' : 'segundo palo')
+          const zs: Record<string, number> = {}
+          E.forEach(e => { const z = zona(e); zs[z] = (zs[z] ?? 0) + 1 })
+          const L0 = lg.favor?.kpis?.ambos
+          return { donde: key ?? 'toda su carrera', corners: D.n, partidos: D.partidos, por_partido: +(D.n / Math.max(D.partidos, 1)).toFixed(1), xg_por_corner: +(mean(E.map(e => e[3])) ?? 0).toFixed(3), remate_pct: +((mean(E.map(e => (e[3] > 0 ? 1 : 0))) ?? 0) * 100).toFixed(0), primer_contacto_propio_pct: fcs.length ? +((mean(fcs) ?? 0) * 100).toFixed(0) : null, corto_pct: +((mean(E.map(e => e[5])) ?? 0) * 100).toFixed(0), reparto_por_zona_pct: Object.fromEntries(Object.entries(zs).map(([k, v]) => [k, Math.round((100 * v) / E.length)])), cobradores: names(root.favor?.lados?.ambos?.quien?.cob?.top), liga: L0 ? { xg_por_corner: L0.xg, remate_pct: Math.round(L0.remate * 100), primer_contacto_pct: Math.round((L0.fc ?? 0) * 100), corto_pct: Math.round(L0.corto * 100) } : null }
+        }
+        const T = o.tl; if (!T) throw new Error('Sin datos de tiros libres para este DT.')
+        const ci = club ? (T.clubes ?? []).findIndex((c: Any) => norm(c.club).includes(norm(String(club)))) : -1
+        const part = ci >= 0 ? T.clubes[ci].partidos : T.partidos
+        const rows = [...T.favor.tiros.map((t: Any[]) => ({ k: 'tiro', x: t[2], y: t[3], xg: t[6], gol: t[7] === 0, res: t[7], jug: t[8], club: t[9] })), ...T.favor.pases.map((p: Any[]) => ({ k: p[6] === 1 || (p[7] === 2 && p[4] >= 102 && p[5] >= 18 && p[5] <= 62) ? 'centro' : 'corto', x: p[2], xg: p[9], gol: false, post: p[9], jug: p[11], club: p[12] }))].filter((r: Any) => r.x >= 72 && (ci < 0 || r.club === ci))
+        const tiros = rows.filter((r: Any) => r.k === 'tiro'), cen = rows.filter((r: Any) => r.k === 'centro')
+        const tk: Record<number, number> = {}
+        rows.forEach((r: Any) => { tk[r.jug] = (tk[r.jug] ?? 0) + 1 })
+        const top = Object.entries(tk).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([j, n]) => { const [pid, nm] = T.jugadores[+j]; return `${jugadorShort(pid, nm)} (${n})` })
+        const LT = lg.tl
+        return { donde: ci >= 0 ? T.clubes[ci].club : 'toda su carrera', tiros_libres_zona_ataque: rows.length, por_partido: +(rows.length / Math.max(part, 1)).toFixed(1), reparto_pct: { tiro_directo: Math.round((100 * tiros.length) / Math.max(rows.length, 1)), centro_al_area: Math.round((100 * cen.length) / Math.max(rows.length, 1)), pase_corto: Math.round((100 * (rows.length - tiros.length - cen.length)) / Math.max(rows.length, 1)) }, directos: tiros.length, a_puerta_pct: tiros.length ? Math.round((100 * tiros.filter((r: Any) => r.res <= 2).length) / tiros.length) : null, gol_por_tiro_pct: tiros.length ? +((100 * tiros.filter((r: Any) => r.gol).length) / tiros.length).toFixed(1) : null, xg_por_tiro: tiros.length ? +(tiros.reduce((a: number, r: Any) => a + r.xg, 0) / tiros.length).toFixed(3) : null, xg_por_centro: cen.length ? +(cen.reduce((a: number, r: Any) => a + (r.post ?? 0), 0) / cen.length).toFixed(3) : null, cobradores: top, liga: LT ? { por_partido: +LT.por_equipo_partido.total.toFixed(1), a_puerta_pct: Math.round(LT.a_puerta * 100), gol_por_tiro_pct: +(LT.gol_tiro * 100).toFixed(1), xg_por_centro: +LT.xg_por_centro.toFixed(3) } : null }
+      },
+    },
+    {
+      name: 'simulate_league',
+      description: 'Simula 600 veces el resto del Apertura 2026 (o un torneo nuevo si fresh=true) con liguilla de 8 y compara a un club con su DT actual contra ese mismo club dirigido por coach_id (misma plantilla actual del club). Devuelve probabilidades de liguilla, final y campeón y puntos esperados de ambos casos. Para abrir el simulador usa open_view con view "liga".',
+      inputSchema: { type: 'object', properties: { coach_id: { type: 'number' }, club: { type: 'string' }, fresh: { type: 'boolean' } }, required: ['coach_id', 'club'] },
+      execute: async ({ coach_id, club, fresh = false }: Any) => {
+        const id = Number(coach_id); if (!DT_BY_ID.has(id)) throw new Error('coach_id desconocido: usa find_coach')
+        status(L('Jugando 600 torneos…', 'Playing 600 tournaments…'))
+        const [{ loadPack, clubsOf, buildSeason }, { manySeasons }] = await Promise.all([import('./sim/pack'), import('./sim/season')])
+        const pk = await loadPack()
+        const cl = clubsOf(pk).find(c => norm(c).includes(norm(String(club))))
+        if (!cl) throw new Error(`Club desconocido. Opciones: ${clubsOf(pk).join(', ')}`)
+        const real = pk.wi.squads[cl].dt as number
+        const N = 600
+        const a = manySeasons(() => buildSeason(pk, cl, id, null, !!fresh, true), N, 7)[cl]
+        const b = id === real ? a : manySeasons(() => buildSeason(pk, cl, id, null, !!fresh, false), N, 7)[cl]
+        const f = (o: Any) => ({ liguilla_pct: Math.round(o.liguilla * 100), final_pct: Math.round(o.final * 100), campeon_pct: +(o.title * 100).toFixed(1), puntos_esperados: +o.pts.toFixed(1) })
+        return { club: cl, torneo: fresh ? 'nuevo desde cero' : 'resto del Apertura 2026 (partidos reales hasta la jornada ' + pk.lastRound + ')', simulaciones: N, margen_error: '±2 puntos porcentuales', con_su_dt_actual: { dt: dtName(real), ...f(b) }, con_el_dt_pedido: { dt: dtName(id), ...f(a) }, nota: 'Estilo propio del DT con la plantilla actual del club; sin sustituciones, lesiones ni fair play en las simulaciones rápidas.' }
+      },
+    },
+    {
+      name: 'formation_xi',
+      description: 'Formaciones de un DT (opcionalmente en un club): las que usa y su once más probable en una formación concreta (por ejemplo "4231"). Para verla, open_view con view "jugadores".',
+      inputSchema: { type: 'object', properties: { coach_id: { type: 'number' }, club: { type: 'string' }, formation: { type: 'string', description: 'sólo dígitos, p. ej. 433 o 4231' } }, required: ['coach_id'] },
+      execute: async ({ coach_id, club, formation }: Any) => {
+        const id = Number(coach_id); if (!DT_BY_ID.has(id)) throw new Error('coach_id desconocido: usa find_coach')
+        status(L('Buscando su once…', 'Looking for his XI…'))
+        const X = await getJSON(dataUrl(`jugadores_${id}.json`))
+        const key = club ? (X.clubes as string[]).find(c => norm(c).includes(norm(String(club)))) : undefined
+        const sel = key ? X.por_club[key] : X.carrera
+        const fm = String(formation ?? sel.dibujo).replace(/\D/g, '')
+        const once = sel.once_por_dibujo?.[fm]
+        return { donde: key ?? 'toda su carrera', partidos: sel.partidos, formaciones_usadas: Object.entries(sel.formaciones as Record<string, number>).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([f, n]) => `${f.split('').join('-')} (${n})`), formacion: fm.split('').join('-'), arranco_asi: once?.partidos ?? 0, once_mas_probable: once ? (once.once as Any[]).map(p => `${p.posicion}: ${jugadorShort(p.id, p.nombre)} (${p.tit})`) : 'no usó esa formación' }
+      },
+    },
+    {
       name: 'compare_coaches',
       description: 'Compara el estilo propio de dos entrenadores en los indicadores base: parecido (0–100), los 2 rasgos en que más coinciden y los 4 en que más difieren, con el número de cada uno (estilo propio en σ, 0 = media de la liga, y valor observado). Dibuja la tarjeta sólo si show=true.',
       inputSchema: { type: 'object', properties: { coach_a: { type: 'number' }, coach_b: { type: 'number' }, show: { type: 'boolean', description: 'true sólo si piden comparar o ver la comparación' } }, required: ['coach_a', 'coach_b'] },
@@ -307,6 +377,7 @@ Reglas:
 - Todo número sale de las herramientas. Nunca inventes datos ni uses lo que sepas de fuera. Si algo no está en los datos, dilo.
 - Antes de usar un coach_id, búscalo con find_coach (salvo que ya lo tengas).
 - Responde con texto. Las tarjetas (show=true) sólo cuando el usuario pide ver un ranking, una lista, una ficha, una tabla o una comparación; para una pregunta de un dato («¿cuántos puntos por partido tiene X?») basta una frase.
+- Balón parado (córners y tiros libres), once y formaciones y simulaciones del torneo salen de set_pieces, formation_xi y simulate_league; lleva al usuario con open_view (bp, tl, jugadores, liga). Las simulaciones son aproximadas: di el margen de error.
 - Resultados y récords (puntos por partido, G-E-P, goles, xG, tabla, local/visita) salen de rank_results, record y standings: nunca digas que no tienes ese cálculo ni que «va más allá de los datos»; úsalas. Estilo de juego (posesión, presión…) sale de rank_coaches y coach_profile.
 - No pidas aclaraciones salvo que la pregunta sea de verdad ambigua; elige la interpretación más razonable (todo el periodo de la muestra, fase regular) y dilo en una frase.
 - Nunca des tablas completas en el texto ni más de 8 partidos. Si piden «todos», da el resumen y sugiere filtrar por rival o temporada.

@@ -44,6 +44,8 @@ const KU_EN: Record<string, [string, string]> = {
   transicion_def: ['Fast transitions conceded', '%'], field_tilt: ['Field tilt', '%'], xg_balon_parado_90: ['xG after set pieces', ' per 90'],
 }
 if (LANG === 'en') for (const k in KU_EN) if (KU[k]) KU[k] = [KU_EN[k][0], KU_EN[k][1], KU[k][2]]
+/** Número grande y, si lo hay, la unidad en chico («30.9» + «por 100 llegadas»). */
+const Val = ({ t }: { t: string }) => { const i = t.indexOf(' '); return i > 0 && t.length > 9 ? <b>{t.slice(0, i)}<small>{t.slice(i)}</small></b> : <b>{t}</b> }
 export const kName = (k: string, glob: Any) => KU[k]?.[0] ?? kpiLabel(k, String(glob.kpis[k]?.etiqueta ?? k)).split(' (')[0]
 /** Valor con su unidad («50.8%», «3.0 por 100 pases»). `short` deja solo las unidades de 1–3 letras. */
 export function kFmt(k: string, v: number | null | undefined, short = false) {
@@ -131,7 +133,7 @@ export function KpiBell({ k, art, glob, dd, color, mode: mode0 = 'a', showStats 
   const cmp = mine !== undefined ? vsLiga(mine, K.liga, sdV) : null
   const opt = (m: 'v' | 'a', lbl: string, sub: string, v?: number) => (
     <button type="button" className="rs-stat rs-pick" aria-pressed={mode === m} onClick={() => setMode(m)}>
-      <span className="rs-stat-l">{lbl}</span><b>{kFmt(k, v)}</b><span className="rs-stat-s">{sub}</span>
+      <span className="rs-stat-l">{lbl}</span><Val t={kFmt(k, v)} /><span className="rs-stat-s">{sub}</span>
     </button>
   )
   return (
@@ -140,7 +142,7 @@ export function KpiBell({ k, art, glob, dd, color, mode: mode0 = 'a', showStats 
         <div className="rs-stats">
           {opt('v', L('En sus partidos', 'In his matches'), L('lo que se vio', 'what we saw'), raw)}
           {opt('a', L('Su sello', 'His imprint'), L('con jugadores promedio', 'with average players'), sello)}
-          <div className="rs-stat rs-liga"><span className="rs-stat-l">{L('Liga', 'League')}</span><b>{kFmt(k, K.liga)}</b><span className="rs-stat-s">{L('promedio', 'average')}</span></div>
+          <div className="rs-stat rs-liga"><span className="rs-stat-l">{L('Liga', 'League')}</span><Val t={kFmt(k, K.liga)} /><span className="rs-stat-s">{L('promedio', 'average')}</span></div>
         </div>
       )}
       <Dist values={vals} marks={[{ id: art.id, color }]} refV={K.liga} refLabel={L('liga', 'league')} format={v => kFmt(k, v, true)}
