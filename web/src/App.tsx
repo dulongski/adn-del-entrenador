@@ -197,8 +197,8 @@ export default function App() {
                 {tab === 'jugadores' && <Jugadores art={art} glob={glob} media={media} />}
                 {tab === 'bp' && <BalonParado art={art} media={media} />}
                 {tab === 'tl' && <TirosLibres art={art} media={media} />}
-                {tab === 'banda' && <Banda art={art} />}
-                {tab === 'bpdef' && <BpDefensa art={art} />}
+                {tab === 'banda' && <Banda art={art} media={media} />}
+                {tab === 'bpdef' && <BpDefensa art={art} media={media} />}
                 {tab === 'tiempo' && <Tiempo art={art} glob={glob} media={media} />}
                 {tab === 'plan' && <PlanJuego art={art} glob={glob} />}
                 {tab === 'fichajes' && <Fichajes art={art} glob={glob} media={media} />}

@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { ClubLogo, CoachPhoto } from '../charts'
 import { similares } from '../Compare'
 import { chatBus } from '../chatBus'
+import CoachPicker from '../compare/CoachPicker'
+import '../styles/compare.css'
 import { Ico } from '../icons'
 import Info from '../Info'
-import { dataUrl, fmt, getJSON, nombreDT, shortName, type Any } from '../lib'
+import { dataUrl, fmt, getJSON, shortName, type Any } from '../lib'
 import { L, LANG } from '../settings'
 import { kName } from './resumenKit'
 import '../styles/tl.css'
@@ -39,55 +41,55 @@ function fitOf(id: string, al: Record<string, number>) {
 type Caso = 'ambos' | 'ataque' | 'defensa' | 'ninguno'
 type Duel = { id: string; fase: 'con' | 'sin' | 'trans'; t: [string, string]; att: 'A' | 'B'; x: [string, number]; y: [string, number]; txt: Record<Caso, [string, string]> }
 const DUELS: Duel[] = [
-  { id: 'salida', fase: 'con', t: ['Tu salida corta contra su presión', 'Your short build-up vs his press'], att: 'A', x: ['salida_corta', 1], y: ['ppda', -1], txt: {
-    ambos: ['Duelo clave: sales corto y él presiona alto. Prepara el plan B (saque largo o un pivote extra).', 'Key duel: you build short and he presses high. Have a plan B ready (long goal kick or an extra pivot).'],
-    ataque: ['Puedes salir corto con calma: él no presiona tanto.', 'You can build short calmly: he does not press that much.'],
-    defensa: ['Él presiona alto y tú sueles salir largo: gana la segunda jugada.', 'He presses high and you usually go long: win the second ball.'],
-    ninguno: ['Ni sales corto ni él presiona arriba: la salida no decide este partido.', 'You do not build short and he does not press high: build-up will not decide this one.'] } },
-  { id: 'profundidad', fase: 'con', t: ['Tu juego directo contra su línea', 'Your direct play vs his line'], att: 'A', x: ['verticalidad', 1], y: ['linea_360', 1], txt: {
-    ambos: ['Él adelanta la línea y tú juegas directo: la espalda de su defensa es tu partido.', 'He pushes his line up and you play direct: the space behind his defence is your game.'],
-    ataque: ['Juegas directo, pero él defiende cerca de su área: el espacio estará delante, no detrás.', 'You play direct, but he defends near his box: the space will be in front, not behind.'],
-    defensa: ['Él adelanta la línea; aunque no es tu costumbre, los balones a la espalda pagan.', 'He pushes his line up; even if it is not your habit, balls in behind pay off.'],
-    ninguno: ['Ni juegas tan directo ni él adelanta la línea: será un partido de posesión.', 'You are not that direct and he does not push up: expect a possession game.'] } },
-  { id: 'bandas', fase: 'con', t: ['Tu ataque por fuera contra su bloque', 'Your wide attack vs his block'], att: 'A', x: ['progresion_banda', 1], y: ['compacidad_360', -1], txt: {
-    ambos: ['Su bloque es compacto por dentro y tú atacas por fuera: tu camino natural es el bueno.', 'His block is compact inside and you attack wide: your natural route is the right one.'],
-    ataque: ['Atacas por fuera contra un bloque que no siempre cierra: usa la amplitud.', 'You attack wide against a block that does not always close: use the width.'],
-    defensa: ['Su bloque es compacto: tendrás que abrir el campo más de lo que sueles.', 'His block is compact: you will need to stretch the pitch more than usual.'],
-    ninguno: ['El partido no se decide por las bandas: busca dentro.', 'The game will not be decided on the wings: look inside.'] } },
-  { id: 'contras', fase: 'trans', t: ['Tus contragolpes contra su pérdida', 'Your counters vs his ball losses'], att: 'A', x: ['contraataque', 1], y: ['transicion_def', 1], txt: {
-    ambos: ['Tú contragolpeas y a él le llegan rápido tras perder: es tu arma principal.', 'You counter and teams get at him fast after he loses it: it is your main weapon.'],
-    ataque: ['Contragolpeas mucho, pero él se protege bien tras perder: elige bien cuándo salir.', 'You counter a lot, but he protects well after losing it: pick your moments.'],
-    defensa: ['A él le llegan rápido tras perder: aunque no es tu fuerte, ten dos listos para correr.', 'Teams get at him fast after he loses it: even if it is not your strength, keep two ready to run.'],
+  { id: 'salida', fase: 'con', t: ['La salida de {A} contra la presión de {B}', "{A}'s build-up vs {B}'s press"], att: 'A', x: ['salida_corta', 1], y: ['ppda', -1], txt: {
+    ambos: ['Duelo clave: {A} sale corto desde el portero y {B} presiona alto. {A} necesita un plan B (saque largo o un pivote extra).', 'Key duel: {A} builds short from the keeper and {B} presses high. {A} needs a plan B (long goal kick or an extra pivot).'],
+    ataque: ['{A} puede salir corto con calma: {B} no presiona tanto.', '{A} can build short calmly: {B} does not press much.'],
+    defensa: ['{B} presiona alto y {A} suele sacar largo: el partido pasa por ganar la segunda jugada.', '{B} presses high and {A} usually goes long: the game hinges on the second ball.'],
+    ninguno: ['{A} no sale tanto en corto ni {B} presiona arriba: la salida no decide este partido.', '{A} does not build short much and {B} does not press high: build-up will not decide this one.'] } },
+  { id: 'profundidad', fase: 'con', t: ['El juego directo de {A} contra la línea de {B}', "{A}'s direct play vs {B}'s line"], att: 'A', x: ['verticalidad', 1], y: ['linea_360', 1], txt: {
+    ambos: ['{B} adelanta la línea y {A} juega directo: la espalda de la defensa de {B} es la ventaja de {A}.', "{B} pushes the line up and {A} plays direct: the space behind {B}'s defence is {A}'s edge."],
+    ataque: ['{A} juega directo, pero {B} defiende cerca de su área: el espacio estará delante, no detrás.', '{A} plays direct, but {B} defends near the box: the space will be in front, not behind.'],
+    defensa: ['{B} adelanta la línea: aunque no es lo habitual de {A}, los balones a la espalda pagan.', "{B} pushes the line up: even if it is not {A}'s habit, balls in behind pay off."],
+    ninguno: ['Ni {A} juega tan directo ni {B} adelanta la línea: será un partido de posesión.', '{A} is not that direct and {B} does not push up: expect a possession game.'] } },
+  { id: 'bandas', fase: 'con', t: ['El ataque por fuera de {A} contra el bloque de {B}', "{A}'s wide attack vs {B}'s block"], att: 'A', x: ['progresion_banda', 1], y: ['compacidad_360', -1], txt: {
+    ambos: ['El bloque de {B} es compacto por dentro y {A} ataca por fuera: el camino natural de {A} es el bueno.', "{B}'s block is compact inside and {A} attacks wide: {A}'s natural route is the right one."],
+    ataque: ['{A} ataca por fuera contra un bloque que no siempre cierra: la amplitud es su arma.', '{A} attacks wide against a block that does not always close: width is the weapon.'],
+    defensa: ['El bloque de {B} es compacto: {A} tendrá que abrir el campo más de lo que suele.', "{B}'s block is compact: {A} will need to stretch the pitch more than usual."],
+    ninguno: ['El partido no se decide por las bandas: {A} tiene que buscar por dentro.', 'The game will not be decided on the wings: {A} has to look inside.'] } },
+  { id: 'contras', fase: 'trans', t: ['Los contragolpes de {A} contra la pérdida de {B}', "{A}'s counters vs {B}'s ball losses"], att: 'A', x: ['contraataque', 1], y: ['transicion_def', 1], txt: {
+    ambos: ['{A} contragolpea y a {B} le llegan rápido tras perder el balón: es el arma principal de {A}.', "{A} counters and teams get at {B} fast after losing the ball: it is {A}'s main weapon."],
+    ataque: ['{A} contragolpea mucho, pero {B} se protege bien tras perder: {A} tiene que elegir cuándo salir.', '{A} counters a lot, but {B} protects well after losing it: {A} must pick the moments.'],
+    defensa: ['A {B} le llegan rápido tras perder: aunque no es lo suyo, {A} debería tener dos jugadores listos para correr.', 'Teams get at {B} fast after losing it: even if it is not his thing, {A} should keep two players ready to run.'],
     ninguno: ['Las transiciones no serán decisivas: ataque posicional.', 'Transitions will not be decisive: positional attack.'] } },
-  { id: 'posesion', fase: 'sin', t: ['Su posesión contra tu presión', 'His possession vs your press'], att: 'B', x: ['posesion', 1], y: ['ppda', -1], txt: {
-    ambos: ['Él quiere el balón y tú presionas: el partido se decide en su salida.', 'He wants the ball and you press: the game is decided in his build-up.'],
-    ataque: ['Él tendrá el balón y tú no presionas alto: bloque compacto y a la contra.', 'He will have the ball and you do not press high: compact block and counter.'],
-    defensa: ['Tú presionas y él no elabora tanto: le vas a robar arriba.', 'You press and he does not build that patiently: you will win it high.'],
+  { id: 'posesion', fase: 'sin', t: ['La posesión de {B} contra la presión de {A}', "{B}'s possession vs {A}'s press"], att: 'B', x: ['posesion', 1], y: ['ppda', -1], txt: {
+    ambos: ['{B} quiere el balón y {A} presiona: el partido se decide en la salida de {B}.', "{B} wants the ball and {A} presses: the game is decided in {B}'s build-up."],
+    ataque: ['{B} tendrá el balón y {A} no presiona alto: a {A} le conviene bloque compacto y contragolpe.', '{B} will have the ball and {A} does not press high: {A} is better off with a compact block and counters.'],
+    defensa: ['{A} presiona y {B} no elabora tanto: {A} le va a robar arriba.', '{A} presses and {B} does not build that patiently: {A} will win it high.'],
     ninguno: ['Nadie domina el balón ni la presión: partido abierto.', 'Neither side dominates the ball or the press: an open game.'] } },
-  { id: 'sus_contras', fase: 'trans', t: ['Sus contragolpes contra tu pérdida', 'His counters vs your ball losses'], att: 'B', x: ['contraataque', 1], y: ['transicion_def', 1], txt: {
-    ambos: ['Peligro: él contragolpea y a ti te llegan rápido tras perder. Deja 2+1 atrás cuando ataques.', 'Danger: he counters and teams get at you fast after you lose it. Keep 2+1 back when attacking.'],
-    ataque: ['Él contragolpea, pero tú te proteges bien tras perder: mantén ese equilibrio.', 'He counters, but you protect well after losing it: keep that balance.'],
-    defensa: ['A ti te llegan rápido tras perder, aunque él no vive del contragolpe.', 'Teams get at you fast after you lose it, though he does not live off counters.'],
-    ninguno: ['Sus contras no son su arma principal ni tu punto débil.', 'His counters are neither his main weapon nor your weak spot.'] } },
+  { id: 'sus_contras', fase: 'trans', t: ['Los contragolpes de {B} contra la pérdida de {A}', "{B}'s counters vs {A}'s ball losses"], att: 'B', x: ['contraataque', 1], y: ['transicion_def', 1], txt: {
+    ambos: ['Peligro para {A}: {B} contragolpea y a {A} le llegan rápido tras perder. {A} debe dejar 2+1 atrás cuando ataque.', 'Danger for {A}: {B} counters and teams get at {A} fast after losing it. {A} must keep 2+1 back when attacking.'],
+    ataque: ['{B} contragolpea, pero {A} se protege bien tras perder: {A} solo tiene que mantener ese equilibrio.', '{B} counters, but {A} protects well after losing it: {A} just has to keep that balance.'],
+    defensa: ['A {A} le llegan rápido tras perder, aunque {B} no vive del contragolpe.', 'Teams get at {A} fast after losing it, though {B} does not live off counters.'],
+    ninguno: ['Los contragolpes de {B} no son su arma principal ni el punto débil de {A}.', "{B}'s counters are neither his main weapon nor {A}'s weak spot."] } },
 ]
-const FASE: Record<string, [string, string, string, string]> = { con: ['Cuando tú tienes el balón', 'When you have the ball', 'ball', 'var(--c-dt)'], sin: ['Cuando él tiene el balón', 'When he has the ball', 'shield', 'var(--c-club)'], trans: ['Transiciones', 'Transitions', 'bolt', 'var(--c-rival)'] }
+const FASE: Record<string, [string, string, string, string]> = { con: ['Cuando {A} tiene el balón', 'When {A} has the ball', 'ball', 'var(--c-dt)'], sin: ['Cuando {B} tiene el balón', 'When {B} has the ball', 'shield', 'var(--c-club)'], trans: ['Transiciones', 'Transitions', 'bolt', 'var(--c-rival)'] }
 
 /* Reacciones al marcador / minuto: qué implica para el rival cada cambio del DT. */
 const KF: Record<string, 'con' | 'sin' | 'trans' | 'peligro'> = { posesion: 'con', verticalidad: 'con', pase_largo: 'con', field_tilt: 'con', ppda: 'sin', altura_presion: 'sin', linea_360: 'sin', contraataque: 'trans', xg_90: 'peligro', xg_contra_90: 'peligro' }
 const REC: Record<string, [[string, string], [string, string]]> = {
-  posesion: [['busca más el balón: bloque compacto y a la contra', 'wants more of the ball: compact block and counter'], ['te cede el balón: ten un plan para atacar en estático', 'gives you the ball: have a plan to break a set defence']],
-  verticalidad: [['juega más directo: defiende la profundidad y la segunda jugada', 'plays more directly: defend depth and second balls'], ['elabora más: presiona su primer pase', 'builds more patiently: press his first pass']],
-  pase_largo: [['tira más balones largos: centrales fuertes por arriba', 'plays more long balls: strong aerial centre-backs'], ['juega más corto: presión tras pérdida', 'plays shorter: press right after losing it']],
-  field_tilt: [['se mete más en tu campo: prepara salidas rápidas', 'camps more in your half: prepare fast exits'], ['se mete menos en tu campo: puedes adelantar líneas', 'camps less in your half: you can push up']],
-  ppda: [['presiona menos: sal jugando', 'presses less: play out from the back'], ['presiona más: salida larga o con pivote extra', 'presses more: go long or add a pivot']],
-  altura_presion: [['presiona más arriba: hay espacio a la espalda de su presión', 'presses higher: there is space behind his press'], ['espera más atrás: tendrás el balón en tu campo', 'waits deeper: you will have the ball in your half']],
-  linea_360: [['adelanta la línea: balones a la espalda', 'pushes his line up: balls in behind'], ['hunde la línea: centros y tiros de media distancia', 'drops his line: crosses and mid-range shots']],
-  contraataque: [['contragolpea más: cuida la pérdida', 'counters more: protect against losing it'], ['contragolpea menos: puedes subir a los laterales', 'counters less: you can push your full-backs on']],
-  xg_90: [['genera más peligro: refuerza el área', 'creates more danger: reinforce the box'], ['genera menos peligro', 'creates less danger']],
-  xg_contra_90: [['concede más: es el momento de atacarlo', 'concedes more: it is the moment to attack him'], ['concede menos: ten paciencia', 'concedes less: be patient']],
+  posesion: [['busca más el balón: a {Y} le conviene bloque compacto y contragolpe', 'wants more of the ball: {Y} should sit compact and counter'], ['cede el balón: {Y} necesita un plan para atacar en estático', 'gives up the ball: {Y} needs a plan to break a set defence']],
+  verticalidad: [['juega más directo: {Y} debe cuidar la profundidad y la segunda jugada', 'plays more directly: {Y} must guard depth and second balls'], ['elabora más: {Y} puede presionar su primer pase', 'builds more patiently: {Y} can press his first pass']],
+  pase_largo: [['tira más balones largos: {Y} necesita centrales fuertes por arriba', 'plays more long balls: {Y} needs strong aerial centre-backs'], ['juega más corto: {Y} puede presionar tras pérdida', 'plays shorter: {Y} can press right after losing it']],
+  field_tilt: [['se mete más en campo rival: {Y} debe preparar salidas rápidas', "camps more in the opponent's half: {Y} should prepare fast exits"], ['se mete menos en campo rival: {Y} puede adelantar líneas', "camps less in the opponent's half: {Y} can push up"]],
+  ppda: [['presiona menos: {Y} puede salir jugando', 'presses less: {Y} can play out from the back'], ['presiona más: {Y} necesita salida larga o un pivote extra', 'presses more: {Y} should go long or add a pivot']],
+  altura_presion: [['presiona más arriba: {Y} tiene espacio a la espalda de esa presión', 'presses higher: {Y} has space behind that press'], ['espera más atrás: {Y} tendrá el balón en su campo', 'waits deeper: {Y} will have the ball in its own half']],
+  linea_360: [['adelanta la línea: {Y} debe buscar la espalda', 'pushes his line up: {Y} should play in behind'], ['hunde la línea: {Y} debe ir a centros y tiros de media distancia', 'drops his line: {Y} should go for crosses and mid-range shots']],
+  contraataque: [['contragolpea más: {Y} debe cuidar la pérdida', 'counters more: {Y} must protect the ball'], ['contragolpea menos: {Y} puede subir a los laterales', 'counters less: {Y} can push the full-backs on']],
+  xg_90: [['genera más peligro: {Y} debe reforzar el área', 'creates more danger: {Y} must reinforce the box'], ['genera menos peligro', 'creates less danger']],
+  xg_contra_90: [['concede más: es el momento de {Y} para atacar', "concedes more: it is {Y}'s moment to attack"], ['concede menos: {Y} necesita paciencia', 'concedes less: {Y} needs patience']],
 }
 const SITS: [string, string, string, string, string][] = [
-  ['marcador', 'Perdiendo', 'Cuando él va perdiendo', 'When he is losing', L('Perdiendo', 'Losing')], ['marcador', 'Empatando', 'Con el empate', 'When level', L('Empate', 'Level')], ['marcador', 'Ganando', 'Cuando él va ganando', 'When he is winning', L('Ganando', 'Winning')],
+  ['marcador', 'Perdiendo', 'Cuando {X} va perdiendo', 'When {X} is losing', L('Perdiendo', 'Losing')], ['marcador', 'Empatando', 'Con el empate', 'When level', L('Empate', 'Level')], ['marcador', 'Ganando', 'Cuando {X} va ganando', 'When {X} is winning', L('Ganando', 'Winning')],
   ['minuto', "0-30'", "Del 0' al 30'", "0'–30'", "0-30'"], ['minuto', "30-60'", "Del 30' al 60'", "30'–60'", "30-60'"], ['minuto', "60-75'", "Del 60' al 75'", "60'–75'", "60-75'"], ['minuto', "75'+", "Del 75' al final", "75' to the end", "75'+"],
 ]
 const FROWS: [string, string, string][] = [['con', 'Con el balón', 'With the ball'], ['sin', 'Sin el balón', 'Without the ball'], ['trans', 'Transiciones', 'Transitions'], ['peligro', 'Peligro', 'Danger']]
@@ -141,9 +143,12 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
   const [B, setB] = useState<Any>(null)
   useEffect(() => { setB(null); if (rid) getJSON(dataUrl(`dt_${rid}.json`)).then(setB).catch(() => setB(false)) }, [rid])
   const [quien, setQuien] = useState<'el' | 'tu'>('el')
-  const name = (id: number, full?: string) => { const n = nombreDT(id, full); return n ? n.apellidos.split(' ')[0] : shortName(full ?? '') }
+  const name = (_id: number, full?: string) => shortName(full ?? '')
+  const sur = (full?: string) => shortName(full ?? '').split(' ').slice(1).join(' ') || shortName(full ?? '')
   const A = art
   const nA = name(A.id, A.nombre), nB = B ? name(B.id, B.nombre) : ''
+  const sA = sur(A.nombre), sB = B ? sur(B.nombre) : ''
+  const f = (t: string, X = sB, Y = sA) => t.split('{A}').join(sA).split('{B}').join(sB).split('{X}').join(X).split('{Y}').join(Y)
   const aA = ap(A), aB = ap(B)
   const setRival = (b: number | undefined) => { if (b && b !== A.id) setPick({ a: A.id, b }) }
 
@@ -155,16 +160,9 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
     return { n: rows.length, w, d, l, gf, gc, list: list.slice(-5).reverse() }
   }, [pp, rid, A.id])
 
-  const pickRow = (
-    <div className="du-pick">
-      <span className="note">{L('Rival:', 'Opponent:')}</span>
-      <div className="du-clubs">{Object.entries(byClub).filter(([c]) => c !== myClub).sort((a, b) => a[0].localeCompare(b[0])).map(([c, id]) => (
-        <button key={c} className={id === rid ? 'on' : ''} title={`${c} · ${glob.dts.find((d: Any) => d.id === id)?.nombre ?? ''}`} onClick={() => setRival(id)}><ClubLogo club={c} media={media} size={22} /></button>))}</div>
-      <select value={rid ?? ''} onChange={e => setRival(Number(e.target.value))} aria-label={L('Elegir técnico rival', 'Pick the opposing coach')}>
-        {[...(glob.dts as Any[])].filter(d => d.id !== A.id).sort((a, b) => a.nombre.localeCompare(b.nombre)).map(d => <option key={d.id} value={d.id}>{d.nombre}{clubOf(d.id) ? ` · ${clubOf(d.id)}` : ''}</option>)}
-      </select>
-    </div>
-  )
+  const pts = useMemo(() => new Map<number, Any>(mapa.puntos.map((p: Any) => [p.id, p])), [mapa])
+  const extra = next?.coach ? [{ id: next.coach, k: L('Su próximo rival', 'Next opponent') }] : []
+  const pickRow = <CoachPicker sims={sims} pts={pts} mapa={mapa} media={media} selected={rid ?? -1} onPick={id => setRival(id)} nA={nA} title={L(`¿Contra quién juega ${nA}?`, `Who does ${nA} face?`)} extra={extra} />
   if (!rid) return <div className="card note">{L('Elige un rival.', 'Pick an opponent.')}</div>
   if (B === false) return <div className="pl">{pickRow}<div className="card note">{L('No se pudo cargar a ese técnico.', 'Could not load that coach.')}</div></div>
   if (!B) return <div className="pl">{pickRow}<div className="card note">{L('Cargando…', 'Loading…')}</div></div>
@@ -189,9 +187,10 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
   const bench = B.jugadores?.minuto_cambios?.['1']
   const benchL = B.jugadores?.minuto_cambios_liga?.['1']
   const quienN = quien === 'el' ? nB : nA
-  const FavTag = ({ f }: { f: string }) => <span className={`du-tag ${f}`}>{f === 'tu' ? L('a tu favor', 'in your favour') : f === 'el' ? L('a su favor', 'in his favour') : f === 'choque' ? L('choque', 'clash') : L('parejo', 'even')}</span>
-  const FitTag = ({ f, mine }: { f: Any; mine: boolean }) => !f ? <span className="du-tag neutro">{L('depende de cómo lo prepares', 'depends on your preparation')}</span>
-    : <span className={`du-tag ${f.tipo === 'si' ? (mine ? 'tu' : 'el') : f.tipo === 'no' ? (mine ? 'el' : 'tu') : 'neutro'}`}>{f.tipo === 'si' ? (mine ? L('ya lo haces', 'you already do it') : L('él lo hace', 'he does it')) : f.tipo === 'no' ? (mine ? L('va contra tu estilo', 'goes against your style') : L('no es lo suyo', 'not his thing')) : L('ni sí ni no', 'neither')}</span>
+  const qX = quien === 'el' ? sB : sA, qY = quien === 'el' ? sA : sB
+  const FavTag = ({ f }: { f: string }) => <span className={`du-tag ${f}`}>{f === 'tu' ? L(`ventaja ${sA}`, `${sA}'s edge`) : f === 'el' ? L(`ventaja ${sB}`, `${sB}'s edge`) : f === 'choque' ? L('choque', 'clash') : L('parejo', 'even')}</span>
+  const FitTag = ({ f, mine }: { f: Any; mine: boolean }) => !f ? <span className="du-tag neutro">{L('depende de la preparación', 'depends on preparation')}</span>
+    : <span className={`du-tag ${f.tipo === 'si' ? (mine ? 'tu' : 'el') : f.tipo === 'no' ? (mine ? 'el' : 'tu') : 'neutro'}`}>{f.tipo === 'si' ? L(`${mine ? sA : sB} ya lo hace`, `${mine ? sA : sB} already does it`) : f.tipo === 'no' ? L(`va contra el estilo de ${mine ? sA : sB}`, `goes against ${mine ? sA : sB}'s style`) : L('ni sí ni no', 'neither')}</span>
   const zEs = (z: string) => L(z, ({ 'Primer palo': 'near post', 'Área chica': 'six-yard box', 'Punto penal': 'penalty spot', 'Segundo palo': 'far post', Corto: 'short' } as Record<string, string>)[z] ?? z)
 
   return (
@@ -215,7 +214,7 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
 
       <div className="tl-grid">
         <div className="card">
-          <div className="tl-h"><b>{L(`Las claves para jugarle a ${nB}, y si tú ya juegas así`, `The keys to play ${nB}, and whether you already play that way`)}</b></div>
+          <div className="tl-h"><b>{L(`Lo que le funciona a ${sA} contra ${sB}, y si ${sA} ya juega así`, `What works for ${sA} against ${sB}, and whether ${sA} already plays that way`)}</b></div>
           {tusClaves.length === 0 && <p className="note">{L('Su estilo no tiene rasgos lo bastante claros.', 'His style has no clear enough traits.')}</p>}
           {tusClaves.map(({ a, f }: Any) => (
             <div key={a.id} className="du-key"><span className="du-kt"><b>{tx(a, 'titulo')}</b><small>{tx(a, 'texto')}</small></span>
@@ -223,7 +222,7 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
           ))}
         </div>
         <div className="card">
-          <div className="tl-h"><b>{L(`Lo que más te duele a ti, y si ${nB} lo hace`, `What hurts you most, and whether ${nB} does it`)}</b></div>
+          <div className="tl-h"><b>{L(`Lo que le funciona a ${sB} contra ${sA}, y si ${sB} lo hace`, `What works for ${sB} against ${sA}, and whether ${sB} does it`)}</b></div>
           {susClaves.length === 0 && <p className="note">{L('Tu estilo no tiene rasgos lo bastante claros.', 'Your style has no clear enough traits.')}</p>}
           {susClaves.map(({ a, f }: Any) => (
             <div key={a.id} className="du-key"><span className="du-kt"><b>{tx(a, 'titulo')}</b><small>{tx(a, 'texto')}</small></span>
@@ -237,18 +236,18 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
         <div className="du-duels">
           {duels.map(({ d, x, y, caso, fav }) => (
             <div key={d.id} className="du-duel" style={{ ['--fc' as string]: FASE[d.fase][3] }}>
-              <span className="pl-fase"><Ico name={FASE[d.fase][2]} />{L(FASE[d.fase][0], FASE[d.fase][1])}</span>
-              <b className="du-dt">{L(d.t[0], d.t[1])}</b>
-              <div className="du-vs"><span>{d.att === 'A' ? nA : nB} · {kName(d.x[0], glob)} <em>{sg(x)}</em></span><span>{d.att === 'A' ? nB : nA} · {d.y[0] === 'ppda' ? L('Presión', 'Pressing') : kName(d.y[0], glob)} <em>{sg(y)}</em></span></div>
-              <p>{L(d.txt[caso][0], d.txt[caso][1])}</p>
+              <span className="pl-fase"><Ico name={FASE[d.fase][2]} />{f(L(FASE[d.fase][0], FASE[d.fase][1]))}</span>
+              <b className="du-dt">{f(L(d.t[0], d.t[1]))}</b>
+              <div className="du-vs"><span>{d.att === 'A' ? sA : sB} · {kName(d.x[0], glob)} <em>{sg(x)}</em></span><span>{d.att === 'A' ? sB : sA} · {d.y[0] === 'ppda' ? L('Presión', 'Pressing') : kName(d.y[0], glob)} <em>{sg(y)}</em></span></div>
+              <p>{f(L(d.txt[caso][0], d.txt[caso][1]))}</p>
               <FavTag f={fav} />
             </div>
           ))}
           {vz && <div className="du-duel" style={{ ['--fc' as string]: 'var(--c-ctx)' }}>
             <span className="pl-fase"><Ico name="flag" />{L('A balón parado', 'At set pieces')}</span>
-            <b className="du-dt">{L('Tus córners contra su zona débil', 'Your corners vs his weak zone')}</b>
-            <div className="du-vs"><span>{nB} · {zEs(vz.zona)}: xG {fmt(vz.xg, 3)} <em>{L('liga', 'lg')} {fmt(vz.xg_liga, 3)}</em></span><span>{nA} · {L('mandas ahí el', 'you send there')} <em>{fmt(myZ[vz.zona] ?? 0, 0)}%</em> ({L('liga', 'lg')} {fmt(lgZ[vz.zona] ?? 0, 0)}%)</span></div>
-            <p>{(myZ[vz.zona] ?? 0) >= (lgZ[vz.zona] ?? 0) + 3 ? L('Ya cargas esa zona más que la liga: insiste ahí.', 'You already load that zone more than the league: keep at it.') : L('Casi no mandas ahí: vale la pena preparar una jugada a esa zona.', 'You rarely go there: it is worth preparing a routine to that zone.')}{markB?.tipo ? ` ${L(`Él marca ${markB.tipo === 'hombre' ? 'al hombre: usa bloqueos' : markB.tipo === 'zonal' ? 'en zona: ataca los huecos con carreras desde atrás' : 'mixto'}.`, `He marks ${markB.tipo === 'hombre' ? 'man-to-man: use screens' : markB.tipo === 'zonal' ? 'zonally: attack the gaps with late runs' : 'mixed'}.`)}` : ''}</p>
+            <b className="du-dt">{L(`Los córners de ${sA} contra la zona débil de ${sB}`, `${sA}'s corners vs ${sB}'s weak zone`)}</b>
+            <div className="du-vs"><span>{sB} · {zEs(vz.zona)}: xG {fmt(vz.xg, 3)} <em>{L('liga', 'lg')} {fmt(vz.xg_liga, 3)}</em></span><span>{sA} · {L('manda ahí el', 'sends there')} <em>{fmt(myZ[vz.zona] ?? 0, 0)}%</em> ({L('liga', 'lg')} {fmt(lgZ[vz.zona] ?? 0, 0)}%)</span></div>
+            <p>{(myZ[vz.zona] ?? 0) >= (lgZ[vz.zona] ?? 0) + 3 ? L(`${sA} ya carga esa zona más que la liga: que insista ahí.`, `${sA} already loads that zone more than the league: keep at it.`) : L(`${sA} casi no manda ahí: vale la pena preparar una jugada a esa zona.`, `${sA} rarely goes there: worth preparing a routine to that zone.`)}{markB?.tipo ? ` ${L(`${sB} marca ${markB.tipo === 'hombre' ? 'al hombre: usa bloqueos' : markB.tipo === 'zonal' ? 'en zona: ataca los huecos con carreras desde atrás' : 'mixto'}.`, `${sB} marks ${markB.tipo === 'hombre' ? 'man-to-man: use screens' : markB.tipo === 'zonal' ? 'zonally: attack the gaps with late runs' : 'mixed'}.`)}` : ''}</p>
             <FavTag f={(myZ[vz.zona] ?? 0) >= (lgZ[vz.zona] ?? 0) + 3 ? 'tu' : 'neutro'} />
           </div>}
         </div>
@@ -257,7 +256,7 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
       <div className="card">
         <div className="tl-h"><b>{L(`Cómo cambia ${quienN} según el marcador y el minuto`, `How ${quienN} changes with score and minute`)}</b>
           <Info wide>{L('Cada celda: el rasgo de esa faceta que más se separa del promedio de la liga en esa misma situación (en desviaciones típicas), ya sin el efecto de sus jugadores. Presión: ▲ = presiona más. Sólo situaciones con 40 tramos o más. Debajo, los momentos en que más cambia y qué hacer.', 'Each cell: the trait in that facet that moves furthest from the league average in that same situation (in standard deviations), net of his players. Pressing: ▲ = presses more. Only situations with 40+ spells. Below, the moments he changes most and what to do.')}</Info>
-          <span style={{ marginLeft: 'auto' }}><div className="seg sm" role="group"><button aria-pressed={quien === 'el'} onClick={() => setQuien('el')}>{nB}</button><button aria-pressed={quien === 'tu'} onClick={() => setQuien('tu')}>{nA}</button></div></span></div>
+          <span style={{ marginLeft: 'auto' }}><div className="seg sm" role="group"><button aria-pressed={quien === 'el'} onClick={() => setQuien('el')}>{sB}</button><button aria-pressed={quien === 'tu'} onClick={() => setQuien('tu')}>{sA}</button></div></span></div>
         {Object.values(R.cell).some(c => Object.keys(c).length) && <div className="ti-heat">
           <table className="ti-tbl du-tbl">
             <thead><tr><th className="l" />{SITS.map(([dim, lvl, , , sh]) => <th key={dim + lvl} className={lvl === "0-30'" ? 'sep' : ''}>{sh}</th>)}</tr></thead>
@@ -278,8 +277,8 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
             const s = SITS.find(x => `${x[0]}|${x[1]}` === o.sit)!
             const up = o.d >= 0
             const r = REC[o.k]?.[up ? 0 : 1]
-            const txt = r ? (quien === 'el' ? L(r[0], r[1]) : L(r[0], r[1]).split(':')[0]) : kName(o.k, glob)
-            return <div key={i} className="du-mo"><span className="du-mi">{i + 1}</span><span><b>{quien === 'el' ? L(s[2], s[3]) : L(s[2], s[3]).replace(L('él va', 'he is'), L('vas', 'you are'))}</b>{quien === 'el' ? `, ${nB} ` : ', '}{txt} <em className={up ? 'up' : 'dn'}>{kName(o.k, glob)} {sg(o.d)}σ</em></span></div>
+            const txt = r ? f(L(r[0], r[1]), qX, qY) : kName(o.k, glob)
+            return <div key={i} className="du-mo"><span className="du-mi">{i + 1}</span><span><b>{f(L(s[2], s[3]), qX, qY)}</b>{`, ${qX} `}{txt} <em className={up ? 'up' : 'dn'}>{kName(o.k, glob)} {sg(o.d)}σ</em></span></div>
           })}
           {R.top.length === 0 && <p className="note">{L('No cambia de forma clara según el marcador ni el minuto.', 'He does not change clearly with score or minute.')}</p>}
         </div>

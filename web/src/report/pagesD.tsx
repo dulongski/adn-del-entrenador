@@ -1,4 +1,4 @@
-import { fmt, jugadorCorto, type Any } from '../lib'
+import { fmt, jugadorCorto, shortName, type Any } from '../lib'
 import { L, LANG } from '../settings'
 import { kName } from '../tabs/resumenKit'
 import { MODE_COLOR, type RD } from './data'
@@ -31,7 +31,8 @@ export function PlanPage({ rd, n, total }: { rd: RD; n: number; total: number })
   if (!P?.acciones?.length) return <Empty rd={rd} mode={mode} color={MODE_COLOR.plan} title={L('Cómo jugarle', 'How to play him')} n={n} total={total} />
   const F = P.meta.fases
   const T = P.tablero
-  const first = rd.art.nombre.split(' ')[0]
+  const first = shortName(rd.art.nombre)
+  const sur = first.split(' ').slice(1).join(' ') || first
   return (
     <Frame rd={rd} mode={mode} color={MODE_COLOR.plan} n={n} total={total} title={L(`Cómo jugarle a ${first}`, `How to play ${first}`)}
       sub={L('Cada clave sale de una regla fija: sólo se activa si el rasgo de su sello es claro (|α| ≥ 0.25 y ≥ 1.64 errores estándar). Su sello no depende de la plantilla que tenga hoy.', 'Each key comes from a fixed rule: it only fires if the trait in his imprint is clear (|α| ≥ 0.25 and ≥ 1.64 standard errors). His imprint does not depend on today\'s squad.')}>
@@ -39,7 +40,7 @@ export function PlanPage({ rd, n, total }: { rd: RD; n: number; total: number })
         <div className="rp-plan-g">
           {(P.acciones as Any[]).slice(0, 6).map((a, i) => (
             <div key={a.id} className="rp-card rp-pk" style={{ ['--fc' as string]: FC[a.fase] }}>
-              <span className="rp-pk-f">{L(F[a.fase]?.es ?? a.fase, F[a.fase]?.en ?? a.fase)}</span>
+              <span className="rp-pk-f">{a.fase === 'con' ? L(`Cuando ${sur} tiene el balón`, `When ${sur} has the ball`) : a.fase === 'sin' ? L('Cuando su rival tiene el balón', 'When his opponent has the ball') : L(F[a.fase]?.es ?? a.fase, F[a.fase]?.en ?? a.fase)}</span>
               <h4><i>{i + 1}</i>{tx(a, 'titulo')}</h4>
               <p>{tx(a, 'texto')}</p>
               <small>{evLine(a, rd.glob)}</small>

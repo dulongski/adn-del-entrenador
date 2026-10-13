@@ -17,7 +17,7 @@ export const registerPages = (m: Partial<Record<PageKey, PC>>) => Object.assign(
 /** Conjuntos de páginas: el informe general y el de cada pestaña. */
 export const SETS: Record<string, PageKey[]> = {
   general: ['cover', 'ideas', 'separar', 'jugadas', 'formaciones', 'contexto', 'tiempo', 'jugadores', 'bp', 'bp2', 'plan', 'lab', 'vs', 'metodo', 'validacion'],
-  resumen: ['cover', 'ideas'], separar: ['separar'], juego: ['jugadas', 'formaciones', 'contexto', 'tiempo'], jugadores: ['jugadores'], bp: ['bp', 'bp2'], plan: ['plan'], lab: ['lab'], vs: ['vs'], metodo: ['metodo', 'validacion'],
+  resumen: ['cover', 'ideas', 'plan'], separar: ['separar'], juego: ['jugadas', 'formaciones', 'contexto', 'tiempo'], jugadores: ['jugadores'], bp: ['bp', 'bp2'], plan: ['plan'], lab: ['lab'], vs: ['vs'], metodo: ['metodo', 'validacion'],
 }
 
 export function ReportPages({ rd, keys }: { rd: RD; keys: PageKey[] }) {

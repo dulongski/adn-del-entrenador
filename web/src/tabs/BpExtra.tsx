@@ -1,151 +1,217 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Pitch } from '../charts'
+import { xgColor } from '../Corners3D'
 import { Ico } from '../icons'
 import Info from '../Info'
 import { dataUrl, fmt, getJSON, jugadorCorto, type Any } from '../lib'
 import { L } from '../settings'
+import { CARRERA, ClubSwitch } from './JugOnce'
+import '../styles/bp.css'
 import '../styles/tl.css'
+import '../styles/jugadores.css'
 import '../styles/plan.css'
 
-/* Balón parado, parte 2 (pipeline/bp_extra.py → bp2.json): saques de banda en zona de peligro,
-   cómo marca en los córners (fotos 360) y en qué zonas sufre. */
+/* Balón parado, parte 2 (pipeline/bp_extra.py + bp_club.py → bp2.json): cómo defiende los córners
+   (marcaje en la foto 360 y zonas donde sufre) y saques de banda en el último tercio.
+   Mismo esquema que Córners y Tiros libres: club arriba (el actual por defecto), selector, mapa
+   grande y una tarjeta lateral con los números frente a la liga. */
 
 function useBp2(id: number) {
   const [d, setD] = useState<Any>(null)
   useEffect(() => { setD(null); getJSON(dataUrl('bp2.json')).then(b => setD(b.dts?.[String(id)] ? { ...b.dts[String(id)], liga: b.liga } : false)).catch(() => setD(false)) }, [id])
   return d
 }
-const ZONA_EN: Record<string, string> = { 'Primer palo': 'Near post', 'Área chica': 'Six-yard box', 'Punto penal': 'Penalty spot', 'Segundo palo': 'Far post', Corto: 'Short' }
-const zona = (z: string) => L(z, ZONA_EN[z] ?? z)
 
-const kpiTile = (lbl: string, v: number | null | undefined, lv: number | null | undefined, unit: string, d = 1, good = 1, sub?: string) => {
-  const diff = v != null && lv != null ? v - lv : null
-  const same = diff == null || Math.abs(diff) < Math.abs(lv ?? 1) * 0.05
-  return (
-    <div className="tl-kpi"><span className="note">{lbl}</span>
-      <b>{v == null ? '—' : `${fmt(v, d)}${unit}`}{!same && good !== 0 && <i className={(diff! > 0) === (good > 0) ? 'up' : 'dn'}>{diff! > 0 ? '▲' : '▼'}</i>}</b>
-      <small>{sub ? `${sub} · ` : ''}{L('liga', 'league')} {lv == null ? '—' : `${fmt(lv, d)}${unit}`}</small></div>
-  )
+/** Club actual primero; «Toda su carrera» al final (como en Córners y Tiros libres). */
+function useClub(art: Any, media: Any, d: Any) {
+  const [pick, setPick] = useState<{ id: number; club: string } | null>(null)
+  const clubs: string[] = useMemo(() => {
+    const all = Object.keys(d?.por_club ?? {})
+    const cur = media?.dts?.[art.id]?.club ?? art.etapas?.at(-1)?.club
+    const first = all.includes(cur) ? cur : all[all.length - 1]
+    return all.length ? [first, ...all.filter(c => c !== first)] : []
+  }, [d, media, art])
+  const club = pick && pick.id === art.id && (pick.club === CARRERA || clubs.includes(pick.club)) ? pick.club : clubs[0] ?? CARRERA
+  const sel = club === CARRERA || !d?.por_club?.[club] ? d?.carrera : d.por_club[club]
+  const set = (c: string) => setPick({ id: art.id, club: c })
+  const donde = club === CARRERA ? L('en toda su carrera', 'across his career') : L(`en ${club}`, `at ${club}`)
+  return { clubs, club, sel, set, donde }
 }
 
-export function Banda({ art }: { art: Any }) {
-  const d = useBp2(art.id)
-  const [side, setSide] = useState<'favor' | 'contra'>('favor')
-  if (d === false) return <div className="card note">{L('Aún no hay datos de saques de banda.', 'No throw-in data yet.')}</div>
-  if (!d) return <div className="card note">{L('Cargando…', 'Loading…')}</div>
-  const B = d.banda, S = B[side], LG = d.liga.banda
-  const pts: number[][] = side === 'favor' ? B.puntos : B.puntos_contra
-  const g = side === 'favor' ? 1 : -1
+const ARW = (v: number | null | undefined, l: number | null | undefined, dir: number) => {
+  if (v == null || l == null) return null
+  const rel = l ? (v - l) / Math.abs(l) : 0
+  if (Math.abs(rel) < 0.04) return <span className="bp-arrow eq" title={L('Como la liga', 'In line with the league')}>≈</span>
+  const up = v > l, ok = dir === 0 ? null : up ? dir > 0 : dir < 0
+  return <span className={`bp-arrow ${ok == null ? 'eq' : ok ? 'up' : 'down'}`}>{up ? '▲' : '▼'}</span>
+}
+const Kpi = ({ k, v, l, u = '', d = 1, dir = 0, sub }: { k: string; v: number | null | undefined; l: number | null | undefined; u?: string; d?: number; dir?: number; sub?: string }) => (
+  <div><span className="note">{k}</span><b>{v == null ? '—' : `${fmt(v, d)}${u}`} {ARW(v, l, dir)}</b><span className="note">{sub ?? `${L('liga', 'league')} ${l == null ? '—' : `${fmt(l, d)}${u}`}`}</span></div>
+)
+
+/** Rejilla de 6×8 del último tercio: [n, xg medio] por celda (x0 → 120 en 6, y 0 → 80 en 8). */
+function GridMap({ cells, x0, crop }: { cells: [number, number | null][]; x0: number; crop: [number, number] }) {
+  const GX = 6, GY = 8, dx = (120 - x0) / GX, dy = 80 / GY
+  const maxN = Math.max(1, ...cells.map(c => c[0]))
+  const tot = cells.reduce((a, c) => a + c[0], 0) || 1
   return (
-    <div className="tl">
-      <div className="tl-ctrl">
-        <div className="seg sm" role="group"><button aria-pressed={side === 'favor'} onClick={() => setSide('favor')}><Ico name="sword" />{L('A favor', 'Attacking')}</button><button aria-pressed={side === 'contra'} onClick={() => setSide('contra')}><Ico name="shield" />{L('En contra', 'Defending')}</button></div>
-        <span className="note">{S.n} {L('saques de banda en el último tercio', 'final-third throw-ins')} · {d.partidos} {L('partidos', 'matches')}
-          <Info wide><p>{L('Sólo cuentan los saques de banda en el último tercio (a 40 m o menos de la línea de fondo), que son los que pueden acabar en ocasión. «Al área»: el balón cae dentro del área. Remate y xG: tiros de su equipo en la misma jugada durante los 15 segundos siguientes.', 'Only throw-ins in the final third count (within 40 m of the byline): those are the ones that can lead to a chance. «Into the box»: the ball lands inside the box. Shot and xG: his team\'s shots in the same move within the next 15 seconds.')}</p>
-            <p>{L('Todos se dibujan como si se sacaran desde la banda izquierda.', 'All are drawn as if taken from the left touchline.')}</p></Info></span>
-      </div>
-      <div className="tl-kpis">
-        {kpiTile(L('Por partido', 'Per match'), S.por_partido, LG.por_partido, '', 1, 0)}
-        {kpiTile(L('Al área', 'Into the box'), S.al_area_pct, LG.al_area_pct, '%', 0, 0, side === 'favor' && B.pct?.favor_area != null ? L(`más que el ${fmt(B.pct.favor_area, 0)}% de los DTs`, `more than ${fmt(B.pct.favor_area, 0)}% of coaches`) : undefined)}
-        {kpiTile(L('Terminan en remate', 'End in a shot'), S.remate_pct, LG.remate_pct, '%', 0, g)}
-        {kpiTile(L('xG por partido', 'xG per match'), S.xg_por_partido, LG.xg_por_partido, '', 3, g, `${S.goles} ${L('goles', 'goals')}`)}
-        {kpiTile(L('Primer contacto en el área', 'First contact in the box'), S.area_primer_contacto_pct, LG.area_primer_contacto_pct, '%', 0, g, L('de su equipo', 'by his team'))}
-      </div>
-      <div className="tl-grid">
-        <div className="card tl-map">
-          <div className="tl-h"><b>{L('Desde dónde y hacia dónde', 'From where and to where')}</b><Info>{L('Línea: del saque al punto donde cae. Color: rosa = cae en el área, gris = no. Punto relleno = acabó en remate; anillo = gol. Se muestran los de más xG (hasta 160).', 'Line: from the throw to where the ball lands. Colour: pink = lands in the box, grey = not. Filled dot = ended in a shot; ring = goal. The highest-xG ones are shown (up to 160).')}</Info></div>
-          <Pitch vertical crop={[60, 121]}>
-            {pts.map((p, i) => { const [x, y, ex, ey, sh, gol, area] = p; const c = area ? 'var(--mc)' : 'var(--ink-3)'; return (
-              <g key={i} opacity={area ? 0.9 : 0.35}>
-                {ex != null && <line x1={x} y1={y} x2={ex} y2={ey} stroke={c} strokeWidth={area ? 0.45 : 0.3} />}
-                {ex != null && <circle cx={ex} cy={ey} r={sh ? 1.1 : 0.6} fill={sh ? c : 'none'} stroke={gol ? '#fff' : c} strokeWidth={gol ? 0.6 : 0.3} />}
-              </g>) })}
-          </Pitch>
-          <div className="tl-leg"><span><i style={{ background: 'var(--mc)' }} />{L('cae en el área', 'lands in the box')}</span><span><i style={{ background: 'var(--ink-3)' }} />{L('fuera del área', 'outside the box')}</span><span><i className="ring" />{L('gol', 'goal')}</span></div>
+    <Pitch vertical crop={crop}>
+      {cells.map(([n, xg], k) => {
+        if (n < 2) return null
+        const i = Math.floor(k / GY), j = k % GY
+        return (
+          <circle key={k} cx={x0 + (i + 0.5) * dx} cy={(j + 0.5) * dy} r={0.9 + 3.4 * Math.sqrt(n / maxN)} fill={xgColor((xg ?? 0) / 0.08)} fillOpacity={0.9} stroke="rgba(0,0,0,.35)" strokeWidth={0.25}>
+            <title>{`${n} (${fmt((100 * n) / tot, 0)}%) · xG ${fmt(xg ?? 0, 3)}`}</title>
+          </circle>
+        )
+      })}
+    </Pitch>
+  )
+}
+const MapKey = () => (
+  <div className="c3d-2d-key">
+    <span className="c3d-2d-sz"><i style={{ width: 6, height: 6 }} /><i style={{ width: 10, height: 10 }} /><i style={{ width: 15, height: 15 }} />{L('tamaño: cuántos caen ahí', 'size: how many land there')}</span>
+    <span className="c3d-key-row c3d-key-scale"><span>xG</span><i style={{ background: `linear-gradient(90deg, ${xgColor(0)}, ${xgColor(0.33)}, ${xgColor(0.66)}, ${xgColor(1)})` }} /><span>0.08+</span></span>
+  </div>
+)
+
+const ZONA_EN: Record<string, string> = { 'Primer palo': 'Near post', 'Área chica': 'Six-yard box', 'Punto penal': 'Penalty spot', 'Segundo palo': 'Far post', Corto: 'Short' }
+const TIPO: Record<string, [string, string, string, string]> = {
+  zonal: ['Marca en zona', 'Zonal marking', 'Sus defensores cuidan espacios más que rivales.', 'His defenders guard spaces rather than opponents.'],
+  mixto: ['Marca mixta', 'Mixed marking', 'Combina defensores en zona con marcas al hombre.', 'He mixes zonal defenders with man markers.'],
+  hombre: ['Marca al hombre', 'Man marking', 'Sus defensores se pegan a un rival más que la mayoría.', 'His defenders stick to an opponent more than most.'],
+}
+
+export function BpDefensa({ art, media }: { art: Any; media?: Any }) {
+  const d = useBp2(art.id)
+  const { clubs, club, sel, set, donde } = useClub(art, media, d)
+  if (d === false) return <div className="card note">{L('Aún no hay datos.', 'No data yet.')}</div>
+  if (!d) return <div className="card note">{L('Cargando…', 'Loading…')}</div>
+  const D = sel?.defensa
+  if (!D) return <div className="card note">{L('Aún no hay datos por club para este DT.', 'No per-club data for this coach yet.')}</div>
+  const LM = d.liga.marcaje ?? {}, cuts = d.liga.cortes_marcaje ?? LM.cortes
+  const zonas: Any[] = D.zonas ?? []
+  const maxShare = Math.max(1, ...zonas.map(z => z.pct ?? 0))
+  const t = D.tipo ? TIPO[D.tipo] : null
+  const est = LM.xg_por_estilo ?? {}
+  const lo = 25, hi = 65, X = (v: number) => ((Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo)) * 100
+  return (
+    <div className="c3d">
+      {clubs.length > 0 && <ClubSwitch clubes={clubs} value={club} set={set} media={media} partidos={Object.fromEntries(clubs.map(c => [c, d.por_club[c].partidos]))} carrera={d.carrera?.partidos ?? 0} />}
+      <div className="c3d-ctrl"><span className="note">{L(`${D.n} córners en contra ${donde} · ${D.n360} con foto 360`, `${D.n} corners against ${donde} · ${D.n360} with a 360 snapshot`)}
+        <Info wide><p>{L('Mapa: dónde cae cada córner del rival (todos llevados al mismo lado). Tamaño = cuántos caen ahí; color = xG medio de esas jugadas.', 'Map: where each opponent corner lands (all brought to the same side). Size = how many land there; colour = average xG of those plays.')}</p>
+          <p>{L('Marcaje: en la foto 360 del momento del saque, cada defensor dentro del área (sin el portero) se empareja uno a uno con el atacante más cercano; a 1.8 m o menos está «pegado». Los cortes zonal / mixta / al hombre son los tercios de los DTs de la liga. La foto no ve los bloqueos ni las carreras posteriores.', 'Marking: in the 360 snapshot at the moment of the kick, each defender inside the box (excluding the keeper) is paired one-to-one with the nearest attacker; within 1.8 m he is «tight». The zonal / mixed / man cut-offs are the league coaches\' thirds. The snapshot does not see screens or later runs.')}</p></Info></span></div>
+      <div className="c3d-main">
+        <div className="c3d-stage c3d-2d">
+          <GridMap cells={D.mapa} x0={90} crop={[86, 121]} />
+          <MapKey />
+          <div className="c3d-zones">
+            <div className="c3d-zones-h">{L('Dónde sufre', 'Where he suffers')}<span className="note">{L('% de los córners en contra · quién gana el primer contacto · xG concedido', '% of corners against · who wins the first contact · xG conceded')}</span></div>
+            {zonas.map(z => (
+              <div key={z.zona} className="c3d-zone bx-zone">
+                <span className="c3d-zone-n">{L(z.zona, ZONA_EN[z.zona] ?? z.zona)}</span>
+                <span className="c3d-zone-bar"><i style={{ width: `${(100 * (z.pct ?? 0)) / maxShare}%`, background: xgColor((z.xg ?? z.xg_liga ?? 0) / 0.08) }} /></span>
+                <b>{fmt(z.pct, 0)}%</b>
+                <small>{z.rival_gana_pct == null ? '—' : L(`rival gana ${fmt(z.rival_gana_pct, 0)}%`, `rival wins ${fmt(z.rival_gana_pct, 0)}%`)}</small>
+                <small className={z.xg != null && z.xg_liga && z.xg > z.xg_liga * 1.15 ? 'bx-bad' : ''}>{z.xg == null ? L('pocos', 'few') : `xG ${fmt(z.xg, 3)}`} · {L('liga', 'lg')} {fmt(z.xg_liga, 3)}</small>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="card">
-          <div className="tl-h"><b>{L('Qué tanto peligro sacan', 'How much danger they create')}</b></div>
-          {(['favor', 'contra'] as const).map(s => { const X = B[s]; return (
-            <div key={s} className="bx-style">
-              <div className="note">{s === 'favor' ? L('A favor', 'Attacking') : L('En contra', 'Defending')}</div>
-              {[[L('Al área', 'Into the box'), X.al_area_pct, LG.al_area_pct, 40], [L('Remate', 'Shot'), X.remate_pct, LG.remate_pct, 25], [L('Retienen el balón', 'Keep the ball'), X.retiene_pct, LG.retiene_pct, 100]].map(([lbl, v, lv, mx]) => (
-                <div key={lbl as string} className="bx-sr"><span>{lbl}</span><span className="bar" style={{ position: 'relative' }}><i style={{ width: `${Math.min(100, ((v as number) / (mx as number)) * 100)}%`, background: s === 'favor' ? 'var(--mc)' : 'var(--ink-3)' }} /><u style={{ position: 'absolute', top: -2, bottom: -2, width: 2, background: 'var(--ink)', left: `${Math.min(100, ((lv as number) / (mx as number)) * 100)}%` }} /></span><b className="mono">{fmt(v as number, 0)}%</b></div>
-              ))}
-            </div>) })}
-          <p className="note" style={{ marginTop: 10 }}>{L('Raya negra: promedio de la liga.', 'Black tick: league average.')}</p>
-          {B.lanzadores?.length > 0 && <>
-            <div className="tl-h" style={{ marginTop: 14 }}><b>{L('Quién los mete al área', 'Who throws them into the box')}</b></div>
-            <div className="bx-takers">{B.lanzadores.map(([id, n, c]: [number, string, number]) => <div key={id}><span>{jugadorCorto(id, n)}</span><b className="mono">{c}</b></div>)}</div>
-          </>}
-        </div>
+        <aside className="c3d-side">
+          <div>
+            <div className="h3">{L('Cómo marca', 'How he marks')}</div>
+            <div className="note">{L(`Córners del rival ${donde} · comparado con la liga`, `Opponent corners ${donde} · compared with the league`)}</div>
+          </div>
+          {t ? <div className="bx-type"><b>{L(t[0], t[1])}</b><span className="note">{L(t[2], t[3])}</span>
+            {cuts && <div className="bx-scale" aria-hidden>
+              <i className="zo" style={{ width: `${X(cuts[0])}%` }} /><i className="mi" style={{ left: `${X(cuts[0])}%`, width: `${X(cuts[1]) - X(cuts[0])}%` }} /><i className="ho" style={{ left: `${X(cuts[1])}%`, right: 0 }} />
+              <b style={{ left: `${X(D.pegados_pct)}%` }} />
+            </div>}
+            <div className="bx-scale-l note"><span>{L('zonal', 'zonal')}</span><span>{L('mixta', 'mixed')}</span><span>{L('al hombre', 'man')}</span></div>
+          </div> : <p className="note">{L('Pocos córners con foto 360 para clasificar su marcaje.', 'Too few corners with a 360 snapshot to classify his marking.')}</p>}
+          <div className="c3d-kpis">
+            <Kpi k={L('Defensores pegados a un rival', 'Defenders tight to a man')} v={D.pegados_pct} l={LM.pegados_pct} u="%" d={0} />
+            <Kpi k={L('Defensores en el área', 'Defenders in the box')} v={D.defensores_area} l={LM.defensores_area} />
+            <Kpi k={L('xG concedido por córner', 'xG conceded per corner')} v={D.xg_concedido} l={LM.xg_concedido} d={3} dir={-1} />
+            <Kpi k={L('Acaban en remate', 'End in a shot')} v={D.remate_pct} l={LM.remate_pct} u="%" d={0} dir={-1} />
+          </div>
+          {est.zonal != null && <div className="c3d-who">
+            <div className="note">{L('En la liga, xG concedido por córner según el marcaje', 'Across the league, xG conceded per corner by marking')}</div>
+            {(['zonal', 'mixto', 'hombre'] as const).map(s => (
+              <div key={s} className="c3d-who-row"><span>{L(TIPO[s][0], TIPO[s][1])}</span><span className="c3d-tip-bar"><i style={{ width: `${(100 * est[s]) / Math.max(est.zonal, est.mixto, est.hombre)}%`, background: s === D.tipo ? 'var(--mc)' : 'var(--ink-3)' }} /></span><b>{fmt(est[s], 3)}</b></div>
+            ))}
+            <div className="note">{L('Casi iguales: ningún marcaje es mejor por sí solo.', 'Almost equal: no marking scheme is better on its own.')}</div>
+          </div>}
+        </aside>
       </div>
     </div>
   )
 }
 
-/* Zonas del área en el marco de ataque del cobrador (pipeline/features/setpieces.ZONES). */
-const ZPOLY: Record<string, [number, number, number, number][]> = {
-  'Corto': [[90, 0, 102, 80]],
-  'Segundo palo': [[102, 0, 120, 30], [102, 50, 120, 80]],
-  'Punto penal': [[102, 30, 114, 50]],
-  'Primer palo': [[114, 30, 120, 36], [114, 44, 120, 50]],
-  'Área chica': [[114, 36, 120, 44]],
-}
-export function BpDefensa({ art }: { art: Any }) {
+const ORIG: [string, string][] = [['A 30–40 m de la línea de fondo', '30–40 m from the byline'], ['A 20–30 m', '20–30 m'], ['A 10–20 m', '10–20 m'], ['A menos de 10 m', 'Under 10 m']]
+export function Banda({ art, media }: { art: Any; media?: Any }) {
   const d = useBp2(art.id)
-  if (d === false) return <div className="card note">{L('Aún no hay datos.', 'No data yet.')}</div>
+  const [side, setSide] = useState<'favor' | 'contra'>('favor')
+  const C = useClub(art, media, d)
+  if (d === false) return <div className="card note">{L('Aún no hay datos de saques de banda.', 'No throw-in data yet.')}</div>
   if (!d) return <div className="card note">{L('Cargando…', 'Loading…')}</div>
-  const M = d.marcaje ?? {}, LM = d.liga.marcaje
-  const V: Any[] = d.vulnerable ?? []
-  const lo = 25, hi = 65
-  const X = (v: number) => ((Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo)) * 100
-  const ratio = (z: Any) => (z.xg != null && z.xg_liga ? z.xg / z.xg_liga : null)
-  const zc = (z: Any) => { const r = ratio(z); if (r == null) return 'var(--surface-2)'; const t = Math.max(-1, Math.min(1, (r - 1) / 0.6)); return `color-mix(in oklab, ${t >= 0 ? 'var(--div-neg)' : 'var(--div-pos)'} ${Math.round(15 + Math.abs(t) * 60)}%, var(--surface))` }
-  const tipo: Record<string, [string, string]> = { zonal: ['Marca en zona', 'Zonal marking'], mixto: ['Marca mixta', 'Mixed marking'], hombre: ['Marca al hombre', 'Man marking'] }
-  const est = LM?.xg_por_estilo ?? {}, rem = LM?.remate_por_estilo ?? {}
-  const mxs = Math.max(...Object.values(est as Record<string, number>), 0.001)
+  const perClub = !!C.sel?.banda
+  const B = perClub ? C.sel.banda : d.banda
+  const S = B[side] ?? {}, LG = d.liga.banda
+  const donde = perClub ? C.donde : L('en toda su carrera', 'across his career')
+  const g = side === 'favor' ? 1 : -1
+  const pts: number[][] = side === 'favor' ? d.banda.puntos : d.banda.puntos_contra
+  const orig: number[] = S.origen ?? []
+  const totO = orig.reduce((a, b) => a + b, 0) || 1
   return (
-    <div className="tl">
-      <div className="tl-grid">
-        <div className="card">
-          <div className="tl-h"><b>{L('Cómo marca en los córners en contra', 'How he marks on corners against')}</b>
-            <Info wide><p>{L('En la foto 360 del momento del saque se toman los defensores dentro del área (sin el portero) y se emparejan uno a uno con el atacante más cercano. Si están a 1.8 m o menos, ese defensor está «pegado» a su hombre. Mucho pegado = marca al hombre; poco = zonal (defienden espacios). En medio, mixta.', 'In the 360 snapshot at the moment of the kick, the defenders inside the box (excluding the keeper) are paired one-to-one with the nearest attacker. Within 1.8 m, that defender is «tight» to his man. Lots of tight = man marking; little = zonal (they defend space). In between, mixed.')}</p>
-              <p>{L('Los cortes son los tercios de los DTs de la liga. La foto es del instante del saque: no ve los bloqueos ni las carreras que vienen después.', 'The cut-offs are the league coaches\' thirds. The snapshot is from the instant of the kick: it does not see the screens or runs that come afterwards.')}</p></Info></div>
-          {M.pegados_pct == null ? <p className="note">{L(`Pocos córners en contra con foto 360 (${M.n ?? 0}) para medir su marcaje.`, `Too few corners against with a 360 snapshot (${M.n ?? 0}) to measure his marking.`)}</p> : <>
-            <div className="ti-club"><b className="r">{L(tipo[M.tipo][0], tipo[M.tipo][1])}</b><span className="note">{L(`${fmt(M.pegados_pct, 0)}% de sus defensores pegados a un rival · ${M.n} córners`, `${fmt(M.pegados_pct, 0)}% of his defenders tight to an opponent · ${M.n} corners`)}</span></div>
-            <div className="bx-gauge">
-              <span className="z zo" style={{ left: 0, width: `${X(LM.cortes[0])}%` }}>{L('Zonal', 'Zonal')}</span>
-              <span className="z mi" style={{ left: `${X(LM.cortes[0])}%`, width: `${X(LM.cortes[1]) - X(LM.cortes[0])}%` }}>{L('Mixta', 'Mixed')}</span>
-              <span className="z ho" style={{ left: `${X(LM.cortes[1])}%`, width: `${100 - X(LM.cortes[1])}%` }}>{L('Al hombre', 'Man')}</span>
-              <span className="me" style={{ left: `${X(M.pegados_pct)}%` }}><span>{fmt(M.pegados_pct, 0)}%</span></span>
-              {[30, 40, 50, 60].map(v => <span key={v} className="tick" style={{ left: `${X(v)}%` }}>{v}%</span>)}
-            </div>
-            <div className="tl-kpis">
-              {kpiTile(L('Defensores en el área', 'Defenders in the box'), M.defensores_area, LM.defensores_area, '', 1, 0)}
-              {kpiTile(L('En el área chica', 'In the six-yard box'), M.en_area_chica, LM.en_area_chica, '', 1, 0)}
-              {kpiTile(L('Córners que acaban en remate', 'Corners ending in a shot'), M.remate_pct, LM?.remate_pct ?? null, '%', 0, -1)}
-              {kpiTile(L('xG concedido por córner', 'xG conceded per corner'), M.xg_concedido, LM?.xg_concedido ?? null, '', 3, -1)}
-            </div>
-          </>}
-          {LM && <>
-            <div className="tl-h" style={{ marginTop: 14 }}><b>{L('En la liga, ¿qué marcaje concede menos?', 'Across the league, which marking concedes less?')}</b><Info>{L('Todos los córners de la liga con foto 360, repartidos en tercios según cuántos defensores estaban pegados a su rival. Es una descripción, no una causa: los equipos que marcan al hombre pueden ser distintos en otras cosas.', 'All league corners with a 360 snapshot, split into thirds by how many defenders were tight to their man. It describes, it does not prove cause: man-marking teams may differ in other ways.')}</Info></div>
-            <div className="bx-style">{(['zonal', 'mixto', 'hombre'] as const).map(s => est[s] != null && (
-              <div key={s} className="bx-sr"><span>{L(tipo[s][0], tipo[s][1])}</span><span className="bar"><i style={{ width: `${(est[s] / mxs) * 100}%`, background: s === M.tipo ? 'var(--mc)' : 'var(--ink-3)' }} /></span><b className="mono">{fmt(est[s], 3)}</b></div>))}</div>
-            <p className="note">{L(`xG concedido por córner · remate en el ${fmt(rem.zonal, 0)}% (zonal), ${fmt(rem.mixto, 0)}% (mixta) y ${fmt(rem.hombre, 0)}% (al hombre).`, `xG conceded per corner · shot in ${fmt(rem.zonal, 0)}% (zonal), ${fmt(rem.mixto, 0)}% (mixed) and ${fmt(rem.hombre, 0)}% (man).`)}</p>
-          </>}
+    <div className="c3d">
+      {perClub && C.clubs.length > 0 && <ClubSwitch clubes={C.clubs} value={C.club} set={C.set} media={media} partidos={Object.fromEntries(C.clubs.map(c => [c, d.por_club[c].partidos]))} carrera={d.carrera?.partidos ?? 0} />}
+      <div className="c3d-ctrl">
+        <div className="seg sm" role="group"><button aria-pressed={side === 'favor'} onClick={() => setSide('favor')}><Ico name="sword" />{L('A favor', 'Attacking')}</button><button aria-pressed={side === 'contra'} onClick={() => setSide('contra')}><Ico name="shield" />{L('En contra', 'Defending')}</button></div>
+        <span className="note">{S.n ?? 0} {L('saques de banda en el último tercio', 'final-third throw-ins')} {donde}
+          <Info wide><p>{L('Sólo los saques de banda en el último tercio (a 40 m o menos de la línea de fondo), que son los que pueden acabar en ocasión. «Al área»: el balón cae dentro del área. Remate y xG: tiros de su equipo en la misma jugada durante los 15 segundos siguientes.', 'Only final-third throw-ins (within 40 m of the byline): those are the ones that can lead to a chance. «Into the box»: the ball lands inside the box. Shot and xG: his team\'s shots in the same move within the next 15 seconds.')}</p>
+            <p>{perClub ? L('Mapa: dónde cae el balón; tamaño = cuántos, color = xG medio de esas jugadas.', 'Map: where the ball lands; size = how many, colour = average xG of those plays.') : L('Mapa: los saques con más xG de su carrera (hasta 160), del saque a donde cae.', 'Map: his highest-xG throw-ins (up to 160), from the throw to where it lands.')}</p></Info></span>
+      </div>
+      <div className="c3d-main">
+        <div className="c3d-stage c3d-2d">
+          {perClub && S.mapa ? <><GridMap cells={S.mapa} x0={80} crop={[76, 121]} /><MapKey /></> : (
+            <Pitch vertical crop={[76, 121]}>
+              {pts.map((p, i) => { const [x, y, ex, ey, sh, gol, area] = p; return ex == null ? null : (
+                <g key={i}>
+                  <line x1={x} y1={y} x2={x} y2={y + 1.4} stroke="var(--ink-3)" strokeWidth={0.5} opacity={0.6} />
+                  <circle cx={ex} cy={ey} r={sh ? 1.3 : 0.8} fill={sh ? xgColor(0.55) : 'var(--ink-3)'} fillOpacity={area ? 0.95 : 0.45} stroke={gol ? '#fff' : 'rgba(0,0,0,.35)'} strokeWidth={gol ? 0.6 : 0.2} />
+                </g>) })}
+            </Pitch>
+          )}
+          {!(perClub && S.mapa) && <div className="c3d-2d-key"><span><i className="bx-dot" style={{ background: xgColor(0.55) }} />{L('acabó en remate', 'ended in a shot')}</span><span><i className="bx-dot" style={{ background: 'var(--ink-3)' }} />{L('sin remate', 'no shot')}</span><span><i className="bx-dot ring" />{L('gol', 'goal')}</span><span className="note">{L('Los 160 con más peligro de su carrera; rayita = desde dónde se sacó.', 'His 160 most dangerous ones; tick = where it was taken from.')}</span></div>}
+          {orig.length > 0 && <div className="c3d-zones">
+            <div className="c3d-zones-h">{L('Desde dónde los saca', 'Where he takes them from')}<span className="note">{L('% de sus saques en el último tercio', '% of his final-third throw-ins')}</span></div>
+            {orig.map((n, i) => (
+              <div key={i} className="c3d-zone"><span className="c3d-zone-n">{L(ORIG[i][0], ORIG[i][1])}</span><span className="c3d-zone-bar"><i style={{ width: `${(100 * n) / Math.max(...orig, 1)}%`, background: 'var(--mc)' }} /></span><b>{fmt((100 * n) / totO, 0)}%</b><small>{n}</small></div>
+            ))}
+          </div>}
         </div>
-        <div className="card bx-box">
-          <div className="tl-h"><b>{L('Dónde sufre: zonas de vulnerabilidad', 'Where he suffers: vulnerable zones')}</b><Info>{L('Córners en contra según dónde cae el envío. Color: xG que concede por córner en esa zona frente a la liga (rojo = concede más). Abajo, qué parte de los córners cae ahí y quién gana el primer contacto.', 'Corners against by where the delivery lands. Colour: xG conceded per corner in that zone versus the league (red = concedes more). Below, what share of corners lands there and who wins the first contact.')}</Info></div>
-          <Pitch vertical crop={[88, 121]}>
-            {V.map(z => (ZPOLY[z.zona] ?? []).map(([x0, y0, x1, y1], i) => <rect key={z.zona + i} x={x0} y={y0} width={x1 - x0} height={y1 - y0} fill={zc(z)} fillOpacity={0.85} stroke="var(--pitch-line)" strokeWidth={0.3} />))}
-          </Pitch>
-          <div className="bx-zt h" style={{ marginTop: 10 }}><span>{L('Zona', 'Zone')}</span><span>{L('Córners', 'Corners')}</span><span>{L('Gana el rival', 'Rival wins')}</span><span>xG</span></div>
-          {V.map(z => (
-            <div key={z.zona} className="bx-zt"><span><i style={{ background: zc(z) }} />{zona(z.zona)}</span><span><b>{fmt(z.pct, 0)}%</b><br /><small>{L('liga', 'lg')} {fmt(z.pct_liga, 0)}%</small></span>
-              <span><b>{z.rival_gana_pct == null ? '—' : `${fmt(z.rival_gana_pct, 0)}%`}</b><br /><small>{L('liga', 'lg')} {fmt(z.rival_gana_liga, 0)}%</small></span>
-              <span><b>{z.xg == null ? '—' : fmt(z.xg, 3)}</b><br /><small>{L('liga', 'lg')} {fmt(z.xg_liga, 3)}</small></span></div>
-          ))}
-        </div>
+        <aside className="c3d-side">
+          <div>
+            <div className="h3">{side === 'favor' ? L('Sus saques de banda', 'His throw-ins') : L('Saques del rival contra su equipo', 'Opponent throw-ins against his team')}</div>
+            <div className="note">{donde} · {L('comparado con la liga', 'compared with the league')}</div>
+          </div>
+          <div className="c3d-kpis">
+            <Kpi k={L('Por partido', 'Per match')} v={S.por_partido} l={LG.por_partido} />
+            <Kpi k={L('Caen en el área', 'Land in the box')} v={S.al_area_pct} l={LG.al_area_pct} u="%" d={0} />
+            <Kpi k={L('Acaban en remate', 'End in a shot')} v={S.remate_pct} l={LG.remate_pct} u="%" d={0} dir={g} />
+            <Kpi k={L('xG por partido', 'xG per match')} v={S.xg_por_partido} l={LG.xg_por_partido} d={3} dir={g} sub={`${S.goles ?? 0} ${L('goles', 'goals')} · ${L('liga', 'league')} ${fmt(LG.xg_por_partido, 3)}`} />
+            <Kpi k={side === 'favor' ? L('Primer contacto en el área', 'First contact in the box') : L('Primer contacto del rival', 'Opponent first contact')} v={S.area_primer_contacto_pct} l={LG.area_primer_contacto_pct} u="%" d={0} dir={g} />
+            <Kpi k={L('Retienen el balón', 'Keep the ball')} v={S.retiene_pct} l={LG.retiene_pct} u="%" d={0} dir={g} />
+          </div>
+          {side === 'favor' && d.banda.lanzadores?.length > 0 && <div className="c3d-who">
+            <div className="note">{L('Quién los mete al área (toda su carrera)', 'Who throws them into the box (whole career)')}</div>
+            {d.banda.lanzadores.map(([id, n, c]: [number, string, number]) => (
+              <div key={id} className="c3d-who-row"><span>{jugadorCorto(id, n)}</span><span className="c3d-tip-bar"><i style={{ width: `${(100 * c) / d.banda.lanzadores[0][2]}%`, background: 'var(--mc)' }} /></span><b>{c}</b></div>
+            ))}
+          </div>}
+        </aside>
       </div>
     </div>
   )

@@ -17,7 +17,7 @@ export type Mode = {
 
 export const MODES: Mode[] = [
   { k: 'resumen', name: L('Resumen', 'Summary'), title: L('Su ADN en tres ideas', 'His DNA in three ideas'), q: L('¿Cómo juega este DT?', 'How does this coach play?'), color: '#3987e5',
-    desc: L('Los rasgos que son suyos y no de sus jugadores, con los números clave de su carrera.', 'The traits that belong to him, not his players, plus the key numbers of his career.'), subs: [['resumen', L('Resumen', 'Summary')]] },
+    desc: L('Los rasgos que son suyos y no de sus jugadores, con los números clave de su carrera, cómo jugarle, qué jugadores le encajan y cómo vigilar si sigue siendo él.', 'The traits that belong to him, not his players, plus the key numbers of his career, how to play him, which players fit him and how to track whether he is still himself.'), subs: [['resumen', L('Resumen', 'Summary')], ['plan', L('Cómo jugarle', 'How to play him')], ['fichajes', L('Jugadores a su medida', 'Players who fit')], ['tablero', L('Seguimiento', 'Tracking')]] },
   { k: 'separar', name: L('¿DT o plantilla?', 'Coach or squad?'), title: L('¿DT o plantilla?', 'Coach or squad?'), q: L('¿El estilo es suyo o de sus jugadores?', 'Is the style his, or his players\'?'), color: '#e0662f',
     desc: L('Cuánto de cada rasgo pone el DT, la plantilla, el club y el rival, y si su estilo viaja con él de club en club.', 'How much of each trait comes from the coach, squad, club and opponent, and whether his style travels with him.'),
     subs: [['dt', L('DT vs plantilla', 'Coach vs squad')], ['transfer', L('Prueba de transferencia', 'Transfer test')]] },
@@ -33,9 +33,6 @@ export const MODES: Mode[] = [
     subs: [['sim', L('Rejugar partidos', 'Replay matches')], ['whatif', L('Llévalo a otro club', 'Move him to another club')], ['liga', L('Simulador de liga', 'League simulator')]] },
   { k: 'vs', name: L('Cara a cara', 'Head to head'), title: L('Cara a cara', 'Head to head'), q: L('¿En qué se parece a otro DT?', 'Who does he play like?'), color: '#e5484d',
     desc: L('Compara su estilo propio contra cualquier otro entrenador, rasgo por rasgo, y arma el plan para enfrentar a un técnico o equipo concreto.', 'Compare his own style with any other coach, trait by trait, and build the plan to face a specific coach or team.'), subs: [['vs', '1 vs 1'], ['duelo', L('Cómo jugarle a un rival', 'Game plan vs a rival')]] },
-  { k: 'plan', name: L('Plan de partido', 'Game plan'), title: L('Qué hacer con su ADN', 'What to do with his DNA'), q: L('¿Cómo le juego y qué le conviene?', 'How do I play him, and what suits him?'), color: '#11a3b4',
-    desc: L('Claves para enfrentarlo con su evidencia, los jugadores que encajan con su estilo y un tablero para vigilar si sigue siendo él.', 'Keys to face him with their evidence, the players who fit his style and a dashboard to check he is still himself.'),
-    subs: [['plan', L('Cómo jugarle', 'How to play him')], ['fichajes', L('Jugadores a su medida', 'Players who fit')], ['tablero', L('Seguimiento', 'Tracking')]] },
   { k: 'metodo', name: L('Método', 'Method'), title: L('Método', 'Method'), q: L('¿Cómo se calcula todo esto?', 'How is all this calculated?'), color: '#8a9a92',
     desc: L('El modelo, sus supuestos y sus límites.', 'The model, its assumptions and its limits.'), subs: [['metodo', L('Método', 'Method')]] },
 ]

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ClubLogo } from '../charts'
 import { Ico, type IconName } from '../icons'
 import Info from '../Info'
-import { dataUrl, fmt, getJSON, jugadorCorto, type Any } from '../lib'
+import { dataUrl, fmt, getJSON, jugadorCorto, shortName, type Any } from '../lib'
 import { L, LANG } from '../settings'
 import { kName } from './resumenKit'
 import '../styles/tl.css'
@@ -10,6 +10,8 @@ import '../styles/plan.css'
 
 /* Accionable (pipeline/plan.py → plan.json): cómo jugarle, qué plantilla le conviene y un tablero
    para vigilar si sigue siendo él. Todo sale de su sello (α), ya sin el efecto de sus jugadores. */
+
+const faseTxt = (f: string, n: string) => f === 'con' ? L(`Cuando ${n} tiene el balón`, `When ${n} has the ball`) : f === 'sin' ? L(`Cuando su rival tiene el balón`, `When his opponent has the ball`) : f === 'trans' ? L('En las transiciones', 'In transitions') : f === 'bp' ? L('A balón parado', 'At set pieces') : L('Durante el partido', 'During the match')
 
 export function usePlan(id: number) {
   const [d, setD] = useState<Any>(null)
@@ -49,21 +51,20 @@ export function PlanJuego({ art, glob }: { art: Any; glob: Any }) {
   const d = usePlan(art.id)
   if (d === false) return <div className="card note">{L('Aún no hay plan para este DT.', 'No plan for this coach yet.')}</div>
   if (!d) return <div className="card note">{L('Cargando…', 'Loading…')}</div>
-  const F = d.meta.fases
   const acc: Any[] = d.acciones
   const maxF = Math.max(...acc.map(a => a.fuerza ?? 0), 1)
   return (
     <div className="pl">
       <div className="pl-lead">
-        <h3 className="h2">{L(`Cómo jugarle a ${art.nombre.split(' ')[0]}`, `How to play against ${art.nombre.split(' ')[0]}`)}
+        <h3 className="h2">{L(`Cómo jugarle a ${shortName(art.nombre)}`, `How to play against ${shortName(art.nombre)}`)}
           <Info wide><p>{L('Cada clave sale de una regla escrita de antemano: si un rasgo de su sello es claro (al menos 0.25 desviaciones típicas y 1.64 veces su error estándar), la regla propone qué hacer en contra. Su sello es su estilo con jugadores, club y rival promedio, así que no depende de quién tenga hoy en la plantilla.', 'Each key comes from a rule written in advance: if a trait of his imprint is clear (at least 0.25 standard deviations and 1.64 times its standard error), the rule proposes what to do against it. His imprint is his style with average players, club and opponent, so it does not depend on who is in the squad today.')}</p>
             <p>{L(`Se eligen las más fuertes, como máximo dos por fase. Este DT activó ${d.todas} reglas. A balón parado se usan sus córners en contra (360) y sus saques; en el partido, cómo reacciona al marcador y cuándo mueve el banco.`, `The strongest are chosen, at most two per phase. This coach triggered ${d.todas} rules. At set pieces we use his corners against (360) and his throw-ins; in-game, how he reacts to the score and when he goes to the bench.`)}</p></Info></h3>
-        <p className="note">{L('Lo que haría un cuerpo técnico rival con estos datos. Cada clave lleva la evidencia que la sostiene.', 'What an opposing staff would do with this data. Every key carries the evidence behind it.')}</p>
+        <p className="note">{L(`Recomendaciones para el técnico que enfrente a ${shortName(art.nombre)}. Cada clave lleva la evidencia que la sostiene.`, `Recommendations for the coach facing ${shortName(art.nombre)}. Every key carries the evidence behind it.`)}</p>
       </div>
       <div className="pl-grid">
         {acc.map((a, i) => (
           <article key={a.id} className="card pl-card" style={{ ['--fc' as string]: FASE_C[a.fase], ['--i' as string]: i }}>
-            <div className="pl-top"><span className="pl-fase"><Ico name={FASE_IC[a.fase] ?? 'target'} />{L(F[a.fase]?.es ?? a.fase, F[a.fase]?.en ?? a.fase)}</span>
+            <div className="pl-top"><span className="pl-fase"><Ico name={FASE_IC[a.fase] ?? 'target'} />{faseTxt(a.fase, shortName(art.nombre).split(' ').slice(1).join(' ') || shortName(art.nombre))}</span>
               <span className="pl-str" title={L('Qué tan clara es la evidencia', 'How clear the evidence is')}><i style={{ width: `${(100 * (a.fuerza ?? 0)) / maxF}%` }} /></span></div>
             <h4 className="pl-t"><span className="pl-n">{i + 1}</span>{tx(a, 'titulo')}</h4>
             <p className="pl-p">{tx(a, 'texto')}</p>

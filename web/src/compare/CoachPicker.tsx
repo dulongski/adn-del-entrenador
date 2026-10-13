@@ -8,8 +8,8 @@ import { mapLabel } from '../i18n/data'
 type Orden = 'parecido' | 'distinto' | 'nombre' | 'partidos'
 
 /** Buscador de rival al estilo del mercado de "¿Y si…?": texto + filtros + lista ordenable. */
-export default function CoachPicker({ sims, pts, mapa, media, selected, onPick, nA }: {
-  sims: { id: number; r: number }[]; pts: Map<number, Any>; mapa: Any; media: Any; selected: number; onPick: (id: number) => void; nA: string
+export default function CoachPicker({ sims, pts, mapa, media, selected, onPick, nA, title, extra }: {
+  sims: { id: number; r: number }[]; pts: Map<number, Any>; mapa: Any; media: Any; selected: number; onPick: (id: number) => void; nA: string; title?: string; extra?: { id: number; k: string }[]
 }) {
   const [q, setQ] = useState('')
   const [activos, setActivos] = useState(false)
@@ -49,8 +49,11 @@ export default function CoachPicker({ sims, pts, mapa, media, selected, onPick, 
   return (
     <div className="card vs-cp">
       <div className="vs-cp-head">
-        <div className="h3" style={{ margin: 0 }}>{L(`¿Con quién comparar a ${nA}?`, `Who should ${nA} face?`)}</div>
+        <div className="h3" style={{ margin: 0 }}>{title ?? L(`¿Con quién comparar a ${nA}?`, `Who should ${nA} face?`)}</div>
         <div className="vs-cp-quick">
+          {(extra ?? []).filter(x => pts.get(x.id)).map(x => (
+            <button key={x.k} className="vs-cp-chip" aria-pressed={selected === x.id} onClick={() => onPick(x.id)}><span className="vs-cp-chip-k">{x.k}</span> {shortName(pts.get(x.id).nombre)}</button>
+          ))}
           <button className="vs-cp-chip" aria-pressed={selected === twin.id} onClick={() => onPick(twin.id)}>
             <span className="vs-cp-chip-k">{L('Su gemelo', 'His twin')}</span> {shortName(pts.get(twin.id).nombre)}
           </button>

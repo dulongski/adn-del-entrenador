@@ -112,3 +112,15 @@
 .du-moments { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; } .du-mo { display: flex; gap: 10px; align-items: baseline; font-size: 14px; line-height: 1.4; }
 .du-mi { font: 800 13px var(--mono); color: var(--mc); } .du-mo em { font-style: normal; font: 700 11.5px var(--mono); margin-left: 6px; } .du-mo em.up { color: color-mix(in oklab, var(--div-pos) 75%, var(--ink)); } .du-mo em.dn { color: color-mix(in oklab, var(--div-neg) 75%, var(--ink)); }
 @media (max-width: 760px) { .du-head { grid-template-columns: 1fr 1fr; } .du-mid { grid-column: 1 / -1; order: 3; } .du-key { grid-template-columns: 1fr; } .du-kf { align-items: flex-start; text-align: left; } .du-side b { font-size: 20px; } }
+
+/* balón parado 2 con el esquema de Córners */
+.bx-zone { grid-template-columns: 130px minmax(0, 1fr) 40px 110px 130px !important; } .bx-zone small.bx-bad { color: color-mix(in oklab, var(--div-neg) 75%, var(--ink)); font-weight: 700; }
+.bx-type { display: flex; flex-direction: column; gap: 4px; } .bx-type > b { font: 800 26px var(--display); text-transform: uppercase; color: color-mix(in oklab, var(--mc) 75%, var(--ink)); line-height: 1; }
+.bx-scale { position: relative; height: 10px; margin-top: 8px; border-radius: 6px; overflow: visible; background: var(--surface-2); }
+.bx-scale i { position: absolute; top: 0; bottom: 0; } .bx-scale i.zo { left: 0; border-radius: 6px 0 0 6px; background: color-mix(in oklab, var(--c-club) 35%, var(--surface)); } .bx-scale i.mi { background: var(--surface-2); } .bx-scale i.ho { border-radius: 0 6px 6px 0; background: color-mix(in oklab, var(--c-rival) 35%, var(--surface)); }
+.bx-scale b { position: absolute; top: -4px; width: 4px; height: 18px; margin-left: -2px; border-radius: 2px; background: var(--ink); }
+.bx-scale-l { display: flex; justify-content: space-between; font-size: 11px; }
+@media (max-width: 760px) { .bx-zone { grid-template-columns: 100px minmax(0, 1fr) 38px !important; } .bx-zone small { display: none; } }
+
+.bx-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; } .bx-dot.ring { border: 2px solid #fff; background: transparent; }
+.bx-zone small { white-space: nowrap; } .bx-zone { grid-template-columns: 120px minmax(0, 1fr) 40px 110px 150px !important; }
