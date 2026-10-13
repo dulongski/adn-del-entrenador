@@ -377,6 +377,8 @@ def main():
         out["dts"][str(c)] = {"acciones": elegir(pool), "todas": len(pool),
                               "fichajes": fichajes(c, art, glob, T, B, rel, season, club),
                               "tablero": tablero(c, art, glob, tiempo, rel)}
+    from pipeline.plan_textos import apply
+    out = apply(out)  # textos en tercera persona con {N} (sin «tú/él»)
     json.dump(out, open(OUT, "w"), ensure_ascii=False, separators=(",", ":"))
     n = [len(v["acciones"]) for v in out["dts"].values()]
     print(f"plan.json: {len(out['dts'])} DTs · acciones por DT min {min(n)} / mediana {int(np.median(n))} · {OUT.stat().st_size / 1e3:.0f} KB")

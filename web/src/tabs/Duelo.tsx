@@ -18,7 +18,7 @@ import '../styles/plan.css'
 
 const ap = (a: Any) => Object.fromEntries((a?.huella ?? []).map((h: Any) => [h.kpi, h.alpha])) as Record<string, number>
 const sg = (v: number) => `${v >= 0 ? '+' : '−'}${fmt(Math.abs(v), 2)}`
-const tx = (a: Any, k: string) => (LANG === 'en' ? a[`${k}_en`] : a[k]) ?? a[k]
+const tx = (a: Any, k: string, n = '') => String((LANG === 'en' ? a[`${k}_en`] : a[k]) ?? a[k]).split('{N}').join(n)
 
 /* Qué tiene que hacer el rival para aplicar cada clave de plan.py: [kpi, signo] de SU estilo. */
 const NEED: Record<string, [string, number][]> = {
@@ -217,7 +217,7 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
           <div className="tl-h"><b>{L(`Lo que le funciona a ${sA} contra ${sB}, y si ${sA} ya juega así`, `What works for ${sA} against ${sB}, and whether ${sA} already plays that way`)}</b></div>
           {tusClaves.length === 0 && <p className="note">{L('Su estilo no tiene rasgos lo bastante claros.', 'His style has no clear enough traits.')}</p>}
           {tusClaves.map(({ a, f }: Any) => (
-            <div key={a.id} className="du-key"><span className="du-kt"><b>{tx(a, 'titulo')}</b><small>{tx(a, 'texto')}</small></span>
+            <div key={a.id} className="du-key"><span className="du-kt"><b>{tx(a, 'titulo', sB)}</b><small>{tx(a, 'texto', sB)}</small></span>
               <span className="du-kf"><FitTag f={f} mine />{f && <small>{f.parts.map((p: Any) => `${kName(p.k, glob)} ${sg(p.v)}σ`).join(' · ')}</small>}</span></div>
           ))}
         </div>
@@ -225,7 +225,7 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
           <div className="tl-h"><b>{L(`Lo que le funciona a ${sB} contra ${sA}, y si ${sB} lo hace`, `What works for ${sB} against ${sA}, and whether ${sB} does it`)}</b></div>
           {susClaves.length === 0 && <p className="note">{L('Tu estilo no tiene rasgos lo bastante claros.', 'Your style has no clear enough traits.')}</p>}
           {susClaves.map(({ a, f }: Any) => (
-            <div key={a.id} className="du-key"><span className="du-kt"><b>{tx(a, 'titulo')}</b><small>{tx(a, 'texto')}</small></span>
+            <div key={a.id} className="du-key"><span className="du-kt"><b>{tx(a, 'titulo', sA)}</b><small>{tx(a, 'texto', sA)}</small></span>
               <span className="du-kf"><FitTag f={f} mine={false} />{f && <small>{f.parts.map((p: Any) => `${kName(p.k, glob)} ${sg(p.v)}σ`).join(' · ')}</small>}</span></div>
           ))}
         </div>

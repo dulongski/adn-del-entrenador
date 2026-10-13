@@ -9,7 +9,7 @@ const Empty = ({ rd, mode, color, title, n, total }: { rd: RD; mode: string; col
   <Frame rd={rd} mode={mode} color={color} title={title} n={n} total={total}><div className="rp-card" style={{ margin: 'auto', textAlign: 'center', color: 'var(--ink-3)' }}>{L('Todavía no hay datos suficientes para esta página.', 'There is not enough data for this page yet.')}</div></Frame>
 )
 const divColor = (v: number, sc: number) => `color-mix(in oklab, ${v >= 0 ? 'var(--div-pos)' : 'var(--div-neg)'} ${Math.round(8 + Math.min(1, Math.abs(v) / sc) * 55)}%, var(--paper))`
-const tx = (a: Any, k: string) => (LANG === 'en' ? a[`${k}_en`] : a[k]) ?? a[k]
+const tx = (a: Any, k: string, n = '') => String((LANG === 'en' ? a[`${k}_en`] : a[k]) ?? a[k]).split('{N}').join(n)
 const FC: Record<string, string> = { con: 'var(--c-dt)', sin: 'var(--c-club)', trans: 'var(--c-rival)', bp: 'var(--c-ctx)', partido: 'var(--c-plantilla)' }
 const ZONA_EN: Record<string, string> = { 'Primer palo': 'Near post', 'Área chica': 'Six-yard box', 'Punto penal': 'Penalty spot', 'Segundo palo': 'Far post', Corto: 'Short' }
 
@@ -41,8 +41,8 @@ export function PlanPage({ rd, n, total }: { rd: RD; n: number; total: number })
           {(P.acciones as Any[]).slice(0, 6).map((a, i) => (
             <div key={a.id} className="rp-card rp-pk" style={{ ['--fc' as string]: FC[a.fase] }}>
               <span className="rp-pk-f">{a.fase === 'con' ? L(`Cuando ${sur} tiene el balón`, `When ${sur} has the ball`) : a.fase === 'sin' ? L('Cuando su rival tiene el balón', 'When his opponent has the ball') : L(F[a.fase]?.es ?? a.fase, F[a.fase]?.en ?? a.fase)}</span>
-              <h4><i>{i + 1}</i>{tx(a, 'titulo')}</h4>
-              <p>{tx(a, 'texto')}</p>
+              <h4><i>{i + 1}</i>{tx(a, 'titulo', sur)}</h4>
+              <p>{tx(a, 'texto', sur)}</p>
               <small>{evLine(a, rd.glob)}</small>
             </div>
           ))}

@@ -21,7 +21,8 @@ export function usePlan(id: number) {
 
 const FASE_IC: Record<string, IconName> = { con: 'ball', sin: 'shield', trans: 'bolt', bp: 'flag', partido: 'clock' }
 const FASE_C: Record<string, string> = { con: 'var(--c-dt)', sin: 'var(--c-club)', trans: 'var(--c-rival)', bp: 'var(--c-ctx)', partido: 'var(--c-plantilla)' }
-const tx = (a: Any, k: 'titulo' | 'texto') => (LANG === 'en' ? a[`${k}_en`] : a[k]) ?? a[k]
+const tx = (a: Any, k: 'titulo' | 'texto', n = '') => String((LANG === 'en' ? a[`${k}_en`] : a[k]) ?? a[k]).split('{N}').join(n)
+export const surname = (full: string) => shortName(full).split(' ').slice(1).join(' ') || shortName(full)
 const ZONA_EN: Record<string, string> = { 'Primer palo': 'Near post', 'Área chica': 'Six-yard box', 'Punto penal': 'Penalty spot', 'Segundo palo': 'Far post', Corto: 'Short' }
 const zona = (z: string) => L(z, ZONA_EN[z] ?? z)
 const pctTxt = (p?: number | null) => (p == null ? '' : p >= 50 ? L(`más alto que el ${fmt(p, 0)}% de los DTs`, `higher than ${fmt(p, 0)}% of coaches`) : L(`más bajo que el ${fmt(100 - p, 0)}% de los DTs`, `lower than ${fmt(100 - p, 0)}% of coaches`))
@@ -66,8 +67,8 @@ export function PlanJuego({ art, glob }: { art: Any; glob: Any }) {
           <article key={a.id} className="card pl-card" style={{ ['--fc' as string]: FASE_C[a.fase], ['--i' as string]: i }}>
             <div className="pl-top"><span className="pl-fase"><Ico name={FASE_IC[a.fase] ?? 'target'} />{faseTxt(a.fase, shortName(art.nombre).split(' ').slice(1).join(' ') || shortName(art.nombre))}</span>
               <span className="pl-str" title={L('Qué tan clara es la evidencia', 'How clear the evidence is')}><i style={{ width: `${(100 * (a.fuerza ?? 0)) / maxF}%` }} /></span></div>
-            <h4 className="pl-t"><span className="pl-n">{i + 1}</span>{tx(a, 'titulo')}</h4>
-            <p className="pl-p">{tx(a, 'texto')}</p>
+            <h4 className="pl-t"><span className="pl-n">{i + 1}</span>{tx(a, 'titulo', surname(art.nombre))}</h4>
+            <p className="pl-p">{tx(a, 'texto', surname(art.nombre))}</p>
             <div className="pl-evs"><Evidence a={a} glob={glob} /></div>
           </article>
         ))}
@@ -97,7 +98,7 @@ export function Fichajes({ art, glob, media }: { art: Any; glob: Any; media: Any
     <div className="pl">
       <div className="pl-lead">
         <h3 className="h2">{L('Qué jugadores le convienen', 'Which players suit him')}
-          <Info wide><p>{L('El modelo estima, para cada jugador con al menos 900 minutos, cómo cambia el estilo del equipo cuando está en la cancha, ya descontado el entrenador, el club y el rival. Aquí se suman esos efectos sobre los tres rasgos más claros de su sello: los primeros de la lista empujan al equipo en la misma dirección que él.', 'For each player with at least 900 minutes, the model estimates how the team style changes when he is on the pitch, net of coach, club and opponent. Here those effects are summed over the three clearest traits of his imprint: the top of the list pushes the team the same way he does.')}</p>
+          <Info wide><p>{L('El modelo estima, para cada jugador con al menos 900 minutos, cómo cambia el estilo del equipo cuando está en la cancha, ya descontado el entrenador, el club y el rival. Aquí se suman esos efectos sobre los tres rasgos más claros de su sello: los primeros de la lista empujan al equipo en la misma dirección que su estilo.', 'For each player with at least 900 minutes, the model estimates how the team style changes when he is on the pitch, net of coach, club and opponent. Here those effects are summed over the three clearest traits of his imprint: the top of the list pushes the team the same way he does.')}</p>
             <p>{L('Son efectos encogidos por el ridge y medidos con los compañeros que tuvo cada jugador: sirven para hacer una lista corta, no para decidir un fichaje solos.', 'They are ridge-shrunk effects measured with each player\'s team-mates: use them to build a shortlist, not to decide a signing on their own.')}</p></Info></h3>
         <div className="pl-rasgos">{f.rasgos.map((r: Any) => <span key={r.kpi} className={`chip ${r.alpha >= 0 ? 'up' : 'down'}`}>{r.alpha >= 0 ? '▲' : '▼'} {kName(r.kpi, glob)} <small>{pctTxt(r.pct)}</small></span>)}</div>
       </div>
@@ -138,7 +139,7 @@ export function Tablero({ art, glob }: { art: Any; glob: Any }) {
   return (
     <div className="pl">
       <div className="pl-lead">
-        <h3 className="h2">{L('¿Sigue siendo él? Tablero de seguimiento', 'Is he still himself? Tracking dashboard')}
+        <h3 className="h2">{L(`¿${surname(art.nombre)} sigue jugando igual? Tablero de seguimiento`, `Is ${surname(art.nombre)} still playing the same way? Tracking dashboard`)}
           <Info wide><p>{L('Sus seis rasgos más marcados y confiables (la confiabilidad sale de la prueba mitad/mitad del Método). La franja es lo esperable para el promedio de 10 partidos si sigue jugando como siempre (su media de carrera ± 1.64 veces el error de un promedio de 10). El punto es lo que hizo en los últimos 10.', 'His six most distinctive and reliable traits (reliability comes from the split-half test in Method). The band is what to expect from a 10-match average if he keeps playing as always (career mean ± 1.64 times the error of a 10-match average). The dot is what he did in the last 10.')}</p>
             <p>{L('Valores en desviaciones típicas frente a la liga, ya sin el efecto de jugadores, club, rival ni contexto.', 'Values in standard deviations versus the league, net of players, club, opponent and context.')}</p></Info></h3>
         <p className="note">{L(`Últimos ${t.n} partidos: del ${t.desde} al ${t.hasta}.`, `Last ${t.n} matches: ${t.desde} to ${t.hasta}.`)}</p>

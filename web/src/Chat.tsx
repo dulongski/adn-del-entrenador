@@ -341,7 +341,7 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
         const ev = (e: Any) => e.kpi && e.sello ? `${kl(e.kpi)}: ${e.sello} (liga ${e.liga}, percentil ${e.pct})` : JSON.stringify(e)
         const t = T?.dts?.[String(id)]
         return {
-          claves: d.acciones.map((a: Any) => ({ fase: a.fase, titulo: en ? a.titulo_en : a.titulo, que_hacer: en ? a.texto_en : a.texto, evidencia: a.evidencia.map(ev) })),
+          claves: d.acciones.map((a: Any) => ({ fase: a.fase, titulo: String(en ? a.titulo_en : a.titulo).split('{N}').join(dtName(id)), que_hacer: String(en ? a.texto_en : a.texto).split('{N}').join(dtName(id)), evidencia: a.evidencia.map(ev) })),
           jugadores_que_encajan: d.fichajes ? { rasgos: d.fichajes.rasgos.map((r: Any) => kl(r.kpi)), liga: d.fichajes.liga.slice(0, 5).map((p: Any) => `${jugadorShort(p.id, p.nombre)} (${p.club})`), su_plantilla_suman: d.fichajes.suman.map((p: Any) => jugadorShort(p.id, p.nombre)), su_plantilla_restan: d.fichajes.restan.map((p: Any) => jugadorShort(p.id, p.nombre)) } : null,
           tablero_ultimos_10: d.tablero ? d.tablero.rasgos.map((r: Any) => `${kl(r.kpi)}: ${r.estado}`) : null,
           estabilidad_torneo_a_torneo: t ? { r: t.identidad?.r, percentil_entre_dts: t.identidad?.pct, cambios_claros: t.cambios.length } : null,
