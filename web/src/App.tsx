@@ -14,6 +14,7 @@ import { TirosLibres } from './tabs/TirosLibres'
 import { Banda, BpDefensa } from './tabs/BpExtra'
 import { Fichajes, PlanJuego, Tablero } from './tabs/Plan'
 import { Tiempo } from './tabs/Tiempo'
+import { Duelo } from './tabs/Duelo'
 import { Resumen, DtVsPlantilla, Transferencia, Fases, Contexto, Jugadores, BalonParado, Simulador, Metodo } from './tabs'
 
 import Hub from './Hub'
@@ -206,6 +207,7 @@ export default function App() {
                 {tab === 'whatif' && <WhatIf art={art} glob={glob} media={media} />}
                 {tab === 'liga' && <LigaSim art={art} media={media} />}
                 {tab === 'vs' && <Compare key={art.id} art={art} glob={glob} media={media} mapa={mapa} onOpen={openCoach} />}
+                {tab === 'duelo' && <Duelo key={art.id} art={art} glob={glob} media={media} mapa={mapa} />}
                 {tab === 'metodo' && <Metodo glob={glob} />}
               </section>
             )}
@@ -281,6 +283,7 @@ function SubIcon({ k }: { k: TabKey }) {
     bpdef: <><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z" fill="none" strokeWidth="1.8" strokeLinejoin="round" /><path d="M9 12l2 2 4-4" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></>,
     plan: <><rect x="3.5" y="4" width="17" height="16" rx="2" fill="none" strokeWidth="1.8" /><path d="M7 15l3-3 2 2 5-6" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M14.5 8H17v2.5" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></>,
     fichajes: <><circle cx="9" cy="8" r="3.2" fill="none" strokeWidth="1.8" /><path d="M3.5 19c.8-3.4 3-5 5.5-5s4.7 1.6 5.5 5" fill="none" strokeWidth="1.8" strokeLinecap="round" /><path d="M17 8v6m-3-3h6" fill="none" strokeWidth="1.8" strokeLinecap="round" /></>,
+    duelo: <><circle cx="7" cy="8" r="3" fill="none" strokeWidth="1.8" /><circle cx="17" cy="8" r="3" fill="none" strokeWidth="1.8" /><path d="M3 19c.6-3 2-4.6 4-4.6s3.4 1.6 4 4.6M13 19c.6-3 2-4.6 4-4.6s3.4 1.6 4 4.6" fill="none" strokeWidth="1.8" strokeLinecap="round" /></>,
     tablero: <><path d="M4 16a8 8 0 0 1 16 0" fill="none" strokeWidth="1.8" strokeLinecap="round" /><path d="M12 16l4-5" fill="none" strokeWidth="2" strokeLinecap="round" /><circle cx="12" cy="16" r="1.4" /></>,
     liga: <><path d="M7 4h10v5a5 5 0 0 1-10 0z" fill="none" strokeWidth="1.8" strokeLinejoin="round" /><path d="M12 14v4m-4 2h8" fill="none" strokeWidth="1.8" strokeLinecap="round" /></>,
     whatif: <><path d="M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3h-2a2 2 0 0 1-4 0z" fill="none" strokeWidth="1.7" strokeLinejoin="round" /></>,

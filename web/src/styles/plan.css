@@ -86,3 +86,29 @@
   .ti-tbl { min-width: 0; } .ti-tbl td { min-width: 44px; }
   .tl-h { flex-wrap: wrap; } .tl-h > span[style] { margin-left: 0 !important; width: 100%; }
 }
+
+/* ---------------- cara a cara: cómo jugarle a un rival */
+.du-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
+.du-clubs { display: flex; flex-wrap: wrap; gap: 4px; } .du-clubs button { border: 1px solid transparent; background: var(--surface); border-radius: 9px; padding: 4px; cursor: pointer; line-height: 0; opacity: .7; transition: opacity .2s, border-color .2s; }
+.du-clubs button:hover { opacity: 1; } .du-clubs button.on { opacity: 1; border-color: var(--mc); box-shadow: 0 0 0 2px color-mix(in oklab, var(--mc) 30%, transparent); }
+.du-pick select { background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 9px; padding: 6px 10px; font: inherit; font-size: 13px; max-width: 320px; }
+.du-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }
+.du-side { display: flex; align-items: center; gap: 12px; } .du-side.r { justify-content: flex-end; text-align: right; } .du-side b { font: 800 26px var(--display); text-transform: uppercase; display: block; line-height: 1; } .du-side small { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-3); font-size: 12.5px; }
+.du-mid { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; } .du-rec { font: 800 30px var(--display); } .du-rec i { font-size: 14px; font-style: normal; color: var(--ink-3); margin: 0 6px 0 2px; } .du-mid small { color: var(--ink-3); font-size: 12px; }
+.du-next { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: color-mix(in oklab, var(--mc) 70%, var(--ink)); }
+.du-last { display: flex; gap: 4px; } .du-last span { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font: 800 11px var(--mono); color: #0b1018; } .du-last .r-G { background: var(--div-pos); } .du-last .r-E { background: var(--ink-3); } .du-last .r-P { background: var(--div-neg); }
+.du-key { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.du-kt { display: flex; flex-direction: column; gap: 3px; } .du-kt b { font-size: 14px; } .du-kt small { color: var(--ink-3); font-size: 12px; line-height: 1.35; }
+.du-kf { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; } .du-kf small { font: 600 10.5px var(--mono); color: var(--ink-3); }
+.du-tag { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.du-tag.tu { background: color-mix(in oklab, var(--div-pos) 22%, var(--surface)); color: color-mix(in oklab, var(--div-pos) 80%, var(--ink)); }
+.du-tag.el { background: color-mix(in oklab, var(--div-neg) 22%, var(--surface)); color: color-mix(in oklab, var(--div-neg) 80%, var(--ink)); }
+.du-tag.choque { background: color-mix(in oklab, var(--c-plantilla) 25%, var(--surface)); color: color-mix(in oklab, var(--c-plantilla) 80%, var(--ink)); } .du-tag.neutro { background: var(--surface-2); color: var(--ink-3); }
+.du-duels { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.du-duel { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--rule); border-top: 3px solid var(--fc); border-radius: 12px; background: var(--bg); }
+.du-dt { font-size: 15px; } .du-vs { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--ink-2); } .du-vs em { font: 700 12px var(--mono); font-style: normal; color: var(--ink); margin-left: 4px; }
+.du-duel p { margin: 0; font-size: 13px; line-height: 1.4; color: var(--ink-2); } .du-duel .du-tag { align-self: flex-start; margin-top: auto; }
+.du-tbl th.sep, .du-tbl td.sep { border-left: 2px solid var(--rule); } .du-tbl td { font-size: 12px; height: 44px; } .du-tbl td small { display: block; font: 600 9.5px var(--body, inherit); color: var(--ink-2); line-height: 1.1; }
+.du-moments { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; } .du-mo { display: flex; gap: 10px; align-items: baseline; font-size: 14px; line-height: 1.4; }
+.du-mi { font: 800 13px var(--mono); color: var(--mc); } .du-mo em { font-style: normal; font: 700 11.5px var(--mono); margin-left: 6px; } .du-mo em.up { color: color-mix(in oklab, var(--div-pos) 75%, var(--ink)); } .du-mo em.dn { color: color-mix(in oklab, var(--div-neg) 75%, var(--ink)); }
+@media (max-width: 760px) { .du-head { grid-template-columns: 1fr 1fr; } .du-mid { grid-column: 1 / -1; order: 3; } .du-key { grid-template-columns: 1fr; } .du-kf { align-items: flex-start; text-align: left; } .du-side b { font-size: 20px; } }

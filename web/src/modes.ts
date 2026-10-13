@@ -2,7 +2,7 @@
    no por nombre técnico. Cada modo tiene su color (tarjeta, barra fija y subpestañas). */
 import { L } from './settings'
 
-export type TabKey = 'resumen' | 'dt' | 'transfer' | 'fases' | 'contexto' | 'tiempo' | 'jugadores' | 'bp' | 'tl' | 'banda' | 'bpdef' | 'sim' | 'whatif' | 'liga' | 'plan' | 'fichajes' | 'tablero' | 'vs' | 'metodo'
+export type TabKey = 'resumen' | 'dt' | 'transfer' | 'fases' | 'contexto' | 'tiempo' | 'jugadores' | 'bp' | 'tl' | 'banda' | 'bpdef' | 'sim' | 'whatif' | 'liga' | 'plan' | 'fichajes' | 'tablero' | 'vs' | 'duelo' | 'metodo'
 export type View = TabKey | 'hub'
 
 export type Mode = {
@@ -32,7 +32,7 @@ export const MODES: Mode[] = [
     desc: L('Rejuega sus partidos con el xG de cada tiro, o llévalo a dirigir otro club con el once que quieras, y juega un torneo completo con liguilla.', 'Replay his matches with the xG of every shot, send him to another club with the XI you choose, and play a full tournament with playoffs.'),
     subs: [['sim', L('Rejugar partidos', 'Replay matches')], ['whatif', L('Llévalo a otro club', 'Move him to another club')], ['liga', L('Simulador de liga', 'League simulator')]] },
   { k: 'vs', name: L('Cara a cara', 'Head to head'), title: L('Cara a cara', 'Head to head'), q: L('¿En qué se parece a otro DT?', 'Who does he play like?'), color: '#e5484d',
-    desc: L('Compara su estilo propio contra cualquier otro entrenador, rasgo por rasgo.', 'Compare his own style with any other coach, trait by trait.'), subs: [['vs', '1 vs 1']] },
+    desc: L('Compara su estilo propio contra cualquier otro entrenador, rasgo por rasgo, y arma el plan para enfrentar a un técnico o equipo concreto.', 'Compare his own style with any other coach, trait by trait, and build the plan to face a specific coach or team.'), subs: [['vs', '1 vs 1'], ['duelo', L('Cómo jugarle a un rival', 'Game plan vs a rival')]] },
   { k: 'plan', name: L('Plan de partido', 'Game plan'), title: L('Qué hacer con su ADN', 'What to do with his DNA'), q: L('¿Cómo le juego y qué le conviene?', 'How do I play him, and what suits him?'), color: '#11a3b4',
     desc: L('Claves para enfrentarlo con su evidencia, los jugadores que encajan con su estilo y un tablero para vigilar si sigue siendo él.', 'Keys to face him with their evidence, the players who fit his style and a dashboard to check he is still himself.'),
     subs: [['plan', L('Cómo jugarle', 'How to play him')], ['fichajes', L('Jugadores a su medida', 'Players who fit')], ['tablero', L('Seguimiento', 'Tracking')]] },

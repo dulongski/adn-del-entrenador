@@ -379,7 +379,7 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
         const v = String(view)
         const c = v === 'mapa' || coach_id == null ? null : Number(coach_id)
         if (c != null && !DT_BY_ID.has(c)) throw new Error('coach_id desconocido')
-        if (v === 'vs' && other_coach_id != null) chatBus.vsRival = Number(other_coach_id)
+        if ((v === 'vs' || v === 'duelo') && other_coach_id != null) chatBus.vsRival = Number(other_coach_id)
         go(c, c == null ? 'mapa' : v)
         push({ t: 'go', coach: c, view: c == null ? 'mapa' : v })
         return 'ok'
@@ -398,7 +398,7 @@ Reglas:
 - Antes de usar un coach_id, búscalo con find_coach (salvo que ya lo tengas).
 - Responde con texto. Las tarjetas (show=true) sólo cuando el usuario pide ver un ranking, una lista, una ficha, una tabla o una comparación; para una pregunta de un dato («¿cuántos puntos por partido tiene X?») basta una frase.
 - Balón parado (córners y tiros libres), once y formaciones y simulaciones del torneo salen de set_pieces, formation_xi y simulate_league; lleva al usuario con open_view (bp, tl, banda, bpdef, jugadores, liga). Las simulaciones son aproximadas: di el margen de error.
-- «¿Cómo le juego?», «¿qué jugadores le convienen?», «¿sigue jugando igual?» salen de game_plan; lleva al usuario a plan, fichajes, tablero o tiempo con open_view.
+- «¿Cómo le juego?», «¿qué jugadores le convienen?», «¿sigue jugando igual?» salen de game_plan; lleva al usuario a plan, fichajes, tablero o tiempo con open_view. «¿Cómo debería jugar X contra Y?» va a la vista duelo de X con open_view (other_coach_id = Y).
 - Resultados y récords (puntos por partido, G-E-P, goles, xG, tabla, local/visita) salen de rank_results, record y standings: nunca digas que no tienes ese cálculo ni que «va más allá de los datos»; úsalas. Estilo de juego (posesión, presión…) sale de rank_coaches y coach_profile.
 - No pidas aclaraciones salvo que la pregunta sea de verdad ambigua; elige la interpretación más razonable (todo el periodo de la muestra, fase regular) y dilo en una frase.
 - Nunca des tablas completas en el texto ni más de 8 partidos. Si piden «todos», da el resumen y sugiere filtrar por rival o temporada.
