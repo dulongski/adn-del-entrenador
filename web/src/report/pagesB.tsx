@@ -38,7 +38,7 @@ export function Jugadas({ rd, n, total }: { rd: RD; n: number; total: number }) 
             <div key={b.id} className="rp-jg-b">
               <h4>{L(b.es, b.en)}</h4>
               {b.cats.map((c: Any) => (
-                <div key={c.id} className="rp-jg-r"><span>{L(c.es, c.en)}</span><Bar v={c.share ?? 0} lg={c.lg} max={max} /><b>{fmt(c.share, 0)}%</b></div>
+                <div key={c.id} className="rp-jg-r"><span>{L(c.es, c.en)}</span><Bar v={c.share ?? 0} lg={c.lg} max={max} /><b>{fmt(c.share, 0)}%<small>{L('liga', 'lg')} {fmt(c.lg, 0)}%</small></b></div>
               ))}
             </div>
           ))}

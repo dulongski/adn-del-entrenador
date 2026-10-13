@@ -99,6 +99,7 @@ Si el DT queda arriba con otra plantilla, su estilo viajó con él. Si el ajuste
 - **Curvas de reacción:** estilo ajustado por marcador, minuto, localía y fuerza del rival (terciles del xG diferencial del rival en la temporada), frente a la liga en la misma situación.
 - **Motores (SHAP):** LightGBM poco profundo sobre los partidos del DT. Las variables son localía, fuerza del rival, diferencia de goles y el **estilo del DT rival** (sus α de PPDA, posesión y verticalidad).
 - **Evolución:** serie por partido del estilo ajustado con media móvil de 5 y marcas en cada cambio de club.
+- **A lo largo del tiempo** (`pipeline/tiempo.py`): estilo propio por torneo (Apertura jul–dic, Clausura ene–jun; ≥ 5 partidos) en los 34 indicadores, con su error estándar. **Estabilidad:** correlación entre el perfil de cada torneo y el del resto de su carrera (deja-uno-fuera), comparada con lo que se parece al perfil de los demás DTs (referencia ≈ 0) y con la de los demás entrenadores (percentil). **Cambios claros:** prueba z entre torneos seguidos con control de falsos positivos de Benjamini–Hochberg al 10% dentro de cada DT; lo mismo entre clubes.
 
 ## 8. Uso de jugadores (5.3)
 
@@ -117,6 +118,12 @@ Córners, tiros libres en campo rival y saques de banda en el último tercio, a 
 - atacantes y defensores en el área en el momento del envío (360),
 - mapas de envíos y de remates.
 
+**Saques de banda** (`pipeline/bp_extra.py`): los del último tercio (x ≥ 80), reflejados a una banda; % que cae en el área, % que se retiene, remate y xG en los 15 s siguientes de la misma jugada, primer contacto en el área, quién los lanza; a favor y en contra, con percentil entre DTs.
+
+**Marcaje en córners en contra** (`pipeline/marking.py`): en la foto 360 del momento del saque se toman los defensores dentro del área (sin el portero) y se emparejan uno a uno con los atacantes (asignación húngara). Un defensor a ≤ 2 yd (1.8 m) de su atacante está «pegado». La proporción de pegados clasifica al DT en zonal / mixto / al hombre según los tercios de los DTs de la liga (mínimo 15 córners con 360). Se descargan eventos y 360 del API, se extrae el córner y se descarta el resto.
+
+**Zonas de vulnerabilidad:** córners en contra por zona de envío: % del total, quién gana el primer contacto y xG concedido por córner, frente a la liga.
+
 ## 10. Simulación (sección 6)
 
 Monte Carlo por **posesión**: p(gol) = 1 − Π(1 − xG_tiro), con como máximo un gol por posesión y los penales incluidos con su xG. Cada partido se rejuega 5,000 veces (10,000–50,000 en el simulador interactivo) para obtener la probabilidad de victoria, empate y derrota, los **xPts**, los marcadores más probables y el dominio (cuota de xG). Sirve para **explicar** si el resultado reflejó el juego, no para predecir.
@@ -127,21 +134,38 @@ La portada ubica a cada DT en un plano: un **PCA de 2 componentes sobre su huell
 - **X:** repliegue / defensa hundida ↔ dominio territorial / defensa adelantada.
 - **Y:** ataques cortos / verticalidad ↔ elaboración / paciencia.
 
-Las familias salen de k-means sobre ese mismo plano: K entre 4 y 6 por silueta, con al menos 5 DTs por grupo. El resultado es K=4 (silueta 0.33). Cada familia se nombra por los indicadores que la distinguen del resto. **Vista 3D:** un PCA de 3 componentes; las dos primeras son las del mapa 2D y juntas las tres explican el 56% de la variación. La tercera va de «juego por bandas · contrapresión» a «volumen ofensivo · balón parado». **Ejes a elegir:** en lugar del PCA, cada eje (X, Y y Z en 3D) puede ser cualquiera de los indicadores de estilo propio del DT (α en σ). Las familias conservan su color en todas las vistas. Para la visualización, las coordenadas se comprimen con arcsinh, lo que evita que unos pocos DTs atípicos amontonen al resto sin cambiar el orden en cada eje.
+Las familias salen de k-means sobre ese mismo plano: K entre 4 y 6 por silueta, con al menos 5 DTs por grupo. El resultado es K=4 (silueta 0.36; ver sección 13: no supera al azar, así que las familias son una guía de lectura). Cada familia se nombra por los indicadores que la distinguen del resto. **Vista 3D:** un PCA de 3 componentes; las dos primeras son las del mapa 2D y juntas las tres explican el 56% de la variación. La tercera va de «juego por bandas · contrapresión» a «volumen ofensivo · balón parado». **Ejes a elegir:** en lugar del PCA, cada eje (X, Y y Z en 3D) puede ser cualquiera de los indicadores de estilo propio del DT (α en σ). Las familias conservan su color en todas las vistas. Para la visualización, las coordenadas se comprimen con arcsinh, lo que evita que unos pocos DTs atípicos amontonen al resto sin cambiar el orden en cada eje.
 
-## 12. Alcance y límites
+## 12. Plan de partido: lo accionable (`pipeline/plan.py`)
+
+- **Cómo jugarle:** 18 reglas escritas de antemano traducen un rasgo claro del sello (|α| ≥ 0.25 y |α|/EE ≥ 1.64) en una recomendación para el rival, con su evidencia (valor con jugadores promedio, liga, percentil). Se suman la reacción al marcador más grande (curvas de 7), la zona más vulnerable y el tipo de marcaje en córners, sus córners a favor, sus saques al área y el momento de sus cambios. Se eligen las 6 más fuertes, como máximo 2 por fase; los rasgos poco confiables (sección 13) pesan menos.
+- **Jugadores a su medida:** para sus 3 rasgos más claros (de familias distintas), se suman los β estandarizados de cada jugador con ≥ 900 minutos, activo en la última temporada. Lista de la liga y, en su plantilla actual, quién suma y quién resta. Son efectos encogidos por el ridge: sirven para una lista corta.
+- **Seguimiento:** sus 6 rasgos más marcados con confiabilidad ≥ 0.5; banda esperada para el promedio de 10 partidos = media de carrera ± 1.64·sd/√10; se compara con los últimos 10 partidos. Más puntos, xPts y diferencia de xG.
+
+## 13. Pruebas de robustez sobre el diseño real (`pipeline/validation.py`)
+
+Nada de esto cambia el modelo publicado (el ajuste se reproduce con |Δα| ≤ 5·10⁻⁵).
+- **Recuperación sintética:** sobre el diseño real (mismos segmentos, DTs, clubes, rivales, jugadores y pesos) se plantan efectos con magnitudes como las estimadas y residuos reales permutados por decil de peso; 30 réplicas. Escenarios: realista, plantilla a su medida (jugadores alineados con su DT principal, corr ≈ 0.6) y sin DT. Resultado: correlación con la verdad 0.58 (promedio crudo 0.39; DT+club sin jugadores 0.55); con plantilla a su medida 0.78 (0.69); sin DT el modelo inventa una dispersión de 0.19σ frente a 0.95σ del promedio crudo. Pendiente 0.37 (el tamaño sale encogido), 81% de aciertos de signo en los rasgos marcados como claros, cobertura de los IC95 por bootstrap del 62% (miden ruido, no encogimiento).
+- **Confiabilidad mitad/mitad:** partidos al azar en dos mitades, 4 repeticiones, Spearman–Brown; media 0.68. Bajo 0.5: OBV, xG tras balón parado, xG de transiciones, xG en contra.
+- **Fuera de muestra:** validación cruzada por partido (5 pliegues), R² a nivel partido: 0.291 completo, 0.285 sin DT, 0.271 sin jugadores.
+- **Mapa:** la silueta para K = 2..8 (≈ 0.36–0.40) no supera a la de una nube sin estructura con la misma covarianza (media 0.37, p95 0.42) y el ARI por bootstrap es moderado: los estilos son un continuo; el mapa vale por las cercanías, los colores son una guía.
+
+## 14. Alcance y límites
 
 - **Captura:** estilo colectivo observable con eventos y 360, su parte atribuible al DT y cómo cambia con el contexto.
 - **No captura:** tracking continuo (distancias, velocidades, forma del bloque en todo momento), interacciones DT×jugador (el modelo es aditivo), cuerpo técnico, entrenamiento ni información de vestuario.
 - **Cuándo desconfiar:** en DTs con índice de identificabilidad bajo (un solo club, plantilla que no jugó con otros DTs), donde el ridge encoge α hacia la media. El índice acompaña a cada DT en la interfaz.
 - **Datos:** uso exclusivo para la competencia. Los datos crudos se quedan en `data/` (ignorado por git) y solo se publican resultados agregados en `artifacts/`.
 
-## 13. Reproducir
+## 15. Reproducir
 
 ```bash
 python -m pipeline.sb_client      # descarga a caché (credenciales en .env)
 python -m pipeline.process        # tablas procesadas
 python -m pipeline.build          # modelos + artefactos por DT (≈ 1 h con bootstrap y transferencia)
+python -m pipeline.marking        # marcaje 360 en córners (≈ 40 min, descarga y descarta)
+python -m pipeline.validation     # pruebas de robustez → validacion.json
+python -m pipeline.tiempo && python -m pipeline.bp_extra && python -m pipeline.plan
 pytest                            # pruebas del marco y validación sintética
 uvicorn api.main:app --port 8765  # API
 cd web && npm run dev             # frontend en http://localhost:5199

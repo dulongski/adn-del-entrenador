@@ -329,6 +329,26 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
       },
     },
     {
+      name: 'game_plan',
+      description: 'Plan de partido contra un DT y lo accionable de su ADN: claves para jugarle (fase, qué hacer y la evidencia con su valor, el de la liga y su percentil), jugadores de la liga que encajan con su estilo y quién de su plantilla actual suma o resta, tablero de sus últimos 10 partidos frente a su carrera, y qué tan estable es su estilo torneo a torneo.',
+      inputSchema: { type: 'object', properties: { coach_id: { type: 'number' } }, required: ['coach_id'] },
+      execute: async ({ coach_id }: Any) => {
+        const id = Number(coach_id); if (!DT_BY_ID.has(id)) throw new Error('coach_id desconocido: usa find_coach')
+        status(L('Armando el plan de partido…', 'Building the game plan…'))
+        const [P, T] = await Promise.all([getJSON(dataUrl('plan.json')), getJSON(dataUrl('tiempo.json')).catch(() => null)])
+        const d = P.dts?.[String(id)]; if (!d) throw new Error('Sin plan para este DT.')
+        const en = LANG === 'en'
+        const ev = (e: Any) => e.kpi && e.sello ? `${kl(e.kpi)}: ${e.sello} (liga ${e.liga}, percentil ${e.pct})` : JSON.stringify(e)
+        const t = T?.dts?.[String(id)]
+        return {
+          claves: d.acciones.map((a: Any) => ({ fase: a.fase, titulo: en ? a.titulo_en : a.titulo, que_hacer: en ? a.texto_en : a.texto, evidencia: a.evidencia.map(ev) })),
+          jugadores_que_encajan: d.fichajes ? { rasgos: d.fichajes.rasgos.map((r: Any) => kl(r.kpi)), liga: d.fichajes.liga.slice(0, 5).map((p: Any) => `${jugadorShort(p.id, p.nombre)} (${p.club})`), su_plantilla_suman: d.fichajes.suman.map((p: Any) => jugadorShort(p.id, p.nombre)), su_plantilla_restan: d.fichajes.restan.map((p: Any) => jugadorShort(p.id, p.nombre)) } : null,
+          tablero_ultimos_10: d.tablero ? d.tablero.rasgos.map((r: Any) => `${kl(r.kpi)}: ${r.estado}`) : null,
+          estabilidad_torneo_a_torneo: t ? { r: t.identidad?.r, percentil_entre_dts: t.identidad?.pct, cambios_claros: t.cambios.length } : null,
+        }
+      },
+    },
+    {
       name: 'compare_coaches',
       description: 'Compara el estilo propio de dos entrenadores en los indicadores base: parecido (0–100), los 2 rasgos en que más coinciden y los 4 en que más difieren, con el número de cada uno (estilo propio en σ, 0 = media de la liga, y valor observado). Dibuja la tarjeta sólo si show=true.',
       inputSchema: { type: 'object', properties: { coach_a: { type: 'number' }, coach_b: { type: 'number' }, show: { type: 'boolean', description: 'true sólo si piden comparar o ver la comparación' } }, required: ['coach_a', 'coach_b'] },
@@ -377,7 +397,8 @@ Reglas:
 - Todo número sale de las herramientas. Nunca inventes datos ni uses lo que sepas de fuera. Si algo no está en los datos, dilo.
 - Antes de usar un coach_id, búscalo con find_coach (salvo que ya lo tengas).
 - Responde con texto. Las tarjetas (show=true) sólo cuando el usuario pide ver un ranking, una lista, una ficha, una tabla o una comparación; para una pregunta de un dato («¿cuántos puntos por partido tiene X?») basta una frase.
-- Balón parado (córners y tiros libres), once y formaciones y simulaciones del torneo salen de set_pieces, formation_xi y simulate_league; lleva al usuario con open_view (bp, tl, jugadores, liga). Las simulaciones son aproximadas: di el margen de error.
+- Balón parado (córners y tiros libres), once y formaciones y simulaciones del torneo salen de set_pieces, formation_xi y simulate_league; lleva al usuario con open_view (bp, tl, banda, bpdef, jugadores, liga). Las simulaciones son aproximadas: di el margen de error.
+- «¿Cómo le juego?», «¿qué jugadores le convienen?», «¿sigue jugando igual?» salen de game_plan; lleva al usuario a plan, fichajes, tablero o tiempo con open_view.
 - Resultados y récords (puntos por partido, G-E-P, goles, xG, tabla, local/visita) salen de rank_results, record y standings: nunca digas que no tienes ese cálculo ni que «va más allá de los datos»; úsalas. Estilo de juego (posesión, presión…) sale de rank_coaches y coach_profile.
 - No pidas aclaraciones salvo que la pregunta sea de verdad ambigua; elige la interpretación más razonable (todo el periodo de la muestra, fase regular) y dilo en una frase.
 - Nunca des tablas completas en el texto ni más de 8 partidos. Si piden «todos», da el resumen y sugiere filtrar por rival o temporada.

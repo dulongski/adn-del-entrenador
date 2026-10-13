@@ -132,3 +132,5 @@
 .pdf-pop button:disabled { opacity: .6; cursor: progress; }
 .pdf-pop small { font-weight: 500; color: var(--ink-3); font-size: 11.5px; }
 @media (max-width: 760px) { .pdf-btn span { display: none; } .pdf-btn { padding: 6px 8px; } .pdf-pop { position: fixed; left: 12px; right: 12px; top: 64px; } }
+.hub-plan { grid-column: 1 / -1; }
+@media (min-width: 1101px) { .hub-plan .hub-body { max-width: 52%; } .hub-plan .hub-shade { background: linear-gradient(90deg, #070a08 0%, color-mix(in oklab, var(--mc) 25%, #070a08) 45%, transparent 80%); } }

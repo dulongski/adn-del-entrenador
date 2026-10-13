@@ -22,7 +22,6 @@ export function Contexto({ art, glob }: P) {
   const [dim, setDim] = useState('marcador')
   const [mode, setMode] = useState<'dif' | 'val'>('dif')
   const [k, setK] = useState('posesion')
-  const evo: Any[] = C.evolucion
   const tip = useTip()
   const ks = KEY.filter(x => C.curvas[dim]?.[x])
   const label = (x: string) => kpiLabel(x, glob.kpis[x].etiqueta)
@@ -83,9 +82,6 @@ export function Contexto({ art, glob }: P) {
       <Seg opts={KEY.filter(x => C.motores?.[x]).slice(0, 8).map(x => [x, label(x)] as [string, string])} v={k} set={setK} />
       {C.motores?.[k] ? <Drivers rows={C.motores[k]} /> : <div className="note">{L('Hacen falta al menos 15 partidos.', 'Needs at least 15 matches.')}</div>}
 
-      <h3 className="h2">{L('Evolución en el tiempo', 'Over time')} <Info>{L('Cada punto es un partido (sin el efecto de sus jugadores); la línea es el promedio de los últimos 5. El color indica el club.', 'Each dot is a match (with his players\' effect removed); the line is the 5-match rolling average. Colour shows the club.')}</Info></h3>
-      <Seg opts={KEY.slice(0, 8).map(x => [x, label(x)] as [string, string])} v={k} set={setK} />
-      <Evolution rows={evo} k={k} etapas={art.etapas ?? []} />
     </div>
   )
 }
@@ -123,7 +119,7 @@ function Drivers({ rows }: { rows: Any[] }) {
   )
 }
 
-function Evolution({ rows, k, etapas }: { rows: Any[]; k: string; etapas: Any[] }) {
+export function Evolution({ rows, k, etapas }: { rows: Any[]; k: string; etapas: Any[] }) {
   const tip = useTip()
   if (!rows?.length) return null
   const W = 900, H = 230, P = { l: 44, r: 12, t: 14, b: 26 }

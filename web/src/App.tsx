@@ -11,6 +11,9 @@ import { L, LOCALE, SETTINGS } from './settings'
 import WhatIf from './WhatIf'
 import { LigaSim } from './tabs/LigaSim'
 import { TirosLibres } from './tabs/TirosLibres'
+import { Banda, BpDefensa } from './tabs/BpExtra'
+import { Fichajes, PlanJuego, Tablero } from './tabs/Plan'
+import { Tiempo } from './tabs/Tiempo'
 import { Resumen, DtVsPlantilla, Transferencia, Fases, Contexto, Jugadores, BalonParado, Simulador, Metodo } from './tabs'
 
 import Hub from './Hub'
@@ -193,6 +196,12 @@ export default function App() {
                 {tab === 'jugadores' && <Jugadores art={art} glob={glob} media={media} />}
                 {tab === 'bp' && <BalonParado art={art} media={media} />}
                 {tab === 'tl' && <TirosLibres art={art} media={media} />}
+                {tab === 'banda' && <Banda art={art} />}
+                {tab === 'bpdef' && <BpDefensa art={art} />}
+                {tab === 'tiempo' && <Tiempo art={art} glob={glob} media={media} />}
+                {tab === 'plan' && <PlanJuego art={art} glob={glob} />}
+                {tab === 'fichajes' && <Fichajes art={art} glob={glob} media={media} />}
+                {tab === 'tablero' && <Tablero art={art} glob={glob} />}
                 {tab === 'sim' && <Simulador art={art} media={media} glob={glob} />}
                 {tab === 'whatif' && <WhatIf art={art} glob={glob} media={media} />}
                 {tab === 'liga' && <LigaSim art={art} media={media} />}
@@ -267,6 +276,12 @@ function SubIcon({ k }: { k: TabKey }) {
     sim: <><path d="M19 12a7 7 0 1 1-2.1-5" fill="none" strokeWidth="2" strokeLinecap="round" /><path d="M17.5 3.5v4h-4" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="12" r="2.2" /></>,
     bp: <><path d="M6 21V4" fill="none" strokeWidth="1.8" strokeLinecap="round" /><path d="M6 5h11l-2 4 2 4H6" fill="none" strokeWidth="1.8" strokeLinejoin="round" /></>,
     tl: <><circle cx="8.5" cy="14.5" r="4.6" fill="none" strokeWidth="1.8" /><path d="M12.2 11.4L21 9.2v3.8h-7.2" fill="none" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="8.5" cy="14.5" r="1.1" /><path d="M5.2 7.2l1.3 1.9M9.5 5.5l.2 2.1" fill="none" strokeWidth="1.6" strokeLinecap="round" /></>,
+    tiempo: <><path d="M4 18h16" fill="none" strokeWidth="1.8" strokeLinecap="round" /><path d="M5 14l4-4 4 3 6-7" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></>,
+    banda: <><path d="M5 20V4" fill="none" strokeWidth="1.8" strokeLinecap="round" /><circle cx="12" cy="7" r="3" fill="none" strokeWidth="1.8" /><path d="M12 10c3 3 5 6 7 10" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="2 2.4" /></>,
+    bpdef: <><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z" fill="none" strokeWidth="1.8" strokeLinejoin="round" /><path d="M9 12l2 2 4-4" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></>,
+    plan: <><rect x="3.5" y="4" width="17" height="16" rx="2" fill="none" strokeWidth="1.8" /><path d="M7 15l3-3 2 2 5-6" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M14.5 8H17v2.5" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></>,
+    fichajes: <><circle cx="9" cy="8" r="3.2" fill="none" strokeWidth="1.8" /><path d="M3.5 19c.8-3.4 3-5 5.5-5s4.7 1.6 5.5 5" fill="none" strokeWidth="1.8" strokeLinecap="round" /><path d="M17 8v6m-3-3h6" fill="none" strokeWidth="1.8" strokeLinecap="round" /></>,
+    tablero: <><path d="M4 16a8 8 0 0 1 16 0" fill="none" strokeWidth="1.8" strokeLinecap="round" /><path d="M12 16l4-5" fill="none" strokeWidth="2" strokeLinecap="round" /><circle cx="12" cy="16" r="1.4" /></>,
     liga: <><path d="M7 4h10v5a5 5 0 0 1-10 0z" fill="none" strokeWidth="1.8" strokeLinejoin="round" /><path d="M12 14v4m-4 2h8" fill="none" strokeWidth="1.8" strokeLinecap="round" /></>,
     whatif: <><path d="M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3h-2a2 2 0 0 1-4 0z" fill="none" strokeWidth="1.7" strokeLinejoin="round" /></>,
   }

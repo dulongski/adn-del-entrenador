@@ -56,7 +56,7 @@
 /* jugadas, formaciones, según el partido */
 .rp-jg { display: grid; grid-template-columns: 1.05fr 1fr 1fr; gap: 14px; flex: 1; min-height: 0; } .rp-jg-l { display: flex; flex-direction: column; gap: 12px; } .rp-jg-b h4 { margin-bottom: 6px; }
 .rp-jg-r { display: grid; grid-template-columns: 170px 1fr 36px; gap: 10px; align-items: center; margin: 7px 0; font-size: 12.5px; } .rp-jg-r b { font-family: var(--mono); font-size: 12px; text-align: right; }
-.rp-jg-p { display: flex; flex-direction: column; min-height: 0; } .rp-pitchbox { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; } .rp-pitchbox svg { max-height: 392px; width: auto !important; max-width: 100%; }
+.rp-jg-p { display: flex; flex-direction: column; min-height: 0; } .rp-pitchbox { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; } .rp-pitchbox svg { max-height: 360px; width: auto !important; max-width: 100%; }
 .rp-mets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; } .rp-mets span { display: flex; flex-direction: column; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); background: var(--surface-2); border-radius: 8px; padding: 6px 8px; } .rp-mets b { text-transform: none; font-family: var(--display); font-size: 21px; color: var(--ink); line-height: 1.05; } .rp-mets small { font-size: 10px; text-transform: none; letter-spacing: 0; font-weight: 500; }
 .rp-note { display: block; font-size: 11px; color: var(--ink-3); margin-top: 6px; line-height: 1.3; }
 .rp-fm { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; flex: 1; min-height: 0; } .rp-fm .rp-card { display: flex; flex-direction: column; min-height: 0; } .rp-fm .rp-pitchbox svg { max-height: 430px; }
@@ -64,7 +64,7 @@
 .rp-mxs { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; flex: 1; min-height: 0; } .rp-mx { display: flex; flex-direction: column; } .rp-mx-g { display: grid; gap: 5px; align-items: stretch; flex: 1; } .rp-mx-g b { font-size: 11.5px; text-align: center; color: var(--ink-2); } .rp-mx-g .l { font-size: 12px; align-self: center; line-height: 1.15; } .rp-mx-g .c { display: grid; place-items: center; border-radius: 8px; font: 700 12.5px var(--mono); } .rp-mx-g .c.weak { opacity: .5; }
 
 /* jugadores, bp, lab, vs, método */
-.rp-jr { display: grid; grid-template-columns: 330px 1fr 270px; gap: 14px; flex: 1; min-height: 0; } .rp-jr-m { display: flex; flex-direction: column; gap: 10px; min-height: 0; } .rp-jr .jg-pitch { height: 100%; }
+.rp-jr { display: grid; grid-template-columns: 310px 1fr 1fr; gap: 14px; flex: 1; min-height: 0; } .rp-jr-m { display: flex; flex-direction: column; gap: 10px; min-height: 0; } .rp-jr .jg-pitch { height: 100%; }
 .rp-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; } .rp-tiles4 { grid-template-columns: repeat(4, 1fr); margin-bottom: 12px; }
 .rp-pl { display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; align-items: baseline; font-size: 12px; padding: 5px 0; border-bottom: 1px solid var(--rule); } .rp-pl b { font-weight: 700; } .rp-pl span { color: var(--ink-3); font-size: 10.5px; } .rp-pl i { font: 700 12px var(--mono); font-style: normal; } .rp-pl em { font-style: normal; color: var(--ink-3); font-size: 10.5px; }
 .rp-bp { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; flex: 1; min-height: 0; } .rp-halfp { width: 100%; max-height: 430px; margin-top: 6px; }
@@ -74,3 +74,49 @@
 .rp-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin: 0 4px 0 10px; } .rp-dumb { display: grid; grid-template-columns: 150px 1fr 44px; gap: 10px; align-items: center; padding: 9px 0; font-size: 12.5px; } .rp-dumb-t { position: relative; height: 16px; } .rp-dumb-t u { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--rule); } .rp-dumb-t i { position: absolute; top: 7px; height: 2px; background: var(--ink-3); opacity: .5; } .rp-dumb-t b { position: absolute; top: 2px; width: 12px; height: 12px; border-radius: 50%; transform: translateX(-50%); border: 2px solid var(--paper); } .rp-dumb em { font: 700 12px var(--mono); font-style: normal; text-align: right; }
 .rp-eq { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 14px 20px; text-align: center; font: 500 21px var(--display); letter-spacing: .01em; margin-bottom: 12px; } .rp-eq b { color: var(--c-dt); }
 .rp-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; flex: 1; } .rp-step i { font: 800 34px var(--display); font-style: normal; color: var(--mc); line-height: 1; } .rp-step h4 { margin: 6px 0; } .rp-step p { font-size: 12.5px; line-height: 1.4; color: var(--ink-2); margin: 0; }
+
+/* separar: llenar la página y poner escala */
+.rp-sep-l > .rp-card:last-child, .rp-sep-r > .rp-card:first-child { flex: 1; display: flex; flex-direction: column; min-height: 0; } .rp-fams { flex: 1; display: flex; flex-direction: column; justify-content: space-around; } .rp-fams .rp-famrow { margin: 3px 0; }
+.rp-axis { display: grid; grid-template-columns: 150px 1fr; gap: 10px; margin-top: 4px; } .rp-axis div { display: flex; justify-content: space-between; font: 500 10px var(--mono); color: var(--ink-3); } .rp-axis i { font-style: normal; }
+.rp-leg.tiny { margin: -2px 0 6px; font-size: 11px; gap: 4px 12px; }
+
+.rp-grow { flex: 1; min-height: 0; overflow: hidden; } .rp-jr .rp-tiles b { white-space: nowrap; font-size: 28px; } .rp-jr .rp-tiles .rp-tile:first-child b { font-size: 22px; }
+
+/* laboratorio / cara a cara */
+.rp-lab { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; flex: 1; min-height: 0; } .rp-lab > .rp-card { display: flex; flex-direction: column; } .rp-lab-r { display: flex; flex-direction: column; gap: 14px; min-height: 0; } .rp-lab-r .rp-card { flex: 1; }
+.rp-cum { width: 100%; flex: 1; min-height: 0; margin-top: 4px; } .rp-tick { font: 500 10.5px var(--mono); fill: var(--ink-3); } .rp-endl { font: 800 15px var(--mono); }
+.rp-jg-r b small { display: block; font: 500 9.5px var(--mono); color: var(--ink-3); text-align: right; } .rp-jg-r { grid-template-columns: 170px 1fr 44px; }
+.rp-dumb.head { padding: 0 0 2px; } .rp-dumb.head .rp-dumb-t { height: 14px; } .rp-dumb.head em { position: absolute; transform: translateX(-50%); font: 600 10px var(--mono); color: var(--ink-3); text-align: center; width: 24px; margin-left: 0; }
+.rp-dumb-t { height: 18px; } .rp-dumb-t u { background: var(--ink-3); } .rp-dumb-t s { position: absolute; transform: translateX(-50%); font: 700 10px var(--mono); text-decoration: none; color: var(--ink-2); white-space: nowrap; } .rp-dumb { padding: 11px 0 !important; border-bottom: 1px solid var(--rule); }
+.rp-vs .rp-pl { grid-template-columns: 1fr auto auto auto; } .rp-vs .rp-pl span { font-size: 10px; }
+.rp-ins { font-size: 12.5px; line-height: 1.35; margin: 5px 0; color: var(--ink-2); padding-left: 10px; border-left: 3px solid var(--mc); }
+.rp-dumb-t s.l { transform: translateX(calc(-100% - 9px)); top: 2px; } .rp-dumb-t s.r { transform: translateX(9px); top: 2px; }
+.rp-jr-m:last-child .rp-card { zoom: .9; } .rp-jr-m:last-child .rp-card.rp-grow { overflow: visible; }
+.rp-halfp { max-height: 190px; }
+.rp-dumb-t s { background: var(--paper); padding: 0 2px; border-radius: 3px; }
+.rp-jg { grid-template-rows: minmax(0, 1fr); } .rp-jg-p .rp-pitchbox svg { max-height: 330px; }
+.rp-jg-r { margin: 5px 0 !important; }
+.rp-steps { flex: none !important; } .rp-step { min-height: 0; } .rp-defs { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 12px; margin-bottom: 12px; flex: 1; min-height: 0; } .rp-defs ul { margin: 0; padding-left: 16px; font-size: 12px; line-height: 1.4; color: var(--ink-2); } .rp-defs li { margin: 0 0 7px; } .rp-defs li b { color: var(--ink); margin-right: 4px; }
+.rp-eq { padding: 8px 20px !important; font-size: 19px !important; margin-bottom: 10px !important; } .rp-steps { gap: 10px !important; margin-bottom: 10px !important; } .rp-step { padding: 10px 14px !important; } .rp-step i { font-size: 24px !important; } .rp-step h4 { margin: 2px 0 4px !important; } .rp-step p { font-size: 11.5px !important; line-height: 1.35 !important; }
+.rp-tiles4 { margin-bottom: 10px !important; } .rp-defs li { font-size: 11.5px; margin-bottom: 5px; }
+.rp-pl span, .rp-pl i, .rp-pl em, .rp-who b { white-space: nowrap; }
+.rp-cv-club { overflow: hidden; display: grid !important; place-items: center; width: 84px; height: 84px; border-radius: 50% !important; padding: 0 !important; } .rp-cv-club img { border: 0 !important; box-shadow: none !important; background: transparent; }
+
+/* plan, tiempo, bp2, validación */
+.rp-plan { display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; flex: 1; min-height: 0; } .rp-plan-g { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 10px; min-height: 0; }
+.rp-pk { border-top: 3px solid var(--fc); display: flex; flex-direction: column; gap: 4px; padding: 10px 13px; } .rp-pk-f { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: color-mix(in oklab, var(--fc) 75%, var(--ink)); }
+.rp-pk h4 { margin: 0 !important; font: 800 15px var(--display) !important; letter-spacing: .01em !important; color: var(--ink) !important; line-height: 1.1; } .rp-pk h4 i { font: 700 11px var(--mono); font-style: normal; color: var(--ink-3); margin-right: 6px; }
+.rp-pk p { margin: 0; font-size: 11.5px; line-height: 1.35; color: var(--ink-2); } .rp-pk small { margin-top: auto; font-size: 10px; color: var(--ink-3); border-top: 1px dashed var(--rule); padding-top: 5px; line-height: 1.3; }
+.rp-plan-t { display: flex; flex-direction: column; } .rp-tb { display: grid; grid-template-columns: 140px 1fr 64px; gap: 8px; align-items: center; padding: 5px 0; font-size: 11.5px; }
+.rp-tb div { position: relative; height: 16px; background: var(--surface-2); border-radius: 6px; } .rp-tb u { position: absolute; top: 2px; bottom: 2px; width: 1px; background: var(--ink-3); } .rp-tb i { position: absolute; top: 4px; bottom: 4px; border-radius: 4px; background: color-mix(in oklab, var(--mc) 35%, transparent); }
+.rp-tb em { position: absolute; top: 1px; bottom: 1px; width: 2px; background: var(--mc); } .rp-tb b { position: absolute; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--ink); } .rp-tb b.off { background: var(--c-rival); } .rp-tb small { font-size: 10px; color: var(--ink-3); }
+.rp-fit { font-size: 11.5px; color: var(--ink-2); margin: 0; line-height: 1.4; }
+.rp-ti { flex: 1; display: flex; flex-direction: column; } .rp-ti-g { display: grid; gap: 4px; flex: 1; align-content: start; } .rp-ti-g b { font-size: 10.5px; text-align: center; color: var(--ink-2); } .rp-ti-g b.h { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.rp-ti-g .l { font-size: 11.5px; align-self: center; } .rp-ti-g .l i { font-style: normal; color: var(--ink-3); } .rp-ti-g .c { display: grid; place-items: center; height: 30px; border-radius: 6px; font: 700 11px var(--mono); } .rp-ti-g .c.car { outline: 2px solid var(--rule); outline-offset: -2px; } .rp-ti-g .c.weak { opacity: .55; } .rp-ti-g .c.st { background: var(--surface-2); color: var(--ink-2); }
+.rp-mk { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; } .rp-mk b { font: 800 26px var(--display); line-height: 1; color: var(--mc); } .rp-mk span { font-size: 11.5px; color: var(--ink-2); }
+.rp-sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.rp-val { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; flex: 1; min-height: 0; } .rp-val-r { display: flex; flex-direction: column; gap: 12px; }
+.rp-vg { margin-bottom: 10px; } .rp-vt { display: block; font-size: 11px; font-weight: 700; color: var(--ink-2); margin-bottom: 4px; } .rp-vr { display: grid; grid-template-columns: 120px 1fr 44px; gap: 8px; align-items: center; font-size: 11px; margin: 3px 0; } .rp-vr b { font: 700 11px var(--mono); text-align: right; }
+.rp-rel { display: grid; gap: 1px; } .rp-rel div { display: grid; grid-template-columns: 150px 1fr 34px; gap: 6px; align-items: center; font-size: 9.5px; } .rp-rel div.weak { color: var(--c-rival); } .rp-rel .rp-bar { height: 6px; } .rp-rel b { font: 700 9.5px var(--mono); text-align: right; }
+.rp-val { grid-template-columns: 1fr 1.45fr 1fr !important; } .rp-rel { grid-template-columns: 1fr 1fr; column-gap: 14px; } .rp-rel div { grid-template-columns: minmax(0, 1fr) 54px 28px !important; } .rp-rel div span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-ti-g .c { height: 27px !important; }

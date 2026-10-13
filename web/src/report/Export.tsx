@@ -59,7 +59,30 @@ export async function makePdf(art: Any, set: string, onProgress: Progress): Prom
   } finally { root.unmount(); host.remove() }
 }
 
-export async function savePdf(blob: Blob, filename: string): Promise<'saved' | 'declined' | 'fallback'> {
+/** Informe HTML autocontenido (CSS e imágenes incrustados): es el entregable «reporte en HTML» del concurso. */
+export async function makeHtml(art: Any, set: string, onProgress: Progress): Promise<Blob> {
+  const keys: PageKey[] = SETS[set] ?? SETS.general
+  onProgress(0, 1, L('Armando el informe…', 'Building the report…'))
+  const rd = await loadRD(art)
+  const host = document.createElement('div')
+  host.style.cssText = `position:fixed;left:-${W + 400}px;top:0;width:${W}px;pointer-events:none;`
+  document.body.appendChild(host)
+  const root = createRoot(host)
+  try {
+    root.render(<ReportPages rd={rd} keys={keys} />)
+    await new Promise(r => setTimeout(r, 700))
+    await Promise.all([...host.querySelectorAll('img')].map(i => (i.complete ? null : new Promise(r => { i.onload = i.onerror = () => r(null) }))))
+    for (const img of [...host.querySelectorAll('img')]) { try { img.src = await toData(await (await fetch(img.src)).blob()) } catch { /* se queda la ruta */ } }
+    const css = [...document.styleSheets].map(sh => { try { return [...sh.cssRules].map(r => r.cssText).join('\n') } catch { return '' } }).join('\n')
+    const fonts = await embedFonts()
+    const title = L(`Coach DNA · ${art.nombre}`, `Coach DNA · ${art.nombre}`)
+    const html = `<!doctype html><html lang="${L('es', 'en')}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>${fonts}\n${css}\nbody{margin:0;background:#d9d3c3}.rp{display:flex;flex-direction:column;align-items:center;gap:24px;padding:24px 0}.rp-page{box-shadow:0 6px 30px rgb(0 0 0/.18);flex:none}@media print{body{background:#fff}.rp{gap:0;padding:0}.rp-page{box-shadow:none;break-after:page}@page{size:1123px 794px;margin:0}}</style></head><body>${host.innerHTML}</body></html>`
+    onProgress(1, 1, L('Listo', 'Done'))
+    return new Blob([html], { type: 'text/html' })
+  } finally { root.unmount(); host.remove() }
+}
+
+export async function saveFile(blob: Blob, filename: string): Promise<'saved' | 'declined' | 'fallback'> {
   try {
     const dl = await (window as Any).claude?.use?.('downloads')
     if (dl) { await dl.save({ filename, data: blob }); return 'saved' }
@@ -81,29 +104,31 @@ export function PdfMenu({ art, modeK, modeName }: { art: Any; modeK: string; mod
     document.addEventListener('mousedown', f); return () => document.removeEventListener('mousedown', f)
   }, [open])
   const own = SETS[modeK] ? modeK : null
-  const items: [string, string, string][] = [['general', L('Informe completo', 'Full report'), L('Todas las páginas, 11 hojas', 'Every page, 11 sheets')]]
-  if (own && own !== 'general') items.push([own, L(`Sólo ${modeName}`, `${modeName} only`), `${SETS[own].length} ${L(SETS[own].length === 1 ? 'hoja' : 'hojas', SETS[own].length === 1 ? 'sheet' : 'sheets')}`])
+  const items: [string, string, string][] = [['general', L('Informe completo (PDF)', 'Full report (PDF)'), L(`Todas las páginas, ${SETS.general.length} hojas`, `Every page, ${SETS.general.length} sheets`)]]
+  if (own && own !== 'general') items.push([own, L(`Sólo ${modeName} (PDF)`, `${modeName} only (PDF)`), `${SETS[own].length} ${L(SETS[own].length === 1 ? 'hoja' : 'hojas', SETS[own].length === 1 ? 'sheet' : 'sheets')}`])
+  items.push(['html', L('Informe web (HTML)', 'Web report (HTML)'), L('Un solo archivo para enviar o abrir sin internet', 'One file to send or open offline')])
   const go = async (set: string) => {
+    const isHtml = set === 'html'
     setBusy(set); setMsg(L('Preparando…', 'Preparing…'))
     try {
-      const blob = await makePdf(art, set, (d, t, m) => setMsg(`${m}${t ? ` · ${Math.round((d / t) * 100)}%` : ''}`))
-      const r = await savePdf(blob, `coach-dna_${art.slug ?? art.id}_${set}.pdf`)
-      setMsg(r === 'declined' ? L('Cancelado', 'Cancelled') : L('PDF listo', 'PDF ready'))
+      const prog: Progress = (d, t, m) => setMsg(`${m}${t > 1 ? ` · ${Math.round((d / t) * 100)}%` : ''}`)
+      const blob = isHtml ? await makeHtml(art, 'general', prog) : await makePdf(art, set, prog)
+      const r = await saveFile(blob, `coach-dna_${art.slug ?? art.id}_${isHtml ? 'informe' : set}.${isHtml ? 'html' : 'pdf'}`)
+      setMsg(r === 'declined' ? L('Cancelado', 'Cancelled') : L('Listo', 'Ready'))
       setTimeout(() => { setBusy(null); setOpen(false); setMsg('') }, 900)
     } catch (e) {
-      console.error(e); setMsg(L('No se pudo crear el PDF', 'Could not create the PDF')); setTimeout(() => setBusy(null), 2200)
+      console.error(e); setMsg(L('No se pudo crear el archivo', 'Could not create the file')); setTimeout(() => setBusy(null), 2200)
     }
   }
   return (
     <div className="pdf-wrap" ref={ref}>
-      <button className="pdf-btn" onClick={() => setOpen(o => !o)} aria-expanded={open} title={L('Descargar informe en PDF', 'Download PDF report')}>
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 20h14" /></svg><span>PDF</span>
+      <button className="pdf-btn" onClick={() => setOpen(o => !o)} aria-expanded={open} title={L('Descargar informe (PDF o HTML)', 'Download report (PDF or HTML)')}>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 20h14" /></svg><span>{L('Informe', 'Report')}</span>
       </button>
       {open && (
         <div className="pdf-pop" role="menu">
           <b>{L('Descargar informe', 'Download report')}</b>
           {items.map(([k, t, s]) => <button key={k} role="menuitem" disabled={!!busy} onClick={() => go(k)}><span>{t}</span><small>{busy === k ? msg : s}</small></button>)}
-          {busy && !items.some(i => i[0] === busy) ? null : null}
         </div>
       )}
     </div>

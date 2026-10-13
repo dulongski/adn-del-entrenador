@@ -129,6 +129,24 @@ function ArtVs({ art, media, mapa }: { art: Any; media: Any; mapa: Any }) {
   )
 }
 
+function ArtPlan() {
+  // pizarra táctica: cancha horizontal con flechas de ataque y marcas
+  return (
+    <svg viewBox="0 0 240 80" preserveAspectRatio="xMaxYMid slice">
+      <g transform="translate(118 2) scale(.95)" fill="none" stroke="currentColor" strokeWidth={0.7} opacity={0.55}>
+        <rect x={0} y={0} width={120} height={80} /><line x1={60} y1={0} x2={60} y2={80} /><circle cx={60} cy={40} r={10} /><rect x={102} y={18} width={18} height={44} /><rect x={0} y={18} width={18} height={44} />
+      </g>
+      <g transform="translate(118 2) scale(.95)" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+        <path d="M30 60 C 55 62, 70 40, 96 34" strokeDasharray="4 3" /><path d="M92 30l5 4-6 3" />
+        <path d="M40 20 C 60 12, 80 14, 100 22" /><path d="M96 18l5 4-6 2" />
+        <path d="M70 70 L 106 50" strokeDasharray="2 3" />
+        {[[30, 60], [40, 20], [70, 70]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={3.2} fill="currentColor" stroke="none" />)}
+        {[[88, 44], [80, 26], [98, 58]].map(([x, y], i) => <path key={'x' + i} d={`M${x - 3} ${y - 3}l6 6M${x + 3} ${y - 3}l-6 6`} />)}
+      </g>
+    </svg>
+  )
+}
+
 function ArtFormula() {
   return <div className="hub-formula" aria-hidden>z = α<sub>{L('DT', 'coach')}</sub> + φ<sub>club</sub> + Σβ<sub>{L('jugador', 'player')}</sub> + γ<sub>{L('rival', 'opp')}</sub> + δ<sub>{L('contexto', 'context')}</sub></div>
 }
@@ -164,6 +182,10 @@ function hook(m: Mode, art: Any, mapa: Any, jug: Any): string {
       const p = s && mapa.puntos.find((q: Any) => q.id === s.id)
       return p ? L(`Su gemelo de estilo: ${shortName(p.nombre)}`, `His style twin: ${shortName(p.nombre)}`) : ''
     }
+    case 'plan': {
+      const n = (art.huella ?? []).filter((h: Any) => !h.kpi.startsWith('arq_') && h.se && Math.abs(h.alpha) >= 0.25 && Math.abs(h.alpha) / h.se >= 1.64).length
+      return L(`${n} rasgos claros para preparar el partido contra él`, `${n} clear traits to prepare a match against him`)
+    }
     default: return 'z = α + φ + Σβ + γ + δ'
   }
 }
@@ -174,7 +196,7 @@ export default function Hub({ art, media, mapa, go }: { art: Any; media: Any; ma
   const ART: Record<string, ReactNode> = {
     resumen: <ArtPhoto art={art} media={media} />, separar: <ArtPrism art={art} />, juego: <ArtNet art={art} />,
     jugadores: <ArtFormation art={art} />, bp: <ArtCorners art={art} />, lab: <ArtShots art={art} />,
-    vs: <ArtVs art={art} media={media} mapa={mapa} />, metodo: <ArtFormula />,
+    vs: <ArtVs art={art} media={media} mapa={mapa} />, plan: <ArtPlan />, metodo: <ArtFormula />,
   }
   return (
     <nav className="hub" aria-label={L('Qué quieres ver de este DT', 'What you want to see about this coach')}>

@@ -30,7 +30,7 @@ export function Cover({ rd, n, total }: { rd: RD; n: number; total: number }) {
       <div className="rp-top" />
       <div className="rp-cv-l">
         <div className="rp-brand big"><i /><b>COACH</b><b className="g">DNA</b></div>
-        <div className="rp-cv-photo"><Img src={info?.foto} size={290} round /><span className="rp-cv-club"><Logo rd={rd} club={rd.club} size={74} /></span></div>
+        <div className="rp-cv-photo"><Img src={info?.foto} size={290} round /><span className="rp-cv-club"><Logo rd={rd} club={rd.club} size={60} /></span></div>
       </div>
       <div className="rp-cv-r">
         <div className="rp-eyebrow">{L('Historia de un entrenador a través de los datos', 'The story of a coach through the data')}</div>
@@ -113,7 +113,7 @@ export function Separar({ rd, n, total }: { rd: RD; n: number; total: number }) 
   const tr: Any = (art.transferencia as Any[])?.slice().reverse().find(t => t.partidos >= 8) ?? art.transferencia?.at(-1)
   const id = art.identificabilidad
   const Stack = ({ s, h = 22 }: { s: Record<string, number>; h?: number }) => (
-    <div className="rp-stack" style={{ height: h }}>{COMPS.map(([k, , , c]) => s[k] > 0.015 ? <span key={k} style={{ width: `${s[k] * 100}%`, background: c }}>{s[k] > 0.07 ? `${fmt(s[k] * 100, 0)}` : ''}</span> : null)}</div>
+    <div className="rp-stack" style={{ height: h }}>{COMPS.map(([k, , , c]) => s[k] > 0.015 ? <span key={k} style={{ width: `${s[k] * 100}%`, background: c }}>{s[k] > 0.045 ? `${fmt(s[k] * 100, 0)}` : ''}</span> : null)}</div>
   )
   return (
     <Frame rd={rd} mode={L('¿DT o plantilla?', 'Coach or squad?')} color={MODE_COLOR.separar} n={n} total={total}
@@ -127,13 +127,16 @@ export function Separar({ rd, n, total }: { rd: RD; n: number; total: number }) 
           </div>
           <div className="rp-card">
             <h4>{L('Por familia de rasgos', 'By family of traits')}</h4>
-            {byFam.filter(x => x.s.coach + x.s.player > 0).map(x => <div key={x.f} className="rp-famrow"><span>{famLabel(x.f)}</span><Stack s={x.s} h={14} /></div>)}
+            <div className="rp-fams">{byFam.filter(x => x.s.coach + x.s.player > 0).map(x => <div key={x.f} className="rp-famrow"><span>{famLabel(x.f)}</span><Stack s={x.s} h={18} /></div>)}</div>
+            <div className="rp-axis"><span /><div><i>0%</i><i>25%</i><i>50%</i><i>75%</i><i>100%</i></div></div>
           </div>
         </div>
         <div className="rp-sep-r">
           <div className="rp-card">
             <h4>{L('Los rasgos donde más pone él', 'Traits where he contributes most')}</h4>
-            {top.map(({ r, s }) => <div key={r.kpi} className="rp-famrow wide"><span>{kName(r.kpi, glob)}</span><Stack s={s} h={14} /><b>{fmt(s.coach * 100, 0)}%</b></div>)}
+            <div className="rp-leg tiny">{COMPS.map(([k, es, en, c]) => <span key={k}><i style={{ background: c }} />{L(es, en)}</span>)}</div>
+            <div className="rp-fams">{top.map(({ r, s }) => <div key={r.kpi} className="rp-famrow wide"><span>{kName(r.kpi, glob)}</span><Stack s={s} h={18} /><b>{fmt(s.coach * 100, 0)}%</b></div>)}</div>
+            <small className="rp-note">{L('Número dentro de la barra = % de cada parte; a la derecha, la parte del DT.', 'Number inside the bar = % of each part; on the right, the coach\'s share.')}</small>
           </div>
           <div className="rp-tiles two">
             <Tile k={L('Identificabilidad', 'Identifiability')} v={`${fmt(id.indice, 0)}/100`} s={L(`${fmt(id.conectividad * 100, 0)}% de sus minutos son de jugadores que también jugaron con otros técnicos`, `${fmt(id.conectividad * 100, 0)}% of his minutes come from players who also played under other coaches`)} color="var(--c-plantilla)" />

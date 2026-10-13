@@ -10,6 +10,7 @@ import {
   ArchBars, C, ConfoundFig, EventCurve, EventDots, Fig, TransplantForest, IdentHist, IdentPanels, IdentWeights, LambdaBars, LevelCompare,
   MapMini, MobilityNet, PitchGeometry, ShareLegend, SumSketch, SynthBars, TransferHist, VarianceChart, blockName,
 } from '../metodo/figs'
+import { Validacion } from '../metodo/Validacion'
 import '../styles/metodo.css'
 
 const SECS = [
@@ -541,6 +542,7 @@ export function Metodo({ glob }: { glob: Any }) {
               </div>
             </>)
           })()}
+          <Validacion glob={glob} n0={14} />
         </Sec>
 
         {/* ------------------------------------------------------------ 6 */}
