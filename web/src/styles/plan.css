@@ -124,3 +124,4 @@
 
 .bx-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; } .bx-dot.ring { border: 2px solid #fff; background: transparent; }
 .bx-zone small { white-space: nowrap; } .bx-zone { grid-template-columns: 120px minmax(0, 1fr) 40px 110px 150px !important; }
+@media (max-width: 760px) { .c3d-zone.bx-zone { grid-template-columns: 110px minmax(0, 1fr) 40px !important; } .bx-zone small { display: none; } }

@@ -255,7 +255,7 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
 
       <div className="card">
         <div className="tl-h"><b>{L(`Cómo cambia ${quienN} según el marcador y el minuto`, `How ${quienN} changes with score and minute`)}</b>
-          <Info wide>{L('Cada celda: el rasgo de esa faceta que más se separa del promedio de la liga en esa misma situación (en desviaciones típicas), ya sin el efecto de sus jugadores. Presión: ▲ = presiona más. Sólo situaciones con 40 tramos o más. Debajo, los momentos en que más cambia y qué hacer.', 'Each cell: the trait in that facet that moves furthest from the league average in that same situation (in standard deviations), net of his players. Pressing: ▲ = presses more. Only situations with 40+ spells. Below, the moments he changes most and what to do.')}</Info>
+          <Info wide>{L('Cada celda: el rasgo de esa faceta que más se separa del promedio de la liga en esa misma situación (en desviaciones típicas), ya sin el efecto de sus jugadores. Presión: ▲ = presiona más. Color: verde = bueno para él (más xG a favor, menos en contra), rojo = malo; en el resto, verde = más que la liga. Sólo situaciones con 40 tramos o más. Debajo, los momentos en que más cambia y qué hacer.', 'Each cell: the trait in that facet that moves furthest from the league average in that same situation (in standard deviations), net of his players. Pressing: ▲ = presses more. Colour: green = good for him (more xG for, less against), red = bad; elsewhere, green = more than the league. Only situations with 40+ spells. Below, the moments he changes most and what to do.')}</Info>
           <span style={{ marginLeft: 'auto' }}><div className="seg sm" role="group"><button aria-pressed={quien === 'el'} onClick={() => setQuien('el')}>{sB}</button><button aria-pressed={quien === 'tu'} onClick={() => setQuien('tu')}>{sA}</button></div></span></div>
         {Object.values(R.cell).some(c => Object.keys(c).length) && <div className="ti-heat">
           <table className="ti-tbl du-tbl">
@@ -266,7 +266,8 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
                   const xs = [...(R.cell[`${dim}|${lvl}`]?.[f] ?? [])].sort((a, b) => Math.abs(b.d) - Math.abs(a.d))
                   const best = xs[0]
                   const v = best ? (best.k === 'ppda' ? -best.d : best.d) : null
-                  return <td key={dim + lvl} className={lvl === "0-30'" ? 'sep' : ''} style={{ background: v == null ? 'transparent' : `color-mix(in oklab, ${v >= 0 ? 'var(--div-pos)' : 'var(--div-neg)'} ${Math.round(8 + Math.min(1, Math.abs(v) / 1.2) * 52)}%, var(--surface))` }} title={best ? `${kName(best.k, glob)} ${sg(best.d)}σ` : ''}>{best ? <><small>{best.k === 'ppda' ? L('Presión', 'Pressing') : kName(best.k, glob)}</small>{v! >= 0 ? '▲' : '▼'}{fmt(Math.abs(v!), 1)}</> : '—'}</td>
+                  const good = best ? (best.k === 'xg_contra_90' ? -1 : 1) * (v ?? 0) : 0
+                  return <td key={dim + lvl} className={lvl === "0-30'" ? 'sep' : ''} style={{ background: v == null ? 'transparent' : `color-mix(in oklab, ${good >= 0 ? 'var(--div-pos)' : 'var(--div-neg)'} ${Math.round(8 + Math.min(1, Math.abs(v) / 1.2) * 52)}%, var(--surface))` }} title={best ? `${kName(best.k, glob)} ${sg(best.d)}σ` : ''}>{best ? <><small>{best.k === 'ppda' ? L('Presión', 'Pressing') : kName(best.k, glob)}</small>{v! >= 0 ? '▲' : '▼'}{fmt(Math.abs(v!), 1)}</> : '—'}</td>
                 })}
               </tr>))}</tbody>
           </table>

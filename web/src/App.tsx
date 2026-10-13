@@ -271,6 +271,7 @@ function CoachBar({ art, media, tab, setTab }: { art: Any; media: Any; tab: View
 /** Iconos de las subpestañas: dejan claro que dentro de un modo hay varias vistas distintas. */
 function SubIcon({ k }: { k: TabKey }) {
   const P: Partial<Record<TabKey, React.ReactNode>> = {
+    resumen: <><path d="M8 3c0 6 8 6 8 12s-8 6-8 6M16 3c0 6-8 6-8 12s8 6 8 6" fill="none" strokeWidth="1.8" strokeLinecap="round" /><path d="M9 7h6M9 17h6" fill="none" strokeWidth="1.6" strokeLinecap="round" /></>,
     dt: <><rect x="3" y="5" width="7" height="3" rx="1" /><rect x="10" y="5" width="5" height="3" rx="1" opacity=".55" /><rect x="3" y="11" width="4" height="3" rx="1" /><rect x="7" y="11" width="9" height="3" rx="1" opacity=".55" /><rect x="3" y="17" width="10" height="3" rx="1" /><rect x="13" y="17" width="4" height="3" rx="1" opacity=".55" /></>,
     transfer: <><path d="M4 8h13l-3-3M20 16H7l3 3" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>,
     fases: <><rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" strokeWidth="1.8" /><path d="M12 5v14" fill="none" strokeWidth="1.8" /><circle cx="12" cy="12" r="2.6" fill="none" strokeWidth="1.8" /></>,
