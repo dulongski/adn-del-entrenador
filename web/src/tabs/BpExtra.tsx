@@ -159,6 +159,7 @@ export function Banda({ art, media }: { art: Any; media?: Any }) {
   const perClub = !!C.sel?.banda
   const B = perClub ? C.sel.banda : d.banda
   const S = B[side] ?? {}, LG = d.liga.banda
+  const WHO: [number, string, number][] = (perClub && S.lanzadores ? S.lanzadores : d.banda.lanzadores) || []
   const donde = perClub ? C.donde : L('en toda su carrera', 'across his career')
   const g = side === 'favor' ? 1 : -1
   const pts: number[][] = side === 'favor' ? d.banda.puntos : d.banda.puntos_contra
@@ -205,10 +206,10 @@ export function Banda({ art, media }: { art: Any; media?: Any }) {
             <Kpi k={side === 'favor' ? L('Primer contacto en el área', 'First contact in the box') : L('Primer contacto del rival', 'Opponent first contact')} v={S.area_primer_contacto_pct} l={LG.area_primer_contacto_pct} u="%" d={0} dir={g} />
             <Kpi k={L('Retienen el balón', 'Keep the ball')} v={S.retiene_pct} l={LG.retiene_pct} u="%" d={0} dir={g} />
           </div>
-          {side === 'favor' && d.banda.lanzadores?.length > 0 && <div className="c3d-who">
-            <div className="note">{L('Quién los mete al área (toda su carrera)', 'Who throws them into the box (whole career)')}</div>
-            {d.banda.lanzadores.map(([id, n, c]: [number, string, number]) => (
-              <div key={id} className="c3d-who-row"><span>{jugadorCorto(id, n)}</span><span className="c3d-tip-bar"><i style={{ width: `${(100 * c) / d.banda.lanzadores[0][2]}%`, background: 'var(--mc)' }} /></span><b>{c}</b></div>
+          {side === 'favor' && WHO.length > 0 && <div className="c3d-who">
+            <div className="note">{perClub && S.lanzadores ? L(`Quién los mete al área ${C.donde}`, `Who throws them into the box ${C.donde}`) : L('Quién los mete al área (toda su carrera)', 'Who throws them into the box (whole career)')}</div>
+            {WHO.map(([id, n, c]: [number, string, number]) => (
+              <div key={id} className="c3d-who-row"><span>{jugadorCorto(id, n)}</span><span className="c3d-tip-bar"><i style={{ width: `${(100 * c) / WHO[0][2]}%`, background: 'var(--mc)' }} /></span><b>{c}</b></div>
             ))}
           </div>}
         </aside>

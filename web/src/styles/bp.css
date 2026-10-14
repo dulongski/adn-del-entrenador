@@ -104,3 +104,5 @@
 .c3d-zone-bar { height: 10px; border-radius: 6px; background: var(--surface-2); overflow: hidden; } .c3d-zone-bar i { display: block; height: 100%; border-radius: 6px; }
 .c3d-zone b { text-align: right; font-family: var(--mono); } .c3d-zone small { color: var(--ink-3); font-family: var(--mono); font-size: 11.5px; }
 @media (max-width: 560px) { .c3d-zone { grid-template-columns: 110px minmax(0, 1fr) 40px; } .c3d-zone small { display: none; } }
+.c3d-2d { position: relative; }
+.c3d-2d-note { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 2; max-width: calc(100% - 32px); padding: 7px 12px; border-radius: 8px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--rule); font-size: 12.5px; color: var(--ink); text-align: center; }

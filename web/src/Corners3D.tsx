@@ -99,6 +99,7 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
   ].filter(d => d.p[0] >= 92) : []
   return (
     <div className="c3d-2d">
+      {showPlayers && lado === 'ambos' && <div className="c3d-2d-note">{L('Los jugadores se ven por lado: elige «Desde la izquierda» o «Desde la derecha».', 'Players are shown per side: pick "From the left" or "From the right".')}</div>}
       <Pitch vertical crop={[88, 121]} >
         {cells.arr.map(c => {
           const cx = 92 + (c.i + 0.5) * CX, cy = fy((c.j + 0.5) * (80 / CYN)), t = c.v / maxX
@@ -151,7 +152,6 @@ function Map2D({ E, V, side, lado, tc, rivalC, gkRival, showPlayers, Q, maxXref 
           <span><i style={{ background: MINE }} />{side === 'favor' ? L('Su equipo ataca', 'His team attacks') : L('Su equipo defiende', 'His team defends')}</span>
           <span><i style={{ background: RIVAL }} />{L('Rival', 'Opponent')}</span>
         </div>}
-        {showPlayers && lado === 'ambos' && <div className="c3d-key-row note">{L('Para ver a los jugadores elige izquierda o derecha.', 'Pick left or right to see the players.')}</div>}
         <div className="c3d-key-row"><span><i style={{ background: '#fff', border: '1px solid #0b1018' }} />{L('Cobrador', 'Corner taker')}</span></div>
       </div>
       {tip.el}
@@ -472,7 +472,7 @@ export default function Corners3D({ art, media, side, onSide }: { art: Any; medi
           <button aria-pressed={vista === '2d'} onClick={() => setVista('2d')}><Ico name="square" />2D</button>
           <button aria-pressed={vista === '3d'} onClick={() => setVista('3d')}><Ico name="cube" />3D</button>
         </div>
-        <label className="smap-activos" htmlFor="c3d-players"><input id="c3d-players" type="checkbox" checked={showPlayers} onChange={e => setShowPlayers(e.target.checked)} /> {L('Jugadores (360)', 'Players (360)')}</label>
+        <label className="smap-activos" htmlFor="c3d-players"><input id="c3d-players" type="checkbox" checked={showPlayers} onChange={e => { const v = e.target.checked; setShowPlayers(v); if (v && lado === 'ambos' && vista === '2d') setLado((D && D.entregas.filter((e: number[]) => e[6] === 1).length > D.entregas.length / 2 ? 'der' : 'izq')) }} /> {L('Jugadores (360)', 'Players (360)')}</label>
         {vista === '3d' && <button className="btn c3d-play" onClick={runOne}>▶ {L('Simular un córner', 'Simulate a corner')}</button>}
       </div>
       <div className="c3d-main">

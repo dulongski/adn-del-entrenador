@@ -9,6 +9,7 @@ Qué partido es de qué DT y club sale de los dt_<id>.json (lista `partidos`); e
 club se deduce cruzando los partidos (el único id que aparece en todos los partidos de ese club).
 
 Uso: python -m pipeline.bp_club --dts <carpeta con dt_*.json> --bp2 <bp2.json> [--setpieces <parquet>]
+     [--actions <actions.parquet> --players <players.parquet>]   (para los lanzadores por club)
 """
 from __future__ import annotations
 
@@ -106,10 +107,20 @@ def banda(d, n, lg_rate=None):
             "xg_por_partido": r(d.xg.sum() / n, 3), "goles": int(d.goal.sum()),
             "area_primer_contacto_pct": r(a.first_contact_own.dropna().astype(float).mean() * 100, 1) if len(a) else None,
             "mapa": grid(d.end_x, d.end_y, d.xg, x0=80.0),
-            "origen": [int(v) for v in np.histogram(d.x.clip(80, 120), bins=[80, 90, 100, 110, 120.1])[0]]}
+            "origen": [int(v) for v in np.histogram(d.x.clip(80, 120), bins=[80, 90, 100, 110, 120.1])[0]],
+            "lanzadores": takers(d)}
 
 
-def main(dts_dir, bp2_path, sp_path=None):
+def takers(d, k=3):
+    """Quién los mete al área: [id, nombre, saques al área] de los k que más."""
+    if "player_id" not in d:
+        return []
+    a = d[d.al_area & d.player_id.notna()]
+    c = a.groupby(["player_id", "player"]).size().sort_values(ascending=False).head(k)
+    return [[int(p), n, int(v)] for (p, n), v in c.items()]
+
+
+def main(dts_dir, bp2_path, sp_path=None, actions_path=None, players_path=None):
     arts = {}
     for f in glob.glob(f"{dts_dir}/dt_*.json"):
         a = json.load(open(f))
@@ -135,6 +146,15 @@ def main(dts_dir, bp2_path, sp_path=None):
         sp = pd.read_parquet(sp_path)
         sp = sp[sp.type == "Throw-in"].copy()
         sp["al_area"] = (sp.end_x >= BOX[0]) & sp.end_y.between(BOX[1], BOX[2])
+        if actions_path and Path(actions_path).exists():
+            A = pd.read_parquet(actions_path, columns=["match_id", "team_id", "player_id", "subtype", "t"])
+            tk = A[A.subtype == "Throw-in"][["match_id", "team_id", "t", "player_id"]].drop_duplicates(["match_id", "team_id", "t"])
+            sp = sp.merge(tk, on=["match_id", "team_id", "t"], how="left")
+            if players_path and Path(players_path).exists():
+                sp["player"] = sp.player_id.map(pd.read_parquet(players_path).drop_duplicates("player_id").set_index("player_id").player)
+            else:
+                sp["player"] = sp.player_id.astype("Int64").astype(str)
+            print(f"lanzador identificado en {sp.player_id.notna().mean():.0%} de los saques")
     out = json.load(open(bp2_path))
     # cortes del marcaje: tercios de los DTs (igual que bp_extra)
     pegs = []
@@ -191,5 +211,7 @@ if __name__ == "__main__":
     ap.add_argument("--dts", required=True)
     ap.add_argument("--bp2", required=True)
     ap.add_argument("--setpieces")
+    ap.add_argument("--actions")
+    ap.add_argument("--players")
     a = ap.parse_args()
-    main(a.dts, a.bp2, a.setpieces)
+    main(a.dts, a.bp2, a.setpieces, a.actions, a.players)
