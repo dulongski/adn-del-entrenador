@@ -150,6 +150,8 @@ Nada de esto cambia el modelo publicado (el ajuste se reproduce con |Δα| ≤ 5
 - **Fuera de muestra:** validación cruzada por partido (5 pliegues), R² a nivel partido: 0.291 completo, 0.285 sin DT, 0.271 sin jugadores.
 - **Mapa:** la silueta para K = 2..8 (≈ 0.36–0.40) no supera a la de una nube sin estructura con la misma covarianza (media 0.37, p95 0.42) y el ARI por bootstrap es moderado: los estilos son un continuo; el mapa vale por las cercanías, los colores son una guía.
 
+- **Huella latente** (`pipeline/lowrank.py`, `lowrank.json`): encogimiento empírico-bayesiano multitarea. La huella de cada DT se modela como α_c ~ N(0, Σ) con Σ = ΛΛᵀ + Ψ (análisis factorial, EM) y la estimación del ridge como α̂_c = α_c + ruido, con ruido medido comparando dos submuestras disjuntas de partidos; la huella final es E[α_c | α̂_c] = Σ(Σ + S_c)⁻¹α̂_c. Un rasgo mal separado de la plantilla (mucho ruido) se reconstruye con los rasgos correlacionados en los que ese DT sí está claro. Prueba mitad/mitad (Σ aprendida solo con la mitad A, 4 particiones): correlación con la otra mitad 0.548 (ridge) → 0.552 (encogimiento por rasgo) → 0.564 (2 factores); en DTs con identificabilidad < 80, 0.518 → 0.534. Mejora en las 4 particiones; lo que más gana son los rasgos ruidosos (xG de balón parado, llegadas al área, tiros, contraataques). Los 2 factores (52% de Σ) son «dónde defiende» y «cómo ataca». Es una prueba aparte: la app sigue mostrando la huella del ridge.
+
 ## 14. Alcance y límites
 
 - **Captura:** estilo colectivo observable con eventos y 360, su parte atribuible al DT y cómo cambia con el contexto.
@@ -165,6 +167,7 @@ python -m pipeline.process        # tablas procesadas
 python -m pipeline.build          # modelos + artefactos por DT (≈ 1 h con bootstrap y transferencia)
 python -m pipeline.marking        # marcaje 360 en córners (≈ 40 min, descarga y descarta)
 python -m pipeline.validation     # pruebas de robustez → validacion.json
+python -m pipeline.lowrank        # huella latente (multitarea) → lowrank.json
 python -m pipeline.tiempo && python -m pipeline.bp_extra && python -m pipeline.plan
 pytest                            # pruebas del marco y validación sintética
 uvicorn api.main:app --port 8765  # API
