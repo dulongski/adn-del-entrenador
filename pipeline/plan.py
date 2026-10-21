@@ -374,7 +374,7 @@ def main():
         art = arts[c]
         club = (d["clubes"][-1]["club"] if d.get("clubes") else None)
         pool = acciones(art, glob, rel) + contexto(art, glob) + balon_parado(c, art, bp2) + cambios(art, of_liga)
-        out["dts"][str(c)] = {"acciones": elegir(pool), "todas": len(pool),
+        out["dts"][str(c)] = {"acciones": sorted(pool, key=lambda x: -(x["fuerza"] or 0)), "todas": len(pool),
                               "fichajes": fichajes(c, art, glob, T, B, rel, season, club),
                               "tablero": tablero(c, art, glob, tiempo, rel)}
     from pipeline.plan_textos import apply
