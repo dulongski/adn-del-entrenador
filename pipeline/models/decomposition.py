@@ -139,6 +139,8 @@ def targets(seg: pd.DataFrame, stats: dict | None = None):
     K = kpis_from_counters(seg)
     Z, W, out = {}, {}, {}
     for k, (num, den, *_r) in KPIS.items():
+        if k not in K:  # indicadores registrados en este proceso pero sin columnas en estas filas (arq_*)
+            continue
         y = K[k]
         d = seg[den].astype(float)
         ok = y.notna() & np.isfinite(y) & (d > 0)

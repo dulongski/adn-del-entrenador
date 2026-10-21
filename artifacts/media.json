@@ -28,7 +28,7 @@
    "logo": "/media/clubes/cruz-azul.png",
    "wikidata": "Q845859",
    "color": "#0B5FD1",
-   "logo_origen": "https://commons.wikimedia.org/wiki/Special:FilePath/Cruz_Azul_2026.png?width=128"
+   "logo_origen": "https://commons.wikimedia.org/wiki/Special:FilePath/Club_de_F%C3%BAtbol_Cruz_Azul_logo.svg?width=128"
   },
   "Guadalajara": {
    "logo": "/media/clubes/guadalajara.png",
@@ -123,7 +123,7 @@
    "wikidata": "Q458133",
    "club": "Tigres UANL",
    "club_id": 1300,
-   "ultimo_partido": "2026-09-19",
+   "ultimo_partido": "2026-10-17",
    "vigente": true,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/54406/54406.jpg"
   },
@@ -141,8 +141,8 @@
   "5543": {
    "foto": "/media/dts/rolando-hernan-cristante-mandarino.jpg",
    "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/10197",
-   "etiqueta_wikidata": null,
-   "wikidata": null,
+   "etiqueta_wikidata": "Hernán Cristante",
+   "wikidata": "Q123813",
    "club": "Puebla",
    "club_id": 1226,
    "ultimo_partido": "2025-11-09",
@@ -178,7 +178,7 @@
    "wikidata": "Q104524446",
    "club": "Santos Laguna",
    "club_id": 1299,
-   "ultimo_partido": "2026-09-21",
+   "ultimo_partido": "2026-10-17",
    "vigente": true,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/157971/157971.jpg"
   },
@@ -200,7 +200,7 @@
    "wikidata": "Q28441385",
    "club": "Pachuca",
    "club_id": 1298,
-   "ultimo_partido": "2026-09-21",
+   "ultimo_partido": "2026-10-19",
    "vigente": true,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/15373/15373.jpg"
   },
@@ -211,7 +211,7 @@
    "wikidata": "Q5888276",
    "club": "América",
    "club_id": 1229,
-   "ultimo_partido": "2026-09-20",
+   "ultimo_partido": "2026-10-18",
    "vigente": true,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/138634/138634.jpg"
   },
@@ -222,7 +222,7 @@
    "wikidata": "Q551843",
    "club": "Atlante",
    "club_id": 10801,
-   "ultimo_partido": "2026-09-19",
+   "ultimo_partido": "2026-10-17",
    "vigente": true,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/1618/1618.jpg"
   },
@@ -236,6 +236,17 @@
    "ultimo_partido": "2025-03-02",
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/139664/139664.jpg"
+  },
+  "1004576": {
+   "foto": "/media/dts/esteban-andres-solari-poggio.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/66140/eyJpZENsdWIiOiAxOH0=/esteban-andres-solari",
+   "etiqueta_wikidata": "Esteban Solari",
+   "wikidata": "Q455540",
+   "club": "Pumas UNAM",
+   "club_id": 1301,
+   "ultimo_partido": "2026-10-17",
+   "vigente": true,
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/66140/66140.jpg"
   },
   "5662": {
    "foto": "/media/dts/fernando-ruben-gago.jpg",
@@ -255,20 +266,9 @@
    "wikidata": "Q123789386",
    "club": "Juárez",
    "club_id": 1291,
-   "ultimo_partido": "2026-09-19",
+   "ultimo_partido": "2026-10-18",
    "vigente": true,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/13946/13946.jpg"
-  },
-  "1004576": {
-   "foto": "/media/dts/esteban-andres-solari-poggio.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/66140/eyJpZENsdWIiOiAxOH0=/esteban-andres-solari",
-   "etiqueta_wikidata": "Esteban Solari",
-   "wikidata": "Q455540",
-   "club": "Pumas UNAM",
-   "club_id": 1301,
-   "ultimo_partido": "2026-09-19",
-   "vigente": true,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/66140/66140.jpg"
   },
   "1001172": {
    "foto": "/media/dts/eduardo-fentanes-orozco.jpg",
@@ -336,17 +336,6 @@
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/172028/172028.jpg"
   },
-  "1002763": {
-   "foto": "/media/dts/diego-andrei-mejia-campo.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/25986/eyJpZENsdWIiOiAxMTIyMH0=/diego-andrei-mejia-campo",
-   "etiqueta_wikidata": "Diego Andréi Mejía",
-   "wikidata": "Q20948811",
-   "club": "Atlético San Luis",
-   "club_id": 1287,
-   "ultimo_partido": "2026-09-19",
-   "vigente": true,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/25986/25986.jpg"
-  },
   "2790": {
    "foto": "/media/dts/benat-san-jose-gil.jpg",
    "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/150380",
@@ -357,6 +346,17 @@
    "ultimo_partido": "2024-11-25",
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/150380/150380.jpg"
+  },
+  "1002763": {
+   "foto": "/media/dts/diego-andrei-mejia-campo.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/25986/eyJpZENsdWIiOiAxMTIyMH0=/diego-andrei-mejia-campo",
+   "etiqueta_wikidata": "Diego Andréi Mejía",
+   "wikidata": "Q20948811",
+   "club": "Atlético San Luis",
+   "club_id": 1287,
+   "ultimo_partido": "2026-10-18",
+   "vigente": true,
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/25986/25986.jpg"
   },
   "2945": {
    "foto": "/media/dts/pablo-adrian-guede-barriero.jpg",
@@ -376,7 +376,7 @@
    "wikidata": "Q3760944",
    "club": "Puebla",
    "club_id": 1226,
-   "ultimo_partido": "2026-09-19",
+   "ultimo_partido": "2026-10-17",
    "vigente": true,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/20781/20781.jpg"
   },
@@ -398,7 +398,7 @@
    "wikidata": "Q603690",
    "club": "Toluca",
    "club_id": 1227,
-   "ultimo_partido": "2026-09-21",
+   "ultimo_partido": "2026-10-18",
    "vigente": true,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/10226/10226.jpg"
   },
@@ -413,6 +413,17 @@
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/54385/54385.jpg"
   },
+  "3294": {
+   "foto": "/media/dts/juan-maximo-reynoso-guzman.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/11516/eyJpZENsdWIiOiAyOX0=/juan-maximo-reynoso-guzman",
+   "etiqueta_wikidata": "Juan Reynoso",
+   "wikidata": "Q982500",
+   "club": "Necaxa",
+   "club_id": 1221,
+   "ultimo_partido": "2026-10-17",
+   "vigente": true,
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/11516/11516.jpg"
+  },
   "3391": {
    "foto": "/media/dts/ricardo-ferretti.jpg",
    "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/56404",
@@ -423,17 +434,6 @@
    "ultimo_partido": "2023-07-15",
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/56404/56404.jpg"
-  },
-  "3294": {
-   "foto": "/media/dts/juan-maximo-reynoso-guzman.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/11516/eyJpZENsdWIiOiAyOX0=/juan-maximo-reynoso-guzman",
-   "etiqueta_wikidata": "Juan Reynoso",
-   "wikidata": "Q982500",
-   "club": "Necaxa",
-   "club_id": 1221,
-   "ultimo_partido": "2026-09-19",
-   "vigente": true,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/11516/11516.jpg"
   },
   "673": {
    "foto": "/media/dts/francisco-javier-rodriguez-vilchez.jpg",
@@ -600,6 +600,17 @@
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/3492/3492.jpg"
   },
+  "3788": {
+   "foto": "/media/dts/guillermo-abascal-perez.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/181446",
+   "etiqueta_wikidata": "Guillermo Abascal",
+   "wikidata": "Q51844726",
+   "club": "Atlético San Luis",
+   "club_id": 1287,
+   "ultimo_partido": "2026-03-22",
+   "vigente": false,
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/181446/181446.jpg"
+  },
   "1001074": {
    "foto": "/media/dts/martin-anselmi.jpg",
    "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/170471",
@@ -655,6 +666,17 @@
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/14741/14741.jpg"
   },
+  "1009494": {
+   "foto": "/media/dts/joel-adrian-huiqui-andrade.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/23718/eyJpZENsdWIiOiAxMjU2Nn0=/joel-adrian-huiqui-andrade",
+   "etiqueta_wikidata": "Joel Huiqui",
+   "wikidata": "Q9012356",
+   "club": "Cruz Azul",
+   "club_id": 1224,
+   "ultimo_partido": "2026-10-18",
+   "vigente": true,
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/23718/23718.jpg"
+  },
   "632": {
    "foto": "/media/dts/juan-carlos-osorio-arbelaez.jpg",
    "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/91517",
@@ -676,17 +698,6 @@
    "ultimo_partido": "2026-04-26",
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/123670/123670.jpg"
-  },
-  "1009494": {
-   "foto": "/media/dts/joel-adrian-huiqui-andrade.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/23718/eyJpZENsdWIiOiAxMjU2Nn0=/joel-adrian-huiqui-andrade",
-   "etiqueta_wikidata": "Joel Huiqui",
-   "wikidata": "Q9012356",
-   "club": "Cruz Azul",
-   "club_id": 1224,
-   "ultimo_partido": "2026-09-20",
-   "vigente": true,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/23718/23718.jpg"
   },
   "2999": {
    "foto": "/media/dts/pablo-eduardo-repetto-aquino.jpg",
@@ -728,9 +739,20 @@
    "wikidata": "Q132056",
    "club": "Tijuana",
    "club_id": 1311,
-   "ultimo_partido": "2026-09-21",
+   "ultimo_partido": "2026-10-17",
    "vigente": true,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/22577/22577.jpg"
+  },
+  "1006558": {
+   "foto": "/media/dts/guido-hernan-pizarro-demestri.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/99109",
+   "etiqueta_wikidata": "Guido Pizarro",
+   "wikidata": "Q334566",
+   "club": "Tigres UANL",
+   "club_id": 1300,
+   "ultimo_partido": "2026-07-26",
+   "vigente": false,
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/99109/99109.jpg"
   },
   "1001792": {
    "foto": "/media/dts/mauro-nestor-gerk-larrea.jpg",
@@ -754,17 +776,6 @@
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/150303/150303.jpg"
   },
-  "1006558": {
-   "foto": "/media/dts/guido-hernan-pizarro-demestri.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/99109",
-   "etiqueta_wikidata": "Guido Pizarro",
-   "wikidata": "Q334566",
-   "club": "Tigres UANL",
-   "club_id": 1300,
-   "ultimo_partido": "2026-07-26",
-   "vigente": false,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/99109/99109.jpg"
-  },
   "1000150": {
    "foto": "/media/dts/jorge-rodrigo-bava.jpg",
    "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/69551",
@@ -776,27 +787,16 @@
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/69551/69551.jpg"
   },
-  "1001245": {
-   "foto": "/media/dts/javier-marcelo-gandolfi.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/75100/eyJpZENsdWIiOiA5fQ==/javier-marcelo-gandolfi",
-   "etiqueta_wikidata": "Javier Gandolfi",
-   "wikidata": "Q1773270",
-   "club": "León",
-   "club_id": 1302,
-   "ultimo_partido": "2026-09-21",
-   "vigente": true,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/75100/75100.jpg"
-  },
-  "3788": {
-   "foto": "/media/dts/guillermo-abascal-perez.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/181446",
-   "etiqueta_wikidata": "Guillermo Abascal",
-   "wikidata": "Q51844726",
-   "club": "Atlético San Luis",
-   "club_id": 1287,
-   "ultimo_partido": "2026-03-22",
+  "1005267": {
+   "foto": "/media/dts/efrain-juarez-valdez.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/45372",
+   "etiqueta_wikidata": "Efraín Juárez",
+   "wikidata": "Q315702",
+   "club": "Pumas UNAM",
+   "club_id": 1301,
+   "ultimo_partido": "2026-05-25",
    "vigente": false,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/181446/181446.jpg"
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/45372/45372.jpg"
   },
   "1009019": {
    "foto": "/media/dts/roberto-omar-tapia-jaramillo.jpg",
@@ -820,16 +820,27 @@
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/91760/91760.jpg"
   },
-  "1005267": {
-   "foto": "/media/dts/efrain-juarez-valdez.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/45372",
-   "etiqueta_wikidata": "Efraín Juárez",
-   "wikidata": "Q315702",
-   "club": "Pumas UNAM",
-   "club_id": 1301,
-   "ultimo_partido": "2026-05-25",
-   "vigente": false,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/45372/45372.jpg"
+  "1631": {
+   "foto": "/media/dts/matias-jesus-almeyda.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/114702",
+   "etiqueta_wikidata": "Matías Almeyda",
+   "wikidata": "Q359494",
+   "club": "Monterrey",
+   "club_id": 1222,
+   "ultimo_partido": "2026-10-19",
+   "vigente": true,
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/114702/114702.jpg"
+  },
+  "1001245": {
+   "foto": "/media/dts/javier-marcelo-gandolfi.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/75100/eyJpZENsdWIiOiA5fQ==/javier-marcelo-gandolfi",
+   "etiqueta_wikidata": "Javier Gandolfi",
+   "wikidata": "Q1773270",
+   "club": "León",
+   "club_id": 1302,
+   "ultimo_partido": "2026-10-18",
+   "vigente": true,
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/75100/75100.jpg"
   },
   "2778": {
    "foto": "/media/dts/guillermo-alejandro-vazquez-herrera.jpg",
@@ -864,17 +875,6 @@
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/171853/171853.jpg"
   },
-  "2695": {
-   "foto": "/media/dts/gabriel-alejandro-milito.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/181663/eyJpZENsdWIiOiA3fQ==/gabriel-alejandro-milito",
-   "etiqueta_wikidata": "Gabriel Milito",
-   "wikidata": "Q193221",
-   "club": "Guadalajara",
-   "club_id": 1297,
-   "ultimo_partido": "2026-09-20",
-   "vigente": true,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/181663/181663.jpg"
-  },
   "5334": {
    "foto": "/media/dts/marcelo-fabian-mendez-russo.jpg",
    "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/150536",
@@ -896,6 +896,17 @@
    "ultimo_partido": "2023-03-19",
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/17577/17577.jpg"
+  },
+  "2695": {
+   "foto": "/media/dts/gabriel-alejandro-milito.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/181663/eyJpZENsdWIiOiA3fQ==/gabriel-alejandro-milito",
+   "etiqueta_wikidata": "Gabriel Milito",
+   "wikidata": "Q193221",
+   "club": "Guadalajara",
+   "club_id": 1297,
+   "ultimo_partido": "2026-10-17",
+   "vigente": true,
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/181663/181663.jpg"
   },
   "385": {
    "foto": "/media/dts/manuel-eduardo-berizzo.jpg",
@@ -919,28 +930,6 @@
    "vigente": false,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/684/684.jpg"
   },
-  "1004862": {
-   "foto": "/media/dts/esteban-eduardo-gonzalez-herrera.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/189180/eyJpZENsdWIiOiAxMzY2OH0=/esteban-eduardo-gonzalez-herrera",
-   "etiqueta_wikidata": "Esteban Eduardo González",
-   "wikidata": "Q5849048",
-   "club": "Querétaro",
-   "club_id": 1228,
-   "ultimo_partido": "2026-09-21",
-   "vigente": true,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/189180/189180.jpg"
-  },
-  "1631": {
-   "foto": "/media/dts/matias-jesus-almeyda.jpg",
-   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/114702",
-   "etiqueta_wikidata": "Matías Almeyda",
-   "wikidata": "Q359494",
-   "club": "Monterrey",
-   "club_id": 1222,
-   "ultimo_partido": "2026-09-20",
-   "vigente": true,
-   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/114702/114702.jpg"
-  },
   "2467": {
    "foto": "/media/dts/hernan-jorge-crespo.jpg",
    "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/192495",
@@ -948,9 +937,20 @@
    "wikidata": "Q160206",
    "club": "Atlas",
    "club_id": 1296,
-   "ultimo_partido": "2026-09-19",
+   "ultimo_partido": "2026-10-17",
    "vigente": true,
    "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/192495/192495.jpg"
+  },
+  "1004862": {
+   "foto": "/media/dts/esteban-eduardo-gonzalez-herrera.jpg",
+   "foto_fuente": "https://ligamx.net/cancha/cuerpotecnico/189180/eyJpZENsdWIiOiAxMzY2OH0=/esteban-eduardo-gonzalez-herrera",
+   "etiqueta_wikidata": "Esteban Eduardo González",
+   "wikidata": "Q5849048",
+   "club": "Querétaro",
+   "club_id": 1228,
+   "ultimo_partido": "2026-10-17",
+   "vigente": true,
+   "foto_origen": "https://dksx1d.ligamx.net/sttcdcs/arcdgt/AfldDrvd/photos/189180/189180.jpg"
   }
  },
  "fuente": "Wikidata / Wikimedia Commons (enlazadas, no descargadas)"

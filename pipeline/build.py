@@ -348,8 +348,11 @@ def main(coach_filter=None, fast=False, n_boot=30, solo_extra=False):
     from pipeline.models import stylemap
     stylemap.main()  # mapa de estilos (PCA + familias) para la portada
     if not solo_extra:
-        from pipeline import whatif
-        whatif.main()  # datos del simulador «¿Y si…?» (web/public/data/whatif.json)
+        # datos del simulador «¿Y si…?» (web/public/data/whatif.json); en otro proceso, porque aquí
+        # quedan registrados los tipos de posesión (arq_*) y whatif ajusta sólo los indicadores base
+        import subprocess
+        import sys
+        subprocess.run([sys.executable, "-m", "pipeline.whatif"], cwd=ROOT, check=True)
     from pipeline import shapes
     shapes.main()  # formas por fase para el partido animado
     from pipeline import corners

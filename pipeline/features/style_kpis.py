@@ -68,6 +68,8 @@ FAMILIES = ["Construcción", "Progresión", "Ocasiones", "Presión", "Organizaci
 def kpis_from_counters(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.DataFrame(index=df.index)
     for k, (n, d, sc, *_rest) in KPIS.items():
+        if n not in df or d not in df:  # p.ej. tipos de posesión registrados por build pero ausentes en estas filas
+            continue
         den = df[d].astype(float)
         out[k] = np.where(den > 0, df[n] / den.replace(0, np.nan) * sc, np.nan)
     return out
