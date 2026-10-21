@@ -11,6 +11,7 @@ import {
   MapMini, MobilityNet, PitchGeometry, ShareLegend, SumSketch, SynthBars, TransferHist, VarianceChart, blockName,
 } from '../metodo/figs'
 import { Validacion } from '../metodo/Validacion'
+import { Latente } from '../metodo/Latente'
 import '../styles/metodo.css'
 
 const SECS = [
@@ -373,6 +374,7 @@ export function Metodo({ glob }: { glob: Any }) {
             <ol className="mt-steps" style={{ counterReset: 'st 3' }}>
               <li><b>{L('Las λ se eligen por validación cruzada.', 'The λ values are chosen by cross-validation.')}</b> {L('Tres pliegues agrupados por partido (un partido nunca está a la vez en entrenamiento y prueba), sobre 8 indicadores y una rejilla de valores. El error es casi plano cerca del óptimo. Las λ elegidas encogen más a los jugadores que al entrenador; en la parte que los datos no logran separar, eso le da la señal a la plantilla. Es una elección conservadora: al entrenador solo se le atribuye lo que los datos respaldan.', 'Three folds grouped by match (a match is never in training and test at once), on 8 indicators and a grid of values. The error is nearly flat near the optimum. The chosen λ values shrink players more than the coach; in the part the data cannot separate, that hands the signal to the squad. It is a conservative choice: the coach is only credited with what the data support.')}</li>
               <li><b>{L('Incertidumbre por bootstrap.', 'Uncertainty by bootstrap.')}</b> {L('Se remuestrean partidos completos 30 veces y se reajusta todo. La dispersión de α entre réplicas da su error estándar y su intervalo de confianza del 95%. Se remuestrea por partido, y no por tramo, porque los tramos de un mismo partido se parecen entre sí.', 'Whole matches are resampled 30 times and everything is refit. The spread of α across replicates gives its standard error and 95% confidence interval. We resample matches rather than segments because segments of the same match resemble each other.')}</li>
+              <li><b>{L('Último paso: huella latente.', 'Last step: latent fingerprint.')}</b> {L('Los 34 rasgos de cada entrenador se ajustan juntos con un modelo de factores (aprendizaje multitarea): un rasgo mal separado de la plantilla toma información de los rasgos correlacionados en los que ese entrenador sí está claro. Ver 5.7.', 'The 34 traits of each coach are adjusted together with a factor model (multi-task learning): a trait poorly separated from the squad borrows from the correlated traits where that coach is clear. See 5.7.')}</li>
             </ol>
               <Fig n={4} title={L('Penalización ridge por bloque, elegida por validación cruzada (escala logarítmica). Más larga = más evidencia exigida antes de alejarse de la media.', 'Ridge penalty by block, chosen by cross-validation (log scale). Longer = more evidence required before moving away from the average.')}>
                 <LambdaBars lam={lam} />
@@ -543,6 +545,7 @@ export function Metodo({ glob }: { glob: Any }) {
             </>)
           })()}
           <Validacion glob={glob} n0={14} />
+          <Latente n0={18} />
         </Sec>
 
         {/* ------------------------------------------------------------ 6 */}
