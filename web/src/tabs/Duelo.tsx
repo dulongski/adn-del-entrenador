@@ -216,8 +216,8 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
   return (
     <div className="pl">
       <div className="pl-lead">
-        <h3 className="h2">{L(`Cómo debería jugar ${nA} contra ${nB}`, `How ${nA} should play against ${nB}`)}
-          <Info wide><p>{L('Se cruzan los rasgos propios de los dos DTs (ya sin sus jugadores); cuenta un rasgo cuando está entre el 30% más marcado de los DTs. Arriba, dónde puede ganar y qué tiene que cubrir, con qué hacer en la cancha y qué mirar durante el partido; los números del «por qué» son lo que se ve en sus partidos frente a la liga. Abajo, balón parado y cómo cambia el rival según el marcador y el minuto. Son tendencias de su carrera, no una predicción.', 'Both coaches’ own traits are crossed (net of their players). Top: where he can win and what he must cover, with what to do on the pitch and what to watch during the match; the «why» numbers are what shows in their matches vs the league. Below: set pieces and how the opponent changes with score and minute. Career tendencies, not a prediction.')}</p></Info></h3>
+        <h3 className="h2">{L(`Cómo debería jugar ${nA} contra ${nB}`, `How ${nA} should play against ${nB}`)}</h3>
+<div className="tab-sub"><p>{L('Se cruzan los rasgos propios de los dos DTs (ya sin sus jugadores); cuenta un rasgo cuando está entre el 30% más marcado de los DTs. Arriba, dónde puede ganar y qué tiene que cubrir, con qué hacer en la cancha y qué mirar durante el partido; los números del «por qué» son lo que se ve en sus partidos frente a la liga. Abajo, balón parado y cómo cambia el rival según el marcador y el minuto. Son tendencias de su carrera, no una predicción.', 'Both coaches’ own traits are crossed (net of their players). Top: where he can win and what he must cover, with what to do on the pitch and what to watch during the match; the «why» numbers are what shows in their matches vs the league. Below: set pieces and how the opponent changes with score and minute. Career tendencies, not a prediction.')}</p></div>
         {pickRow}
       </div>
 

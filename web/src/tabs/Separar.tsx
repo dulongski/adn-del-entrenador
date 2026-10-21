@@ -27,13 +27,14 @@ export function DtVsPlantilla({ art, glob }: P) {
   const dd = useDistData()
   return (
     <div className="att-page">
-      <h3 className="h2">{L('De dónde sale cada rasgo', 'Where each trait comes from')} <Info wide>{LANG === 'en'
+      <h3 className="h2">{L('De dónde sale cada rasgo', 'Where each trait comes from')}</h3>
+<div className="tab-sub">{LANG === 'en'
         ? <>Each row is one trait of how his teams play. The first bar is what shows up in his matches compared with the league.
           The rest tell you who drives it: him, his players, the club, the opponents or the context (home/away, scoreline, minute).
           To the right pushes it up, to the left pushes it down. <b>Tap a row</b> to see where he ranks among all coaches.</>
         : <>Cada fila es un rasgo de su forma de jugar. La primera barra es lo que se ve en sus partidos comparado con la liga.
           Las demás dicen quién lo empuja: él, sus jugadores, el club, los rivales o el contexto (localía, marcador, minuto).
-          Hacia la derecha lo sube, hacia la izquierda lo baja. <b>Toca una fila</b> para ver dónde queda entre todos los DTs.</>}</Info></h3>
+          Hacia la derecha lo sube, hacia la izquierda lo baja. <b>Toca una fila</b> para ver dónde queda entre todos los DTs.</>}</div>
       <div className="att-fams" role="group" aria-label={L('Filtrar por familia', 'Filter by family')}>
         {[['todas', L('Todas', 'All')], ...FAM_ORDER.filter(f => byFam.some(([g, rs]) => g === f && rs.length)).map(f => [f, famLabel(f)])].map(([k, l]) => (
           <button key={k} type="button" aria-pressed={fam === k} onClick={() => setFam(k)}>{(() => { const n = iconFor(k, l); return n ? <Ico name={n} /> : null })()}{l}</button>
@@ -153,7 +154,8 @@ export function Transferencia({ art, glob, media }: P) {
   const R = glob.transferencia_resumen || {}
   return (
     <div>
-      <h3 className="h2">{L('¿Su estilo viaja con él?', 'Does his style travel with him?')} <Info wide>{L('La prueba más directa de que un estilo es del DT y no de sus jugadores: le escondemos al modelo todos sus partidos en un club, lo entrenamos con el resto de la liga y le pedimos que adivine quién dirigía esos partidos. Si lo reconoce aunque los jugadores sean otros, el estilo es suyo.', "The most direct test that a style belongs to the coach and not his players: we hide all his matches at one club from the model, train it on the rest of the league and ask it to guess who was in charge of those matches. If it picks him out even with different players, the style is his.")}</Info></h3>
+      <h3 className="h2">{L('¿Su estilo viaja con él?', 'Does his style travel with him?')}</h3>
+<div className="tab-sub">{L('La prueba más directa de que un estilo es del DT y no de sus jugadores: le escondemos al modelo todos sus partidos en un club, lo entrenamos con el resto de la liga y le pedimos que adivine quién dirigía esos partidos. Si lo reconoce aunque los jugadores sean otros, el estilo es suyo.', "The most direct test that a style belongs to the coach and not his players: we hide all his matches at one club from the model, train it on the rest of the league and ask it to guess who was in charge of those matches. If it picks him out even with different players, the style is his.")}</div>
       {mine.length ? (
         <div className="grid2" style={mine.length % 2 ? { gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))' } : undefined}>
           {mine.map((t: Any) => (

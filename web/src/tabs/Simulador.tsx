@@ -60,7 +60,8 @@ export function Simulador({ art, media, glob }: { art: Any; media?: Any; glob?: 
   }
   return (
     <div>
-      <h3 className="h2">{L('Rejugar sus partidos', 'Replay his matches')}<Info>{L('Volvemos a jugar cada partido 50,000 veces con los mismos tiros: cada uno entra con la probabilidad que marca su xG. Así se ve si el marcador fue justo con lo que pasó en la cancha.', 'We replay every match 50,000 times with the same shots: each one goes in with the probability its xG says. That shows whether the scoreline was fair to what happened on the pitch.')}</Info></h3>
+      <h3 className="h2">{L('Rejugar sus partidos', 'Replay his matches')}</h3>
+<div className="tab-sub">{L('Volvemos a jugar cada partido 50,000 veces con los mismos tiros: cada uno entra con la probabilidad que marca su xG. Así se ve si el marcador fue justo con lo que pasó en la cancha.', 'We replay every match 50,000 times with the same shots: each one goes in with the probability its xG says. That shows whether the scoreline was fair to what happened on the pitch.')}</div>
       <Seg opts={[['mil', L('Probabilidades', 'Probabilities')], ['uno', L('Verlo jugada a jugada', 'Watch it play by play')]]} v={modo} set={v => setModo(v as 'mil' | 'uno')} />
       {glob && <StyleLab art={art} media={media} onChange={f => setFx(old => (JSON.stringify(old) === JSON.stringify(f) ? old : f))} />}
       <MatchPicker key={art.id} rows={rows} value={mid} onChange={setMid} media={media} defaultClub={clubActual} />

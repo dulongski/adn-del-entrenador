@@ -55,7 +55,6 @@ export function BalonParado({ art, media }: { art: Any; media?: Any }) {
   const color = clubColor(club, media)
   return (
     <div>
-      <h3 className="h2">{L('Balón parado', 'Set pieces')}</h3>
       <Corners3D art={art} media={media} side={side} onSide={setSide} />
       <section className="bp-ind">
         <div className="bp-ind-head">

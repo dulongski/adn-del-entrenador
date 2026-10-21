@@ -276,7 +276,8 @@ function WhatIfBody({ art, glob, media, data }: { art: Any; glob: Any; media: An
 
   return (
     <div className="wi">
-      <h3 className="h2">{L('Llévalo a otro club', 'Take him to another club')}<Info wide>{L('Elige un club y arma el once: te decimos cómo jugaría ese equipo con este DT en el banquillo. Arranca con su club actual; cambia de club o de jugadores para comparar. Es una estimación: no sabe de química, lesiones ni vestidor.', 'Pick a club and build the XI: we tell you how that team would play with this coach on the bench. It starts with his current club; swap the club or the players to compare. It’s an estimate: it knows nothing about chemistry, injuries or the dressing room.')}</Info></h3>
+      <h3 className="h2">{L('Llévalo a otro club', 'Take him to another club')}</h3>
+<div className="tab-sub">{L('Elige un club y arma el once: te decimos cómo jugaría ese equipo con este DT en el banquillo. Arranca con su club actual; cambia de club o de jugadores para comparar. Es una estimación: no sabe de química, lesiones ni vestidor.', 'Pick a club and build the XI: we tell you how that team would play with this coach on the bench. It starts with his current club; swap the club or the players to compare. It’s an estimate: it knows nothing about chemistry, injuries or the dressing room.')}</div>
 
       <div className="wi-controls card">
         <div className="wi-pickers">

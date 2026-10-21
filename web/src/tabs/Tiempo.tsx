@@ -41,9 +41,9 @@ export function Tiempo({ art, glob, media }: { art: Any; glob: Any; media: Any }
   return (
     <div className="pl">
       <div className="pl-lead">
-        <h3 className="h2">{L('¿Mantiene su identidad con el tiempo?', 'Does he keep his identity over time?')}
-          <Info wide><p>{L('Cada partido se mide sin lo que ponen sus jugadores, el club, el rival y el contexto. Luego se promedia por torneo (Apertura: julio a diciembre; Clausura: enero a junio), contando sólo los torneos con al menos 5 partidos.', 'Each match is measured without what his players, club, opponent and context bring. Then it is averaged by tournament (Apertura: July to December; Clausura: January to June), counting only tournaments with at least 5 matches.')}</p>
-            <p>{L('Estabilidad: correlación entre su perfil de cada torneo (34 rasgos) y el de todo el resto de su carrera. 1 = idéntico, 0 = nada que ver. Para comparar, también se mide qué tanto se parece cada torneo suyo al de otro entrenador cualquiera.', 'Stability: correlation between his profile in each tournament (34 traits) and that of the rest of his career. 1 = identical, 0 = unrelated. For reference, we also measure how much each of his tournaments resembles another coach.')}</p></Info></h3>
+        <h3 className="h2">{L('¿Mantiene su identidad con el tiempo?', 'Does he keep his identity over time?')}</h3>
+<div className="tab-sub"><p>{L('Cada partido se mide sin lo que ponen sus jugadores, el club, el rival y el contexto. Luego se promedia por torneo (Apertura: julio a diciembre; Clausura: enero a junio), contando sólo los torneos con al menos 5 partidos.', 'Each match is measured without what his players, club, opponent and context bring. Then it is averaged by tournament (Apertura: July to December; Clausura: January to June), counting only tournaments with at least 5 matches.')}</p>
+            <p>{L('Estabilidad: correlación entre su perfil de cada torneo (34 rasgos) y el de todo el resto de su carrera. 1 = idéntico, 0 = nada que ver. Para comparar, también se mide qué tanto se parece cada torneo suyo al de otro entrenador cualquiera.', 'Stability: correlation between his profile in each tournament (34 traits) and that of the rest of his career. 1 = identical, 0 = unrelated. For reference, we also measure how much each of his tournaments resembles another coach.')}</p></div>
         <p className="note">{L(`${T.length} torneos con al menos 5 partidos.`, `${T.length} tournaments with at least 5 matches.`)}</p>
       </div>
       <div className="tl-kpis">
@@ -112,7 +112,8 @@ export function Tiempo({ art, glob, media }: { art: Any; glob: Any; media: Any }
             <em className={e.carrera >= 0 ? 'up' : 'dn'}>{e.carrera >= 0 ? '+' : '−'}{fmt(Math.abs(e.carrera), 1)}σ</em><small>{L(`mismo lado en el ${fmt(e.mismo_lado, 0)}% de ${e.torneos} torneos`, `same side in ${fmt(e.mismo_lado, 0)}% of ${e.torneos} tournaments`)}</small></div>))}</div>
       </div>}
 
-      <h3 className="h2">{L('Partido a partido', 'Match by match')} <Info>{L('Cada punto es un partido (sin el efecto de sus jugadores); la línea es el promedio de los últimos 5. El color indica el club.', 'Each dot is a match (with his players\' effect removed); the line is the average of the last 5. Colour shows the club.')}</Info></h3>
+      <h3 className="h2">{L('Partido a partido', 'Match by match')}</h3>
+<div className="tab-sub">{L('Cada punto es un partido (sin el efecto de sus jugadores); la línea es el promedio de los últimos 5. El color indica el club.', 'Each dot is a match (with his players\' effect removed); the line is the average of the last 5. Colour shows the club.')}</div>
       <Seg opts={KEY.slice(0, 8).map(x => [x, kName(x, glob)] as [string, string])} v={k} set={setK} />
       <Evolution rows={art.contexto.evolucion} k={k} etapas={art.etapas ?? []} />
     </div>

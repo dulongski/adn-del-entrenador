@@ -46,10 +46,12 @@ export function Fases({ art, glob, media }: P) {
         )) : <span className="note">{J === false ? L('Sin datos por club.', 'No club data.') : L('Cargando…', 'Loading…')}</span>}
       </div>
 
-      <h3 className="h2">{L('Jugadas tipo', 'Signature plays')} · {club_} <Info wide><p>{L('Cómo crea peligro este equipo y cómo se para cuando defiende, en el club elegido. Sólo cuentan jugadas efectivas: las que terminan en tiro o llegan al área en juego abierto. Elige un tipo para ver, paso a paso, sus mejores jugadas reales.', 'How this team creates danger and how it sets up when defending, at the chosen club. Only effective moves count: those that end in a shot or reach the box in open play. Pick a type to watch its best real moves, step by step.')}</p><p>{L('Es lo que pasó en sus partidos, así que incluye lo que ponen sus jugadores.', 'This is what happened in his matches, so it includes what his players bring.')}</p></Info></h3>
+      <h3 className="h2">{L('Jugadas tipo', 'Signature plays')} · {club_}</h3>
+<div className="tab-sub"><p>{L('Cómo crea peligro este equipo y cómo se para cuando defiende, en el club elegido. Sólo cuentan jugadas efectivas: las que terminan en tiro o llegan al área en juego abierto. Elige un tipo para ver, paso a paso, sus mejores jugadas reales.', 'How this team creates danger and how it sets up when defending, at the chosen club. Only effective moves count: those that end in a shot or reach the box in open play. Pick a type to watch its best real moves, step by step.')}</p><p>{L('Es lo que pasó en sus partidos, así que incluye lo que ponen sus jugadores.', 'This is what happened in his matches, so it includes what his players bring.')}</p></div>
       {pc && liga ? <JugadasTipo pc={pc} JG={JG} liga={liga} color={cc} media={media} club={club_} /> : loading(JG === false || liga === false)}
 
-      <h3 className="h2">{L('Formaciones', 'Formations')} · {club_} <Info wide>{L(`Los 11 con más minutos en ${club_}${pc ? ` (${pc.partidos} partidos)` : ''}: dónde juegan sobre el papel, dónde se paran con el balón y dónde defienden. Ataca hacia arriba.`, `The 11 players with the most minutes at ${club_}${pc ? ` (${pc.partidos} matches)` : ''}: where they play on paper, where they stand with the ball and where they defend. Attacking upwards.`)}</Info></h3>
+      <h3 className="h2">{L('Formaciones', 'Formations')} · {club_}</h3>
+<div className="tab-sub">{L(`Los 11 con más minutos en ${club_}${pc ? ` (${pc.partidos} partidos)` : ''}: dónde juegan sobre el papel, dónde se paran con el balón y dónde defienden. Ataca hacia arriba.`, `The 11 players with the most minutes at ${club_}${pc ? ` (${pc.partidos} matches)` : ''}: where they play on paper, where they stand with the ball and where they defend. Attacking upwards.`)}</div>
       {pc && JG ? <Formaciones F={pc.formaciones} JG={JG} color={cc} club={club_} /> : loading(JG === false)}
 
       <h3 className="h2">{L('Dónde ocurre', 'Where it happens')}</h3>
@@ -74,7 +76,8 @@ export function Fases({ art, glob, media }: P) {
         </div>
       </div>
 
-      <h3 className="h2">{L('Huella de estilo', 'Style fingerprint')} <Info wide><p>{L('Su sello en cada aspecto del juego: lo que harían sus equipos con jugadores, club y rivales promedio. Punto a la derecha del centro: más que el DT típico; a la izquierda: menos. Relleno: la diferencia es clara, no ruido. La raya es el margen de error.', 'His mark on every part of the game: what his teams would do with average players, club and opponents. Dot right of center: more than the typical coach; left: less. Filled: the difference is real, not noise. The line is the margin of error.')}</p><p>{L('Centro: el DT típico. Números: lo que se vio en sus partidos / promedio de la liga.', 'Center: the typical coach. Numbers: what we saw in his matches / league average.')}</p></Info></h3>
+      <h3 className="h2">{L('Huella de estilo', 'Style fingerprint')}</h3>
+<div className="tab-sub"><p>{L('Su sello en cada aspecto del juego: lo que harían sus equipos con jugadores, club y rivales promedio. Punto a la derecha del centro: más que el DT típico; a la izquierda: menos. Relleno: la diferencia es clara, no ruido. La raya es el margen de error.', 'His mark on every part of the game: what his teams would do with average players, club and opponents. Dot right of center: more than the typical coach; left: less. Filled: the difference is real, not noise. The line is the margin of error.')}</p><p>{L('Centro: el DT típico. Números: lo que se vio en sus partidos / promedio de la liga.', 'Center: the typical coach. Numbers: what we saw in his matches / league average.')}</p></div>
       <div className="grid2">
         {FAM_ORDER.map(f => {
           const rs = hu.filter((h: Any) => h.familia === f)

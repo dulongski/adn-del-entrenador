@@ -556,3 +556,8 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 @media (max-width: 480px) { .seg button .ico { width: 14px; height: 14px; } .seg button { gap: 5px; } }
 .att-fams button { display: inline-flex; align-items: center; gap: 8px; }
 .att-fams button .ico { opacity: .62; flex: none; transition: opacity .15s, transform .15s; } .att-fams button:hover .ico { opacity: .95; transform: translateY(-1px); } .att-fams button[aria-pressed='true'] .ico { opacity: 1; color: var(--c-dt); }
+/* texto visible debajo de cada título de pestaña (antes iba en la «i») */
+.tab-sub { max-width: 900px; margin: 8px 0 22px; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.tab-sub p { margin: 0 0 6px; }
+.tab-sub p:last-child { margin-bottom: 0; }
+.tab-sub b { color: var(--ink); }

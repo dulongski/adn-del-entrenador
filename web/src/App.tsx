@@ -21,6 +21,15 @@ import Hub from './Hub'
 import Chat from './Chat'
 import Compare from './Compare'
 import { PdfMenu } from './report/Export'
+
+/* Título y texto visible de las pestañas que no traen uno propio (mismo formato que el resto). */
+const INTRO: Partial<Record<string, [string, string]>> = {
+  bp: [L('Córners', 'Corners'), L('A dónde manda sus córners y cuánto peligro generan, a favor y en contra, por club o en toda su carrera. En 2D ves dónde cae cada envío (tamaño = cuántos, color = xG); en 3D, además, dónde se paran sus jugadores en la foto 360 del saque.', 'Where he sends his corners and how much danger they create, for and against, by club or over his career. In 2D you see where each delivery lands (size = how many, colour = xG); in 3D, also where his players stand in the 360 snapshot of the kick.')],
+  tl: [L('Tiros libres', 'Free kicks'), L('Sus tiros libres en campo rival: desde dónde los cobra, qué hace a cada distancia (tiro directo, centro o pase corto), dónde caen sus centros, a dónde van sus tiros en el arco y quién los cobra.', 'His free kicks in the opponent’s half: where he takes them from, what he does at each distance (direct shot, cross or short pass), where his crosses land, where his shots go in the goal and who takes them.')],
+  banda: [L('Saques de banda', 'Throw-ins'), L('Sus saques de banda en el último tercio, a favor y en contra: dónde caen, cuántos van al área, si terminan en remate y quién los mete al área, comparado con la liga.', 'His final-third throw-ins, for and against: where they land, how many go into the box, whether they end in a shot and who throws them in, compared with the league.')],
+  bpdef: [L('Cómo defiende el balón parado', 'How he defends set pieces'), L('Cómo defiende los córners en contra: si marca al hombre o en zona (medido en la foto 360 del saque), cuántos defensores mete al área y en qué zonas sufre más que la liga.', 'How he defends corners against: man or zonal marking (measured in the 360 snapshot of the kick), how many defenders he puts in the box and where he suffers more than the league.')],
+  vs: [L('1 vs 1', '1 vs 1'), L('Compara su estilo propio, ya sin jugadores, con el de cualquier otro entrenador: rasgo por rasgo, dónde quedan los dos en el mapa de estilos y su ficha lado a lado.', 'Compare his own style, net of players, with any other coach: trait by trait, where both sit on the style map and their fact sheets side by side.')],
+}
 import { MODES, TAB_KEYS, inkOn, modeOf, modeTitle, type TabKey, type View } from './modes'
 
 function readHash() {
@@ -187,7 +196,7 @@ export default function App() {
             ) : (
               <section className="panel" role="tabpanel" style={{ ['--mc' as string]: modeOf(tab).color }}>
                 <header className="mode-head">
-                  <span className="mode-q">{modeOf(tab).q}<Info>{modeOf(tab).desc}</Info></span>
+                  <span className="mode-q">{modeOf(tab).q}</span>
                 </header>
                 {tab === 'resumen' && <Resumen art={art} glob={glob} media={media} go={setTab} />}
                 {tab === 'dt' && <DtVsPlantilla art={art} glob={glob} media={media} />}
@@ -195,6 +204,7 @@ export default function App() {
                 {tab === 'fases' && <Fases art={art} glob={glob} media={media} />}
                 {tab === 'contexto' && <Contexto art={art} glob={glob} media={media} />}
                 {tab === 'jugadores' && <Jugadores art={art} glob={glob} media={media} />}
+                {INTRO[tab] && <><h3 className="h2">{INTRO[tab]![0]}</h3><div className="tab-sub">{INTRO[tab]![1]}</div></>}
                 {tab === 'bp' && <BalonParado art={art} media={media} />}
                 {tab === 'tl' && <TirosLibres art={art} media={media} />}
                 {tab === 'banda' && <Banda art={art} media={media} />}

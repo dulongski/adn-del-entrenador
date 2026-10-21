@@ -66,12 +66,14 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
         </div>
       ) : <p className="rs-empty">{L('Ningún rasgo suyo destaca con claridad: con los datos que hay, su estilo se confunde con el de sus jugadores.', "None of his traits stands out clearly: with the data available, his style blends into his players'.")}</p>}
 
-      <h3 className="h2 rs-h">{L(`La historia en ${secs.length} claves`, `The story in ${secs.length} keys`)} <Info>{L('Toca un dato con flechita para ver dónde queda entre todos los DTs.', 'Tap a stat with an arrow to see where he ranks among all coaches.')}</Info></h3>
+      <h3 className="h2 rs-h">{L(`La historia en ${secs.length} claves`, `The story in ${secs.length} keys`)}</h3>
+<div className="tab-sub">{L('Toca un dato con flechita para ver dónde queda entre todos los DTs.', 'Tap a stat with an arrow to see where he ranks among all coaches.')}</div>
       <div className="rs-chapters">
         {secs.map(sec => <Chapter key={sec.id} sec={sec} art={art} glob={glob} media={media} dd={dd} open={open} />)}
       </div>
-      <h3 className="h2 rs-h">{L('Sus números', 'His numbers')} <Info>{L(`Todos los números salen de ${glob.muestra.partidos.toLocaleString(LOCALE)} partidos de Liga MX y un solo modelo.`,
-        `Every number comes from ${glob.muestra.partidos.toLocaleString(LOCALE)} Liga MX matches and a single model.`)}</Info></h3>
+      <h3 className="h2 rs-h">{L('Sus números', 'His numbers')}</h3>
+<div className="tab-sub">{L(`Todos los números salen de ${glob.muestra.partidos.toLocaleString(LOCALE)} partidos de Liga MX y un solo modelo.`,
+        `Every number comes from ${glob.muestra.partidos.toLocaleString(LOCALE)} Liga MX matches and a single model.`)}</div>
       <div className="facts rs-facts">
         <div><span className="note">{L('Partidos analizados', 'Matches analyzed')}</span><b>{art.partidos_total}</b></div>
         <div><span className="note">{L('Se separa de su plantilla', 'Separation from his squad')}</span><b>{fmt(art.identificabilidad.indice, 0)}<small>/100</small></b></div>

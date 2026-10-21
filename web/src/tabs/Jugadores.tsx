@@ -91,7 +91,8 @@ export function Jugadores({ art, glob, media }: P) {
 
   return (
     <div className="jg">
-      <h3 className="h2">{L('Su once y su dibujo', 'His XI and formation')} <Info>{L('Cómo para al equipo desde el arranque y cuánto toca el once. Elige un club o mira toda su carrera.', 'How he lines the team up from kick-off and how much he tinkers with the XI. Pick a club or view his whole career.')}</Info></h3>
+      <h3 className="h2">{L('Su once y su dibujo', 'His XI and formation')}</h3>
+<div className="tab-sub">{L('Cómo para al equipo desde el arranque y cuánto toca el once. Elige un club o mira toda su carrera.', 'How he lines the team up from kick-off and how much he tinkers with the XI. Pick a club or view his whole career.')}</div>
       {X === false && <div className="card note">{L('No se pudieron cargar las alineaciones de este DT.', 'Couldn\'t load this coach\'s line-ups.')}</div>}
       {X === null && <div className="card note">{L('Cargando alineaciones…', 'Loading line-ups…')}</div>}
       {sel && (
@@ -132,7 +133,8 @@ export function Jugadores({ art, glob, media }: P) {
         </>
       )}
 
-      <h3 className="h2">{L('Sus cambios', 'His substitutions')} <Info>{L('Cuándo mete los cambios, de qué tipo según cómo va el partido y qué le pasa a su equipo después. Toda su carrera.', 'When he makes his subs, what kind depending on the score, and what happens to his team afterwards. Whole career.')}</Info></h3>
+      <h3 className="h2">{L('Sus cambios', 'His substitutions')}</h3>
+<div className="tab-sub">{L('Cuándo mete los cambios, de qué tipo según cómo va el partido y qué le pasa a su equipo después. Toda su carrera.', 'When he makes his subs, what kind depending on the score, and what happens to his team afterwards. Whole career.')}</div>
       <div className="grid2">
         <div className="card">
           <div className="h3">{L('En qué minuto hace cada cambio', 'When each sub comes on')} <Info>{L('Minuto típico de cada cambio. La raya marca lo habitual en la liga.', 'Typical minute of each sub. The tick marks the league norm.')}</Info></div>
@@ -147,7 +149,8 @@ export function Jugadores({ art, glob, media }: P) {
       <h3 className="h3 jg-sub">{L('Qué le pasa a su equipo después de un cambio', 'What happens to his team after a sub')} <Info wide>{L('Cada punto es un DT de la liga; el resaltado es él. A la derecha, más de lo que dice el título. Primero lo que más lo distingue', 'Each dot is a league coach; the highlighted one is him. Further right means more of what the title says. What sets him apart most comes first')}{art.impacto_cambios?.length ? ` (${art.impacto_cambios[0].n} ${L('cambios', 'subs')})` : ''}.</Info></h3>
       <CambiosBells art={art} glob={glob} />
 
-      <h3 className="h2">{L('Quién juega y dónde', 'Who plays where')} <Info>{L(`Los jugadores que más usó ${quien}: por dónde se mueven en la cancha y qué cambia en el equipo cuando están en ella.`, `The players he used most ${quien}: where they move on the pitch and what changes for the team when they're on it.`)}</Info></h3>
+      <h3 className="h2">{L('Quién juega y dónde', 'Who plays where')}</h3>
+<div className="tab-sub">{L(`Los jugadores que más usó ${quien}: por dónde se mueven en la cancha y qué cambia en el equipo cuando están en ella.`, `The players he used most ${quien}: where they move on the pitch and what changes for the team when they're on it.`)}</div>
       {switcher && clubes.length > 1 && <div className="jg-switch-again">{switcher}</div>}
       {sel && (
         <div className="card tbl-wrap">

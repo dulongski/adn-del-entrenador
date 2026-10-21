@@ -38,7 +38,8 @@ export function Contexto({ art, glob }: P) {
   const maxD = Math.max(1, ...ks.flatMap(x => (C.curvas[dim][x] as Any[]).map(r => Math.abs(r.dt - r.liga))))
   return (
     <div className="ctx">
-      <h3 className="h2">{L('Cómo se adapta', 'How he adapts')} <Info wide>{L('Cómo cambia su juego cuando va perdiendo, empatando o ganando, según el minuto, si juega en casa o la fuerza del rival. Ya quitamos lo que ponen sus jugadores. 0σ es la media de la liga en general; el número pequeño es lo que hace la liga en esa misma situación: si el suyo se separa de ese, la reacción es suya.', 'How his game changes when he is losing, drawing or winning, by minute, home or away, and by the strength of the opponent. What his players bring is already taken out. 0σ is the league average overall; the small number is what the league does in that same situation: where his pulls away from it, the reaction is his.')}</Info></h3>
+      <h3 className="h2">{L('Cómo se adapta', 'How he adapts')}</h3>
+<div className="tab-sub">{L('Cómo cambia su juego cuando va perdiendo, empatando o ganando, según el minuto, si juega en casa o la fuerza del rival. Ya quitamos lo que ponen sus jugadores. 0σ es la media de la liga en general; el número pequeño es lo que hace la liga en esa misma situación: si el suyo se separa de ese, la reacción es suya.', 'How his game changes when he is losing, drawing or winning, by minute, home or away, and by the strength of the opponent. What his players bring is already taken out. 0σ is the league average overall; the small number is what the league does in that same situation: where his pulls away from it, the reaction is his.')}</div>
 
       <div className="ctx-hero">
         {top.map((o, i) => (
@@ -78,7 +79,8 @@ export function Contexto({ art, glob }: P) {
       </div>
       {tip.el}
 
-      <h3 className="h2">{L('Qué le hace cambiar de un partido a otro', 'What changes his approach from match to match')} <Info wide>{L('Qué es lo que más cambia su forma de jugar de un partido a otro: jugar en casa, la fuerza del rival, el marcador o ', 'What shifts his style most from one match to the next: playing at home, the opponent\'s strength, the scoreline or ')}<b>{L('cómo juega el rival', 'how the opponent plays')}</b>{L(' (si presiona, si tiene el balón, si es directo). Cada punto es un partido.', ' (whether they press, keep the ball or go direct). Each dot is a match.')}</Info></h3>
+      <h3 className="h2">{L('Qué le hace cambiar de un partido a otro', 'What changes his approach from match to match')}</h3>
+<div className="tab-sub">{L('Qué es lo que más cambia su forma de jugar de un partido a otro: jugar en casa, la fuerza del rival, el marcador o ', 'What shifts his style most from one match to the next: playing at home, the opponent\'s strength, the scoreline or ')}<b>{L('cómo juega el rival', 'how the opponent plays')}</b>{L(' (si presiona, si tiene el balón, si es directo). Cada punto es un partido.', ' (whether they press, keep the ball or go direct). Each dot is a match.')}</div>
       <Seg opts={KEY.filter(x => C.motores?.[x]).slice(0, 8).map(x => [x, label(x)] as [string, string])} v={k} set={setK} />
       {C.motores?.[k] ? <Drivers rows={C.motores[k]} /> : <div className="note">{L('Hacen falta al menos 15 partidos.', 'Needs at least 15 matches.')}</div>}
 
