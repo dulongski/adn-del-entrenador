@@ -39,11 +39,10 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
     <div className="rs">
 
       <p className="eyebrow">{L('Su ADN en pocas palabras', 'His DNA in a nutshell')}</p>
-      <h3 className="h2 rs-title">{N.titular.split(': ').slice(1).join(': ') || N.titular} <Info wide>{LANG === 'en'
-        ? <>What he does with any squad. Each idea shows his numbers, the league's, and where he ranks among the {nDT} coaches.
-          <b> His imprint</b> is what his teams would do with average players, an average club and average opponents.</>
-        : <>Lo que hace con cualquier plantilla. En cada idea ves sus números, los de la liga y dónde queda entre los {nDT} técnicos.
-          <b> Su sello</b> es lo que harían sus equipos con jugadores, club y rivales promedio.</>}</Info></h3>
+      <h3 className="h2 rs-title">{N.titular.split(': ').slice(1).join(': ') || N.titular}</h3>
+      <p className="rs-sub">{LANG === 'en'
+        ? <>His clearest ideas, the ones he keeps with any squad. Each card shows what was seen in his matches, <b>his imprint</b> (what his teams would do with average players, club and opponents) and the league, plus where he ranks among the {nDT} coaches.</>
+        : <>Sus ideas más claras, las que mantiene con cualquier plantilla. Cada tarjeta muestra lo que se vio en sus partidos, <b>su sello</b> (lo que harían sus equipos con jugadores, club y rivales promedio) y la liga, y dónde queda entre los {nDT} técnicos.</>}</p>
       {art.partidos_total < 10 && <p className="rs-empty rs-warn">{L(`Con solo ${art.partidos_total} partidos estas ideas son preliminares: el modelo acerca su estilo al promedio hasta tener más datos.`,
         `With only ${art.partidos_total} matches these ideas are preliminary: the model pulls his style toward the average until there is more data.`)}</p>}
 

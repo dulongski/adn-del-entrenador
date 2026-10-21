@@ -2,7 +2,9 @@
    cada tarjeta llega en la variable --acc. */
 
 .rs { --acc: var(--c-dt); }
-.rs-title { font-size: 34px; margin-top: 4px; }
+.rs-title { font-size: 34px; margin-top: 6px; line-height: 1.15; }
+.rs-sub { max-width: 900px; margin: 10px 0 28px; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.rs-sub b { color: var(--ink); }
 .rs-h { margin-top: 40px; }
 .rs-facts small { margin-left: 2px; }
 .rs-empty { background: var(--surface); border: 1px dashed var(--rule); border-radius: 10px; padding: 14px 16px; color: var(--ink-2); }

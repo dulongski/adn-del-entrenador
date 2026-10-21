@@ -19,6 +19,7 @@ export function usePlan(id: number) {
   return d
 }
 
+const ORDEN = ['con', 'sin', 'trans', 'bp', 'partido']
 const FASE_IC: Record<string, IconName> = { con: 'ball', sin: 'shield', trans: 'bolt', bp: 'flag', partido: 'clock' }
 const FASE_C: Record<string, string> = { con: 'var(--c-dt)', sin: 'var(--c-club)', trans: 'var(--c-rival)', bp: 'var(--c-ctx)', partido: 'var(--c-plantilla)' }
 const tx = (a: Any, k: 'titulo' | 'texto', n = '') => String((LANG === 'en' ? a[`${k}_en`] : a[k]) ?? a[k]).split('{N}').join(n)
@@ -54,6 +55,8 @@ export function PlanJuego({ art, glob }: { art: Any; glob: Any }) {
   if (!d) return <div className="card note">{L('Cargando…', 'Loading…')}</div>
   const acc: Any[] = d.acciones
   const maxF = Math.max(...acc.map(a => a.fuerza ?? 0), 1)
+  // por situación de juego, en el orden en que se prepara un partido; numeradas en ese mismo orden
+  const orden = ORDEN.flatMap(fa => acc.filter(a => a.fase === fa))
   return (
     <div className="pl">
       <div className="pl-lead">
@@ -62,17 +65,21 @@ export function PlanJuego({ art, glob }: { art: Any; glob: Any }) {
             <p>{L(`Se eligen las más fuertes, como máximo dos por fase. Este DT activó ${d.todas} reglas. A balón parado se usan sus córners en contra (360) y sus saques; en el partido, cómo reacciona al marcador y cuándo mueve el banco.`, `The strongest are chosen, at most two per phase. This coach triggered ${d.todas} rules. At set pieces we use his corners against (360) and his throw-ins; in-game, how he reacts to the score and when he goes to the bench.`)}</p></Info></h3>
         <p className="note">{L(`Recomendaciones para el técnico que enfrente a ${shortName(art.nombre)}. Cada clave lleva la evidencia que la sostiene.`, `Recommendations for the coach facing ${shortName(art.nombre)}. Every key carries the evidence behind it.`)}</p>
       </div>
-      <div className="pl-grid">
-        {acc.map((a, i) => (
-          <article key={a.id} className="card pl-card" style={{ ['--fc' as string]: FASE_C[a.fase], ['--i' as string]: i }}>
-            <div className="pl-top"><span className="pl-fase"><Ico name={FASE_IC[a.fase] ?? 'target'} />{faseTxt(a.fase, shortName(art.nombre).split(' ').slice(1).join(' ') || shortName(art.nombre))}</span>
-              <span className="pl-str" title={L('Qué tan clara es la evidencia', 'How clear the evidence is')}><i style={{ width: `${(100 * (a.fuerza ?? 0)) / maxF}%` }} /></span></div>
-            <h4 className="pl-t"><span className="pl-n">{i + 1}</span>{tx(a, 'titulo', surname(art.nombre))}</h4>
-            <p className="pl-p">{tx(a, 'texto', surname(art.nombre))}</p>
-            <div className="pl-evs"><Evidence a={a} glob={glob} /></div>
-          </article>
-        ))}
-      </div>
+      {ORDEN.filter(fa => acc.some(a => a.fase === fa)).map(fa => (
+        <section key={fa} className="pl-sec" style={{ ['--fc' as string]: FASE_C[fa] }}>
+          <h4 className="pl-sech"><Ico name={FASE_IC[fa] ?? 'target'} />{faseTxt(fa, surname(art.nombre))}</h4>
+          <div className="pl-grid">
+            {acc.filter(a => a.fase === fa).map(a => { const i = orden.indexOf(a); return (
+              <article key={a.id} className="card pl-card" style={{ ['--fc' as string]: FASE_C[a.fase], ['--i' as string]: i }}>
+                <div className="pl-top"><span className="pl-n">{i + 1}</span>
+                  <span className="pl-str" title={L('Qué tan clara es la evidencia', 'How clear the evidence is')}><i style={{ width: `${(100 * (a.fuerza ?? 0)) / maxF}%` }} /></span></div>
+                <h4 className="pl-t">{tx(a, 'titulo', surname(art.nombre))}</h4>
+                <p className="pl-p">{tx(a, 'texto', surname(art.nombre))}</p>
+                <div className="pl-evs"><Evidence a={a} glob={glob} /></div>
+              </article>) })}
+          </div>
+        </section>
+      ))}
       {acc.length < 4 && <p className="note">{L('Pocas claves: su estilo está cerca del promedio de la liga en casi todo, o tiene pocos partidos para afirmarlo.', 'Few keys: his style is close to the league average in almost everything, or he has too few matches to say more.')}</p>}
     </div>
   )
