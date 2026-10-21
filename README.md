@@ -16,7 +16,8 @@ Metodología completa en [docs/METODOLOGIA.md](docs/METODOLOGIA.md).
 ```
 config/framework.yaml      marco analítico: TODOS los objetos y umbrales
 pipeline/
-  sb_client.py             API StatsBomb + caché local (data/, ignorado por git)
+  paths.py                 dónde viven los datos: ~/coach-dna-data (o $COACH_DNA_DATA_DIR), fuera del repo
+  sb_client.py             API StatsBomb + caché local en la carpeta de datos
   framework.py             posesión, stint, acción progresiva, presión, resumen 360
   process.py               caché → tablas parquet (stints, posesiones, tiros, balón parado…)
   features/                indicadores de estilo, jugadores, balón parado
@@ -30,8 +31,10 @@ tests/                     marco analítico + validación sintética de la desco
 
 ## Correrlo
 
+Los datos **no** viven en el repositorio: van en `~/coach-dna-data` (fuera de git y de iCloud/Dropbox). Para otra ruta, `export COACH_DNA_DATA_DIR=/ruta`. Ahí quedan el caché del API (`events/`, `360/`, `lineups/`, `matches/`), las tablas (`processed/`), los cachés del modelo (`model_cache/`, `cache/`) y el marcaje 360 (`marking/`).
+
 ```bash
-cp .env.example .env                      # SB_USER / SB_PASS
+cp .env.example ~/coach-dna-data/.env     # SB_USER / SB_PASS (también vale ./.env)
 python3 -m venv .venv && .venv/bin/pip install pandas numpy scikit-learn lightgbm shap pyarrow fastapi uvicorn requests pyyaml pytest python-dotenv
 .venv/bin/python -m pipeline.sb_client    # descarga (≈1,780 partidos Liga MX 2021/22–2026/27)
 .venv/bin/python -m pipeline.process      # ≈30 min
@@ -70,4 +73,4 @@ La API (`api/main.py`, FastAPI) queda como **opcional**, para funciones que requ
 
 ## Uso de datos
 
-Los datos de StatsBomb son de uso exclusivo para la competencia. El repositorio **no** contiene datos crudos: `data/` está en `.gitignore` y `artifacts/` solo guarda resultados agregados, como el que permiten las bases del concurso («pueden presentar resultados pero no los datos»).
+Los datos de StatsBomb son de uso exclusivo para la competencia. El repositorio **no** contiene datos crudos: viven en `~/coach-dna-data`, fuera del repo (y `data/` sigue en `.gitignore` por si acaso) y `artifacts/` solo guarda resultados agregados, como el que permiten las bases del concurso («pueden presentar resultados pero no los datos»).

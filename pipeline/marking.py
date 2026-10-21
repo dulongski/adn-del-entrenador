@@ -6,7 +6,7 @@ Por cada córner (Pass subtype 'Corner', period<=4) guarda, en el marco de ataqu
 No guarda los eventos ni el 360 crudo: se descargan del API, se extrae el córner y se descartan
 (el disco está casi lleno y los datos crudos no deben salir de la máquina).
 
-Salida incremental (reanudable): ~/coach-dna-work/marking/part_*.parquet
+Salida incremental (reanudable): <datos>/marking/part_*.parquet (pipeline/paths.py)
 Uso: .venv/bin/python -m pipeline.marking [--workers 6] [--limit N]
 """
 from __future__ import annotations
@@ -20,8 +20,9 @@ import pandas as pd
 import requests
 
 from pipeline import sb_client as sb
+from pipeline.paths import MARK
 
-OUT = Path.home() / "coach-dna-work" / "marking"
+OUT = MARK
 NEAR_X = 84.0          # sólo jugadores en el último tercio
 WINDOW_S = 15.0        # remate dentro de la misma posesión y 15 s
 SKIP_FC = {"Ball Receipt*", "Pressure", "Duel", "Block"}

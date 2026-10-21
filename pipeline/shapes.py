@@ -14,10 +14,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from pipeline.paths import PROC
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts"
-PROC = ROOT / "data" / "processed"
 OUT = ROOT / "web" / "public" / "data" / "formas.json"
 MIN_N = 12
 DEF = {"Pressure", "Duel", "Interception", "Ball Recovery", "Block", "Clearance", "Foul Committed"}

@@ -10,9 +10,9 @@ import json
 from pathlib import Path
 
 import pandas as pd
+from pipeline.paths import PROC
 
 ROOT = Path(__file__).resolve().parents[1]
-PROC = ROOT / "data" / "processed"
 OUT = ROOT / "web" / "public" / "data" / "partidos.json"
 
 

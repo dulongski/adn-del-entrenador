@@ -1,4 +1,4 @@
-"""Ajuste del modelo de estilo SIN arquetipos (los 34 KPI base), guardado en ~/coach-dna-work.
+"""Ajuste del modelo de estilo SIN arquetipos (los 34 KPI base), guardado en la carpeta de datos (pipeline/paths.py: <datos>/cache).
 
 Cada KPI se resuelve por separado con el mismo diseño y las mismas λ, así que α de los KPI base
 es idéntica a la publicada (se verifica contra artifacts/dt_*.json). Sirve a los módulos nuevos
@@ -15,14 +15,14 @@ import pandas as pd
 from pipeline import sb_client as sb
 from pipeline.features.style_kpis import BASE_KPIS
 from pipeline.models import decomposition as dec
+from pipeline.paths import CACHE
 
-WORK = Path.home() / "coach-dna-work"
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def load(force: bool = False):
-    WORK.mkdir(exist_ok=True)
-    f = WORK / "fit_base.pkl"
+    CACHE.mkdir(parents=True, exist_ok=True)
+    f = CACHE / "fit_base.pkl"
     if f.exists() and not force:
         return pickle.load(open(f, "rb"))
     t = time.time()

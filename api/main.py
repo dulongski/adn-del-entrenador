@@ -15,10 +15,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from pipeline.models.simulation import simulate_match
+from pipeline.paths import PROC
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts"
-PROC = ROOT / "data" / "processed"
 DIST = ROOT / "web" / "dist"
 
 app = FastAPI(title="ADN del Entrenador")

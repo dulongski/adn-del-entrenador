@@ -157,12 +157,13 @@ Nada de esto cambia el modelo publicado (el ajuste se reproduce con |Δα| ≤ 5
 - **Captura:** estilo colectivo observable con eventos y 360, su parte atribuible al DT y cómo cambia con el contexto.
 - **No captura:** tracking continuo (distancias, velocidades, forma del bloque en todo momento), interacciones DT×jugador (el modelo es aditivo), cuerpo técnico, entrenamiento ni información de vestuario.
 - **Cuándo desconfiar:** en DTs con índice de identificabilidad bajo (un solo club, plantilla que no jugó con otros DTs), donde el ridge encoge α hacia la media. El índice acompaña a cada DT en la interfaz.
-- **Datos:** uso exclusivo para la competencia. Los datos crudos se quedan en `data/` (ignorado por git) y solo se publican resultados agregados en `artifacts/`.
+- **Datos:** uso exclusivo para la competencia. Los datos crudos se quedan en `~/coach-dna-data` (`$COACH_DNA_DATA_DIR`), fuera del repositorio y solo se publican resultados agregados en `artifacts/`.
 
 ## 15. Reproducir
 
 ```bash
-python -m pipeline.sb_client      # descarga a caché (credenciales en .env)
+export COACH_DNA_DATA_DIR=~/coach-dna-data   # opcional: es la ruta por defecto
+python -m pipeline.sb_client      # descarga a caché (credenciales en <datos>/.env o ./.env)
 python -m pipeline.process        # tablas procesadas
 python -m pipeline.build          # modelos + artefactos por DT (≈ 1 h con bootstrap y transferencia)
 python -m pipeline.marking        # marcaje 360 en córners (≈ 40 min, descarga y descarta)

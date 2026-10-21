@@ -16,9 +16,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from pipeline.paths import DATA
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data"
 PROC = DATA / "processed"
 OUT = ROOT / "web" / "public" / "data" / "liga_sim.json"
 RECENT = ["2023/24", "2024/25", "2025/26", "2026/27"]

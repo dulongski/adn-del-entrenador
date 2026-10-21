@@ -38,11 +38,11 @@ import pandas as pd
 from pipeline.features.style_kpis import BASE_KPIS
 from pipeline.models import decomposition as dec
 from pipeline.models.transfer_test import _design_like, match_vectors
+from pipeline.paths import PROC
 
 ROOT = Path(__file__).resolve().parents[2]
 ART = ROOT / "artifacts"
 WEB = ROOT / "web" / "public" / "data"
-PROC = ROOT / "data" / "processed"
 
 MIN_PRE, MIN_POST, MIN_OTHER = 6, 6, 8
 WIN = 17                       # partidos a cada lado (un torneo de Liga MX)

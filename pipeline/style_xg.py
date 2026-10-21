@@ -16,9 +16,9 @@ import pandas as pd
 
 from pipeline.features.style_kpis import BASE_KPIS
 from pipeline.models import decomposition as dec
+from pipeline.paths import PROC
 
 ROOT = Path(__file__).resolve().parents[1]
-PROC = ROOT / "data" / "processed"
 OUT = ROOT / "web" / "public" / "data" / "style_xg.json"
 # resultados (no intenciones): no entran como «estilo»
 OUTPUT_KPIS = {"xg_90", "xg_por_tiro", "tiros_90", "obv_90", "llegada_area", "xg_contra_90", "xg_transicion", "xg_balon_parado_90", "posesion_rival_dur", "field_tilt"}

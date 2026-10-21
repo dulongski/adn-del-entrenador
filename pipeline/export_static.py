@@ -15,6 +15,7 @@ import shutil
 from pathlib import Path
 
 import pandas as pd
+from pipeline.paths import DATA, PROC
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts"
@@ -24,11 +25,11 @@ WEB = ROOT / "web"
 def apodos_jugadores() -> dict:
     """Apodo oficial de cada jugador (player_nickname de las alineaciones StatsBomb), p.ej. «Alan Cervantes»."""
     import gzip
-    f = ROOT / "data" / "processed" / "apodos.json"
+    f = PROC / "apodos.json"
     if f.exists():
         return json.load(open(f))
     out = {}
-    for g in (ROOT / "data" / "lineups").glob("*.json.gz"):
+    for g in (DATA / "lineups").glob("*.json.gz"):
         for team in json.load(gzip.open(g)):
             for p in team["lineup"]:
                 if p.get("player_nickname"):
@@ -47,15 +48,15 @@ def main():
 
     out = WEB / "public" / "data"
     out.mkdir(parents=True, exist_ok=True)
-    shots = pd.read_parquet(ROOT / "data" / "processed" / "shots.parquet")
+    shots = pd.read_parquet(PROC / "shots.parquet")
     by_match = dict(tuple(shots.groupby("match_id")))
     # once inicial de cada partido (ambos equipos) para el partido animado
-    L = pd.read_parquet(ROOT / "data" / "processed" / "lineups.parquet")
+    L = pd.read_parquet(PROC / "lineups.parquet")
     L = L[(L.period == 1) & (L.ts == 0)]
-    nombres = pd.read_parquet(ROOT / "data" / "processed" / "players.parquet").set_index("player_id").player.to_dict()
+    nombres = pd.read_parquet(PROC / "players.parquet").set_index("player_id").player.to_dict()
     xi_by = {k: [[int(r.player_id), r.position, apodos.get(str(int(r.player_id))) or nombres.get(r.player_id, "")] for r in g.itertuples()]
              for k, g in L.groupby(["match_id", "team_id"])}
-    M = pd.read_parquet(ROOT / "data" / "processed" / "matches.parquet").set_index("match_id")
+    M = pd.read_parquet(PROC / "matches.parquet").set_index("match_id")
     for d in glob["dts"]:
         src = ART / f"dt_{d['id']}.json"
         shutil.copyfile(src, out / src.name)

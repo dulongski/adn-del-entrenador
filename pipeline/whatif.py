@@ -17,9 +17,9 @@ import pandas as pd
 from pipeline.features.players import POS_ES
 from pipeline.features.style_kpis import BASE_KPIS, KPIS
 from pipeline.models import decomposition as dec
+from pipeline.paths import PROC
 
 ROOT = Path(__file__).resolve().parents[1]
-PROC = ROOT / "data" / "processed"
 ART = ROOT / "artifacts"
 OUT = ROOT / "web" / "public" / "data" / "whatif.json"
 CTX = ["home", "losing", "winning", "manadv", "tmid", "tmid2"]

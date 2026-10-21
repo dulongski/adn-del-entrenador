@@ -30,10 +30,11 @@ from pipeline.features.style_kpis import BASE_KPIS
 from pipeline.fitcache import load
 from pipeline.lowrank import fit_sigma, noise_from_halves, posterior
 from pipeline.models import decomposition as dec
+from pipeline.paths import DATA
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts"
-BACKUP = Path.home() / "coach-dna-work" / "artifacts_ridge"
+BACKUP = DATA / "artifacts_ridge"
 
 
 def latent_alpha(seg, F, r=2, seed=7):

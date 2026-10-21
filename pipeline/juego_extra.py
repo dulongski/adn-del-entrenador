@@ -17,9 +17,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from pipeline.paths import DATA
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data"
 PROC = DATA / "processed"
 ART = ROOT / "artifacts"
 OUT = ROOT / "web" / "public" / "data"

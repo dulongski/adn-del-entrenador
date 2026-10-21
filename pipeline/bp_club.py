@@ -22,8 +22,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.optimize import linear_sum_assignment
+from pipeline.paths import MARK
 
-MARK = Path.home() / "coach-dna-work" / "marking"
 BOX = (102.0, 18.0, 62.0)
 TIGHT = 2.0
 MIN_DEF = 3

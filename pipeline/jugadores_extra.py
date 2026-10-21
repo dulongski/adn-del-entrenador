@@ -15,9 +15,9 @@ import numpy as np
 import pandas as pd
 
 from pipeline.features.players import POS_ES
+from pipeline.paths import PROC
 
 ROOT = Path(__file__).resolve().parents[1]
-PROC = ROOT / "data" / "processed"
 OUT = ROOT / "web" / "public" / "data"
 
 

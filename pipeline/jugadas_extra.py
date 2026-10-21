@@ -21,12 +21,12 @@ import pandas as pd
 
 from pipeline import def360 as d360
 from pipeline import jugadas as jg
+from pipeline.paths import MODEL_CACHE, PROC
 
 ROOT = Path(__file__).resolve().parents[1]
-PROC = ROOT / "data" / "processed"
 ART = ROOT / "artifacts"
 OUT = ROOT / "web" / "public" / "data"
-PRIV = ROOT / "data" / "model_cache" / "jugadas"   # por DT: juego_extra lo incrusta en juego_<id>.json (el artefacto publicado admite pocos archivos)
+PRIV = MODEL_CACHE / "jugadas"   # por DT: juego_extra lo incrusta en juego_<id>.json (el artefacto publicado admite pocos archivos)
 MIN_SPELL = 5          # partidos mínimos de un DT en un club para entrar a la comparación con la liga
 MIN_FRAMES = 150       # cuadros 360 mínimos por métrica y situación para compararla con la liga
 # qué métricas son confiables en cada situación (en «atrás» la línea defensiva queda fuera de cámara)
@@ -255,7 +255,7 @@ def main():
     nxt = P.sort_values(["match_id", "poss"]).assign(next_team=lambda d: d.groupby("match_id").team_id.shift(-1)).set_index(k3).next_team
     PMIN = None
     try:
-        PMIN = pd.read_parquet(ROOT / "data" / "model_cache" / "juego_poss_minute.parquet").set_index(["match_id", "poss"]).minute
+        PMIN = pd.read_parquet(MODEL_CACHE / "juego_poss_minute.parquet").set_index(["match_id", "poss"]).minute
     except Exception:
         pass
 

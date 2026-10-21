@@ -28,10 +28,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from pipeline.paths import MODEL_CACHE, PROC
 
 ROOT = Path(__file__).resolve().parents[1]
-PROC = ROOT / "data" / "processed"
-CACHE = ROOT / "data" / "model_cache" / "jugadas_poss.parquet"
+CACHE = MODEL_CACHE / "jugadas_poss.parquet"
 
 # (id, es, en, qué es es, qué es en)
 BUILD = [

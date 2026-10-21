@@ -23,11 +23,11 @@ from scipy.optimize import linear_sum_assignment
 
 from pipeline import sb_client as sb
 from pipeline.features.setpieces import zone_of
+from pipeline.paths import MARK
 
 ROOT = Path(__file__).resolve().parents[1]
 PROC = sb.DATA / "processed"
 OUT = ROOT / "web" / "public" / "data" / "bp2.json"
-MARK = Path.home() / "coach-dna-work" / "marking"
 BOX = (102.0, 18.0, 62.0)
 TIGHT = 2.0          # yardas: «pegado» a su atacante
 MIN_DEF = 3          # mínimo de defensores visibles en el área para medir el marcaje

@@ -10,14 +10,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import pandas as pd
+from pipeline.paths import PROC
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "web" / "public" / "data"
 
 
 def main() -> None:
-    apodos = json.load(open(ROOT / "data" / "processed" / "apodos.json"))
-    shots = pd.read_parquet(ROOT / "data" / "processed" / "shots.parquet")
+    apodos = json.load(open(PROC / "apodos.json"))
+    shots = pd.read_parquet(PROC / "shots.parquet")
     by_match = dict(tuple(shots.groupby("match_id")))
     ok = bad = 0
     for f in sorted(OUT.glob("sim_*.json")):

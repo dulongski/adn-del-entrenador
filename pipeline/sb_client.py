@@ -13,14 +13,15 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+from pipeline.paths import DATA
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data"
 BASE = "https://data.statsbomb.com/api"
 LIGA_MX = 73
 SEASONS = [108, 235, 281, 317, 318, 351]  # 2021/22 … 2026/27
 
 load_dotenv(ROOT / ".env")
+load_dotenv(DATA / ".env")  # credenciales también junto a los datos (fuera del repo)
 
 
 def _auth():

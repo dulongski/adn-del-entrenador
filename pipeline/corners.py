@@ -35,9 +35,9 @@ import numpy as np
 import pandas as pd
 
 from pipeline.framework import flatten_events
+from pipeline.paths import DATA
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data"
 OUT = ROOT / "web" / "public" / "data"
 
 FT_X = 84.0        # sólo guardamos jugadores 360 en el último tercio

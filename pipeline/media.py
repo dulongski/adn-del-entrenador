@@ -14,6 +14,7 @@ from urllib.parse import quote
 
 import pandas as pd
 import requests
+from pipeline.paths import DATA, PROC
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts"
@@ -29,7 +30,7 @@ CLUB_PAGES = {
 }
 
 
-CACHE_F = ROOT / "data" / "media_cache.json"
+CACHE_F = DATA / "media_cache.json"
 _cache = json.load(open(CACHE_F)) if CACHE_F.exists() else {}
 
 
@@ -154,7 +155,7 @@ def coach_status(M: pd.DataFrame) -> dict:
 
 def main():
     glob = json.load(open(ART / "global.json"))
-    M = pd.read_parquet(ROOT / "data" / "processed" / "matches.parquet")
+    M = pd.read_parquet(PROC / "matches.parquet")
     media = {"clubes": {}, "dts": {}, "fuente": "Wikidata / Wikimedia Commons (enlazadas, no descargadas)"}
     for club, page in CLUB_PAGES.items():
         q = qid_of("en", page)
