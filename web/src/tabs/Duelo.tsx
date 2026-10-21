@@ -8,7 +8,7 @@ import { Ico } from '../icons'
 import Info from '../Info'
 import { dataUrl, fmt, getJSON, shortName, type Any } from '../lib'
 import { L, LANG } from '../settings'
-import { kName } from './resumenKit'
+import { kFmt, kName } from './resumenKit'
 import '../styles/tl.css'
 import '../styles/plan.css'
 
@@ -20,57 +20,60 @@ const ap = (a: Any) => Object.fromEntries((a?.huella ?? []).map((h: Any) => [h.k
 const sg = (v: number) => `${v >= 0 ? '+' : '−'}${fmt(Math.abs(v), 2)}`
 const tx = (a: Any, k: string, n = '') => String((LANG === 'en' ? a[`${k}_en`] : a[k]) ?? a[k]).split('{N}').join(n)
 
-/* Qué tiene que hacer el rival para aplicar cada clave de plan.py: [kpi, signo] de SU estilo. */
-const NEED: Record<string, [string, number][]> = {
-  salida_corta_debil: [['altura_presion', 1], ['ppda', -1]], salida_corta_buena: [['compacidad_360', -1]], sale_largo: [['linea_360', 1]],
-  cambios_frente: [['compacidad_360', -1]], posesion: [['contraataque', 1], ['posesion', -1]], presiona_alto: [['pase_largo', 1], ['verticalidad', 1]],
-  linea_alta: [['verticalidad', 1], ['contraataque', 1]], linea_baja: [['posesion', 1], ['centros', 1]], bloque_largo: [['progresivos', 1], ['conduccion_prog', 1]],
-  bloque_corto: [['progresion_banda', 1], ['cambios_orientacion', 1]], contrapresion: [['verticalidad', 1], ['pase_largo', 1]], concede_contras: [['contraataque', 1]],
-  contragolpea: [['transicion_def', -1], ['contrapresion', 1]], recupera_rapido: [['tempo', 1]],
-}
-function fitOf(id: string, al: Record<string, number>) {
-  const need = NEED[id]
-  if (!need) return null
-  const parts = need.filter(([k]) => al[k] != null).map(([k, s]) => ({ k, v: al[k] * s }))
-  if (!parts.length) return null
-  const score = parts.reduce((a, p) => a + p.v, 0) / parts.length
-  return { score, parts, tipo: score >= 0.2 ? 'si' : score <= -0.2 ? 'no' : 'neutro' }
-}
-
-/* Duelos directos entre un rasgo de quien ataca y uno de quien defiende. Textos desde el punto de vista de A. */
-type Caso = 'ambos' | 'ataque' | 'defensa' | 'ninguno'
-type Duel = { id: string; fase: 'con' | 'sin' | 'trans'; t: [string, string]; att: 'A' | 'B'; x: [string, number]; y: [string, number]; txt: Record<Caso, [string, string]> }
-const DUELS: Duel[] = [
-  { id: 'salida', fase: 'con', t: ['La salida de {A} contra la presión de {B}', "{A}'s build-up vs {B}'s press"], att: 'A', x: ['salida_corta', 1], y: ['ppda', -1], txt: {
-    ambos: ['Duelo clave: {A} sale corto desde el portero y {B} presiona alto. {A} necesita un plan B (saque largo o un pivote extra).', 'Key duel: {A} builds short from the keeper and {B} presses high. {A} needs a plan B (long goal kick or an extra pivot).'],
-    ataque: ['{A} puede salir corto con calma: {B} no presiona tanto.', '{A} can build short calmly: {B} does not press much.'],
-    defensa: ['{B} presiona alto y {A} suele sacar largo: el partido pasa por ganar la segunda jugada.', '{B} presses high and {A} usually goes long: the game hinges on the second ball.'],
-    ninguno: ['{A} no sale tanto en corto ni {B} presiona arriba: la salida no decide este partido.', '{A} does not build short much and {B} does not press high: build-up will not decide this one.'] } },
-  { id: 'profundidad', fase: 'con', t: ['El juego directo de {A} contra la línea de {B}', "{A}'s direct play vs {B}'s line"], att: 'A', x: ['verticalidad', 1], y: ['linea_360', 1], txt: {
-    ambos: ['{B} adelanta la línea y {A} juega directo: la espalda de la defensa de {B} es la ventaja de {A}.', "{B} pushes the line up and {A} plays direct: the space behind {B}'s defence is {A}'s edge."],
-    ataque: ['{A} juega directo, pero {B} defiende cerca de su área: el espacio estará delante, no detrás.', '{A} plays direct, but {B} defends near the box: the space will be in front, not behind.'],
-    defensa: ['{B} adelanta la línea: aunque no es lo habitual de {A}, los balones a la espalda pagan.', "{B} pushes the line up: even if it is not {A}'s habit, balls in behind pay off."],
-    ninguno: ['Ni {A} juega tan directo ni {B} adelanta la línea: será un partido de posesión.', '{A} is not that direct and {B} does not push up: expect a possession game.'] } },
-  { id: 'bandas', fase: 'con', t: ['El ataque por fuera de {A} contra el bloque de {B}', "{A}'s wide attack vs {B}'s block"], att: 'A', x: ['progresion_banda', 1], y: ['compacidad_360', -1], txt: {
-    ambos: ['El bloque de {B} es compacto por dentro y {A} ataca por fuera: el camino natural de {A} es el bueno.', "{B}'s block is compact inside and {A} attacks wide: {A}'s natural route is the right one."],
-    ataque: ['{A} ataca por fuera contra un bloque que no siempre cierra: la amplitud es su arma.', '{A} attacks wide against a block that does not always close: width is the weapon.'],
-    defensa: ['El bloque de {B} es compacto: {A} tendrá que abrir el campo más de lo que suele.', "{B}'s block is compact: {A} will need to stretch the pitch more than usual."],
-    ninguno: ['El partido no se decide por las bandas: {A} tiene que buscar por dentro.', 'The game will not be decided on the wings: {A} has to look inside.'] } },
-  { id: 'contras', fase: 'trans', t: ['Los contragolpes de {A} contra la pérdida de {B}', "{A}'s counters vs {B}'s ball losses"], att: 'A', x: ['contraataque', 1], y: ['transicion_def', 1], txt: {
-    ambos: ['{A} contragolpea y a {B} le llegan rápido tras perder el balón: es el arma principal de {A}.', "{A} counters and teams get at {B} fast after losing the ball: it is {A}'s main weapon."],
-    ataque: ['{A} contragolpea mucho, pero {B} se protege bien tras perder: {A} tiene que elegir cuándo salir.', '{A} counters a lot, but {B} protects well after losing it: {A} must pick the moments.'],
-    defensa: ['A {B} le llegan rápido tras perder: aunque no es lo suyo, {A} debería tener dos jugadores listos para correr.', 'Teams get at {B} fast after losing it: even if it is not his thing, {A} should keep two players ready to run.'],
-    ninguno: ['Las transiciones no serán decisivas: ataque posicional.', 'Transitions will not be decisive: positional attack.'] } },
-  { id: 'posesion', fase: 'sin', t: ['La posesión de {B} contra la presión de {A}', "{B}'s possession vs {A}'s press"], att: 'B', x: ['posesion', 1], y: ['ppda', -1], txt: {
-    ambos: ['{B} quiere el balón y {A} presiona: el partido se decide en la salida de {B}.', "{B} wants the ball and {A} presses: the game is decided in {B}'s build-up."],
-    ataque: ['{B} tendrá el balón y {A} no presiona alto: a {A} le conviene bloque compacto y contragolpe.', '{B} will have the ball and {A} does not press high: {A} is better off with a compact block and counters.'],
-    defensa: ['{A} presiona y {B} no elabora tanto: {A} le va a robar arriba.', '{A} presses and {B} does not build that patiently: {A} will win it high.'],
-    ninguno: ['Nadie domina el balón ni la presión: partido abierto.', 'Neither side dominates the ball or the press: an open game.'] } },
-  { id: 'sus_contras', fase: 'trans', t: ['Los contragolpes de {B} contra la pérdida de {A}', "{B}'s counters vs {A}'s ball losses"], att: 'B', x: ['contraataque', 1], y: ['transicion_def', 1], txt: {
-    ambos: ['Peligro para {A}: {B} contragolpea y a {A} le llegan rápido tras perder. {A} debe dejar 2+1 atrás cuando ataque.', 'Danger for {A}: {B} counters and teams get at {A} fast after losing it. {A} must keep 2+1 back when attacking.'],
-    ataque: ['{B} contragolpea, pero {A} se protege bien tras perder: {A} solo tiene que mantener ese equilibrio.', '{B} counters, but {A} protects well after losing it: {A} just has to keep that balance.'],
-    defensa: ['A {A} le llegan rápido tras perder, aunque {B} no vive del contragolpe.', 'Teams get at {A} fast after losing it, though {B} does not live off counters.'],
-    ninguno: ['Los contragolpes de {B} no son su arma principal ni el punto débil de {A}.', "{B}'s counters are neither his main weapon nor {A}'s weak spot."] } },
+/* Plan de partido: cruces entre un rasgo de {B} (el rival) y uno de {A} (tu DT).
+   «oportunidad»: algo que {B} hace o concede y que {A} puede explotar. «riesgo»: un arma de {B} que {A} tiene que cubrir.
+   B / A = [kpi, signo] del estilo propio (α). Se muestran los cruces donde el rasgo del rival es claro (≥ 0.25σ),
+   ordenados por la suma rival + encaje de {A}. Los textos van con nombres; el «por qué» usa lo que se ve en sus partidos. */
+type Cruce = { id: string; tipo: 'op' | 'riesgo'; fase: 'con' | 'sin' | 'trans'; B: [string, number][]; A: [string, number][]; t: [string, string]; hacer: [string, string][]; mirar: [string, string] }
+const CRUCES: Cruce[] = [
+  { id: 'presion_salida', tipo: 'op', fase: 'sin', B: [['salida_corta', 1], ['construccion_exito', -1]], A: [['altura_presion', 1], ['ppda', -1]],
+    t: ['Presiona la salida corta de {B}', "Press {B}'s short build-up"],
+    hacer: [['Salta arriba en sus saques de meta: el delantero al portero y los extremos a los centrales.', 'Jump high on their goal kicks: striker on the keeper, wingers on the centre-backs.'], ['Un mediocentro pegado a su pivote para cortar el pase por dentro.', 'One midfielder tight on their pivot to cut the inside pass.'], ['Si superan la primera línea, repliega: no persigas hacia atrás.', 'If they beat the first line, drop back: do not chase backwards.']],
+    mirar: ['Cuántas de sus salidas cortas llegan a tu campo', 'How many of their short build-ups reach your half'] },
+  { id: 'espalda', tipo: 'op', fase: 'con', B: [['linea_360', 1]], A: [['verticalidad', 1], ['contraataque', 1]],
+    t: ['Ataca la espalda de la línea de {B}', "Attack the space behind {B}'s line"],
+    hacer: [['Desmarques en diagonal de los delanteros a la espalda de sus centrales.', 'Diagonal runs from the forwards in behind their centre-backs.'], ['Pase vertical temprano al recuperar: uno o dos toques.', 'Early vertical pass after winning it: one or two touches.'], ['Extremos bien abiertos para estirar la línea antes del pase.', 'Wingers wide to stretch the line before the pass.']],
+    mirar: ['Balones a la espalda y fueras de lugar en los primeros 20 minutos', 'Balls in behind and offsides in the first 20 minutes'] },
+  { id: 'bloque_bajo', tipo: 'op', fase: 'con', B: [['linea_360', -1], ['posesion', -1]], A: [['posesion', 1], ['centros', 1]],
+    t: ['Ten paciencia y carga el área de {B}', "Be patient and load {B}'s box"],
+    hacer: [['Circula rápido de banda a banda para mover su bloque.', 'Move the ball quickly side to side to shift their block.'], ['Centros al segundo palo con la llegada de un mediocentro.', 'Crosses to the far post with a midfielder arriving.'], ['Tiro de media distancia en la segunda jugada.', 'Shoot from mid-range on the second ball.']],
+    mirar: ['Llegadas al área por partido', 'Box entries per match'] },
+  { id: 'entre_lineas', tipo: 'op', fase: 'con', B: [['compacidad_360', 1]], A: [['progresivos', 1], ['conduccion_prog', 1]],
+    t: ['Recibe entre las líneas de {B}', "Receive between {B}'s lines"],
+    hacer: [['Mediapunta y un extremo por dentro, entre su medio campo y su defensa.', 'Number 10 and one winger inside, between their midfield and defence.'], ['Pase vertical a esos jugadores en cuanto se abra el carril.', 'Vertical pass to them as soon as the lane opens.'], ['Conducción hacia el centro para atraer a sus centrales.', 'Carry towards the middle to draw their centre-backs.']],
+    mirar: ['Pases que reciben entre líneas tus mediapuntas', 'Passes your 10s receive between the lines'] },
+  { id: 'por_fuera', tipo: 'op', fase: 'con', B: [['compacidad_360', -1]], A: [['progresion_banda', 1], ['cambios_orientacion', 1]],
+    t: ['Ataca por fuera del bloque de {B}', "Go around {B}'s block"],
+    hacer: [['Lateral y extremo en amplitud total para hacer 2 contra 1 por banda.', 'Full-back and winger at full width for 2-v-1s out wide.'], ['Cambios de orientación rápidos al lado débil.', 'Quick switches to the weak side.'], ['Pase atrás raso al llegar a línea de fondo.', 'Low cut-back when reaching the byline.']],
+    mirar: ['Centros y llegadas por banda', 'Crosses and wide entries'] },
+  { id: 'contragolpe', tipo: 'op', fase: 'trans', B: [['transicion_def', 1]], A: [['contraataque', 1]],
+    t: ['Contragolpea a {B}', 'Hit {B} on the counter'],
+    hacer: [['Deja dos atacantes adelantados cuando defiendas.', 'Keep two attackers high when defending.'], ['Primer pase tras robar hacia adelante, no al lado.', 'First pass after a win-back goes forward, not sideways.'], ['Corre por el carril que deja su lateral al subir.', 'Run into the lane their full-back leaves when he goes forward.']],
+    mirar: ['Contragolpes que llegan a su último tercio', 'Counters that reach their final third'] },
+  { id: 'su_presion', tipo: 'riesgo', fase: 'con', B: [['ppda', -1], ['recuperaciones_altas_90', 1]], A: [['salida_corta', 1]],
+    t: ['Que su presión no ahogue tu salida', "Don't let {B}'s press choke your build-up"],
+    hacer: [['Plan B en saque de meta: largo a un delantero de referencia.', 'Plan B on goal kicks: long to a target forward.'], ['Un pivote extra que baje entre los centrales.', 'An extra pivot dropping between the centre-backs.'], ['Cero pases horizontales en tu propio tercio.', 'No square passes in your own third.']],
+    mirar: ['Balones que pierdes en tu tercio', 'Balls lost in your own third'] },
+  { id: 'sus_contras', tipo: 'riesgo', fase: 'trans', B: [['contraataque', 1]], A: [['transicion_def', 1]],
+    t: ['Cuida la pérdida: {B} contragolpea', '{B} counters: protect the ball'],
+    hacer: [['Deja 2+1 atrás cuando ataques: dos centrales y un pivote.', 'Keep 2+1 back when attacking: two centre-backs and a pivot.'], ['Falta táctica temprana si salen en igualdad numérica.', 'Early tactical foul if they break with equal numbers.'], ['Que no suban los dos laterales a la vez.', 'Never push both full-backs at once.']],
+    mirar: ['Contragolpes rivales que llegan a tu área', 'Opponent counters that reach your box'] },
+  { id: 'sus_bandas', tipo: 'riesgo', fase: 'sin', B: [['progresion_banda', 1], ['centros', 1]], A: [],
+    t: ['Cierra las bandas de {B} y defiende el área', "Close {B}'s flanks and defend the box"],
+    hacer: [['Doble marca en banda: lateral más extremo.', 'Double up out wide: full-back plus winger.'], ['Presión al que centra y un central siempre en el primer palo.', 'Pressure on the crosser and a centre-back always at the near post.'], ['Un jugador fijo en el segundo palo.', 'One player fixed on the far post.']],
+    mirar: ['Centros que te meten al área', 'Crosses into your box'] },
+  { id: 'su_directo', tipo: 'riesgo', fase: 'sin', B: [['pase_largo', 1], ['verticalidad', 1]], A: [],
+    t: ['Gana el primer balón contra el juego directo de {B}', "Win the first ball against {B}'s direct play"],
+    hacer: [['Tu central más fuerte por arriba en la zona de caída.', 'Your best aerial centre-back where the ball lands.'], ['Mediocampistas cerca para quedarse la segunda jugada.', 'Midfielders close by to win the second ball.'], ['La línea da un paso atrás cuando su portero va a sacar largo.', 'The line takes a step back when their keeper goes long.']],
+    mirar: ['Segundas jugadas ganadas', 'Second balls won'] },
+  { id: 'su_posesion', tipo: 'riesgo', fase: 'sin', B: [['posesion', 1], ['pases_por_posesion', 1]], A: [],
+    t: ['Bloque medio contra la posesión de {B}', "Mid-block against {B}'s possession"],
+    hacer: [['Bloque medio compacto, sin regalar espacio entre líneas.', 'A compact mid-block with no room between the lines.'], ['Salta a presionar solo con el pase atrás o al portero.', 'Only jump to press on a back pass or a pass to the keeper.'], ['Cierra los pases por dentro y deja que el balón vaya por fuera.', 'Shut the inside passes and let the ball go wide.']],
+    mirar: ['Su posesión en tu mitad de cancha', 'Their possession in your half'] },
+  { id: 'sus_conductores', tipo: 'riesgo', fase: 'sin', B: [['conduccion_prog', 1]], A: [],
+    t: ['Corta a los conductores de {B}', "Stop {B}'s ball-carriers"],
+    hacer: [['No le des metros al que conduce: temporiza y oriéntalo a banda.', 'Give the carrier no room: delay him and show him wide.'], ['El compañero de al lado cubre la espalda del que sale.', 'The nearest team-mate covers behind whoever steps out.'], ['Falta táctica en medio campo si rompe la línea.', 'Tactical foul in midfield if he breaks the line.']],
+    mirar: ['Conducciones rivales que superan tu medio campo', 'Opponent carries past your midfield'] },
 ]
 const FASE: Record<string, [string, string, string, string]> = { con: ['Cuando {A} tiene el balón', 'When {A} has the ball', 'ball', 'var(--c-dt)'], sin: ['Cuando {B} tiene el balón', 'When {B} has the ball', 'shield', 'var(--c-club)'], trans: ['Transiciones', 'Transitions', 'bolt', 'var(--c-rival)'] }
 
@@ -167,37 +170,54 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
   if (B === false) return <div className="pl">{pickRow}<div className="card note">{L('No se pudo cargar a ese técnico.', 'Could not load that coach.')}</div></div>
   if (!B) return <div className="pl">{pickRow}<div className="card note">{L('Cargando…', 'Loading…')}</div></div>
 
-  const pB = plan?.dts?.[String(B.id)], pA = plan?.dts?.[String(A.id)]
-  const tusClaves = (pB?.acciones ?? []).map((a: Any) => ({ a, f: fitOf(a.id, aA) }))
-  const susClaves = (pA?.acciones ?? []).map((a: Any) => ({ a, f: fitOf(a.id, aB) }))
-  const duels = DUELS.map(d => {
-    const att = d.att === 'A' ? aA : aB, def = d.att === 'A' ? aB : aA
-    const x = (att[d.x[0]] ?? 0) * d.x[1], y = (def[d.y[0]] ?? 0) * d.y[1]
-    const caso: Caso = x >= 0.25 && y >= 0.25 ? 'ambos' : x >= 0.25 ? 'ataque' : y >= 0.25 ? 'defensa' : 'ninguno'
-    // ¿a quién favorece? A ataca: ataque = A; defensa = B. B ataca: al revés. ambos = choque.
-    const fav = caso === 'ambos' ? 'choque' : caso === 'ninguno' ? 'neutro' : (caso === 'ataque') === (d.att === 'A') ? 'tu' : 'el'
-    return { d, x, y, caso, fav }
-  })
-  // balón parado: su zona más débil frente a dónde mandas tus córners
+  const HA = Object.fromEntries((A.huella ?? []).map((h: Any) => [h.kpi, h])) as Record<string, Any>
+  const HB = Object.fromEntries((B.huella ?? []).map((h: Any) => [h.kpi, h])) as Record<string, Any>
+  // fuerza de un rasgo = qué tan lejos está del DT mediano, por percentil entre los DTs (−1 a 1, con su signo).
+  // Se usa el percentil y no α porque el modelo encoge a los DTs con pocos partidos: su orden sigue siendo informativo.
+  const prom = (H: Record<string, Any>, ks: [string, number][]) => { const v = ks.filter(([k]) => H[k]?.pct != null).map(([k, sg_]) => ((H[k].pct - 50) / 50) * sg_); return v.length ? v.reduce((x, y) => x + y, 0) / v.length : 0 }
+  const cruces = CRUCES.map(c => {
+    const sb = prom(HB, c.B), sa = c.A.length ? prom(HA, c.A) : 0
+    // el rasgo del rival manda; el encaje de A suma (oportunidad) o, en riesgos, la debilidad de A agrava
+    // y lo que se ve en sus partidos tiene que ir del mismo lado que su rasgo propio (si no, el «por qué» se contradice)
+    const [k0, s0] = c.B[0], h0 = HB[k0]
+    const visto = h0?.crudo != null && h0?.liga != null ? (h0.crudo - h0.liga) * s0 > 0 : false
+    return { c, sb, sa, visto, score: sb + 0.6 * Math.max(sa, 0) }
+  }).filter(x => x.sb >= 0.4 && x.visto)
+  const ops = cruces.filter(x => x.c.tipo === 'op').sort((p, q) => q.score - p.score).slice(0, 3)
+  const riesgos = cruces.filter(x => x.c.tipo === 'riesgo').sort((p, q) => q.score - p.score).slice(0, 3)
+  // «lo que se ve en sus partidos»: valor observado frente a la liga
+  const ev = (H: Record<string, Any>, k: string, sgn = 1) => {
+    const h = H[k]; if (!h) return null
+    const p = h.pct == null ? '' : sgn > 0 ? L(` · más que el ${fmt(h.pct, 0)}% de los DTs`, ` · more than ${fmt(h.pct, 0)}% of coaches`) : L(` · menos que el ${fmt(100 - h.pct, 0)}% de los DTs`, ` · less than ${fmt(100 - h.pct, 0)}% of coaches`)
+    return `${kName(k, glob)}: ${kFmt(k, h.crudo)} (${L('liga', 'league')} ${kFmt(k, h.liga)})${p}`
+  }
+  const encaje = (x: { c: Cruce; sa: number }) => {
+    if (!x.c.A.length) return null
+    const k0 = x.c.A[0][0], h = HA[k0]
+    const dato = h ? ` · ${kName(k0, glob)} ${kFmt(k0, h.crudo)} (${L('liga', 'league')} ${kFmt(k0, h.liga)})` : ''
+    if (x.c.tipo === 'op') return x.sa >= 0.4 ? [L(`${sA} ya juega así`, `${sA} already plays this way`), 'tu', dato] : x.sa <= -0.4 ? [L(`No es costumbre de ${sA}: hay que entrenarlo`, `Not ${sA}'s habit: it needs work`), 'el', dato] : [L(`${sA} lo puede hacer`, `${sA} can do it`), 'neutro', dato]
+    return x.sa >= 0.4 ? [L(`${sA} es vulnerable aquí`, `${sA} is exposed here`), 'el', dato] : [L(`${sA} lo suele cubrir`, `${sA} usually covers it`), 'tu', dato]
+  }
+  // balón parado: a favor (zona débil de B contra dónde manda A) y en contra (dónde manda B)
   const vul = (bp2?.dts?.[String(B.id)]?.vulnerable ?? []).filter((z: Any) => z.xg != null && z.n >= 15)
-  const vz = vul.length ? vul.reduce((a: Any, b: Any) => (b.xg - b.xg_liga > a.xg - a.xg_liga ? b : a)) : null
+  const vz = vul.length ? vul.reduce((x: Any, y: Any) => (y.xg - y.xg_liga > x.xg - x.xg_liga ? y : x)) : null
   const myZ = A.balon_parado?.ofensivo?.corner_zonas ?? {}, lgZ = A.balon_parado?.liga?.corner_zonas ?? {}
-  const markB = bp2?.dts?.[String(B.id)]?.marcaje
+  const markB = bp2?.dts?.[String(B.id)]?.marcaje, markA = bp2?.dts?.[String(A.id)]?.marcaje
+  const bZ = B.balon_parado?.ofensivo?.corner_zonas ?? {}
+  const bTop = Object.keys(bZ).length ? Object.keys(bZ).reduce((x, y) => ((bZ[y] - (lgZ[y] ?? 0)) > (bZ[x] - (lgZ[x] ?? 0)) ? y : x)) : null
   const R = reactions(quien === 'el' ? B : A)
   const bench = B.jugadores?.minuto_cambios?.['1']
   const benchL = B.jugadores?.minuto_cambios_liga?.['1']
   const quienN = quien === 'el' ? nB : nA
   const qX = quien === 'el' ? sB : sA, qY = quien === 'el' ? sA : sB
-  const FavTag = ({ f }: { f: string }) => <span className={`du-tag ${f}`}>{f === 'tu' ? L(`ventaja ${sA}`, `${sA}'s edge`) : f === 'el' ? L(`ventaja ${sB}`, `${sB}'s edge`) : f === 'choque' ? L('choque', 'clash') : L('parejo', 'even')}</span>
-  const FitTag = ({ f, mine }: { f: Any; mine: boolean }) => !f ? <span className="du-tag neutro">{L('depende de la preparación', 'depends on preparation')}</span>
-    : <span className={`du-tag ${f.tipo === 'si' ? (mine ? 'tu' : 'el') : f.tipo === 'no' ? (mine ? 'el' : 'tu') : 'neutro'}`}>{f.tipo === 'si' ? L(`${mine ? sA : sB} ya lo hace`, `${mine ? sA : sB} already does it`) : f.tipo === 'no' ? L(`va contra el estilo de ${mine ? sA : sB}`, `goes against ${mine ? sA : sB}'s style`) : L('ni sí ni no', 'neither')}</span>
+  const Tag = ({ t, c }: { t: string; c: string }) => <span className={`du-tag ${c}`}>{t}</span>
   const zEs = (z: string) => L(z, ({ 'Primer palo': 'near post', 'Área chica': 'six-yard box', 'Punto penal': 'penalty spot', 'Segundo palo': 'far post', Corto: 'short' } as Record<string, string>)[z] ?? z)
 
   return (
     <div className="pl">
       <div className="pl-lead">
         <h3 className="h2">{L(`Cómo debería jugar ${nA} contra ${nB}`, `How ${nA} should play against ${nB}`)}
-          <Info wide><p>{L('Se cruzan los dos sellos (estilo con jugadores, club y rival promedio): las claves para jugarle a cada uno, si el otro ya juega así, los duelos directos por fase y cómo reacciona el rival según el marcador y el minuto. Son tendencias de toda su carrera, no una predicción del partido.', 'The two imprints are crossed (style with average players, club and opponent): the keys to play each of them, whether the other already plays that way, the direct duels by phase and how the opponent reacts by score and minute. They are career-long tendencies, not a match prediction.')}</p></Info></h3>
+          <Info wide><p>{L('Se cruzan los rasgos propios de los dos DTs (ya sin sus jugadores); cuenta un rasgo cuando está entre el 30% más marcado de los DTs. Arriba, dónde puede ganar y qué tiene que cubrir, con qué hacer en la cancha y qué mirar durante el partido; los números del «por qué» son lo que se ve en sus partidos frente a la liga. Abajo, balón parado y cómo cambia el rival según el marcador y el minuto. Son tendencias de su carrera, no una predicción.', 'Both coaches’ own traits are crossed (net of their players). Top: where he can win and what he must cover, with what to do on the pitch and what to watch during the match; the «why» numbers are what shows in their matches vs the league. Below: set pieces and how the opponent changes with score and minute. Career tendencies, not a prediction.')}</p></Info></h3>
         {pickRow}
       </div>
 
@@ -212,49 +232,52 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
         <div className="du-side r"><div><b>{nB}</b><small>{clubOf(B.id)} {clubOf(B.id) && <ClubLogo club={clubOf(B.id)!} media={media} size={14} />}</small></div><CoachPhoto name={B.nombre} src={media.dts?.[B.id]?.foto} size={64} /></div>
       </div>
 
-      <div className="tl-grid">
-        <div className="card">
-          <div className="tl-h"><b>{L(`Lo que le funciona a ${sA} contra ${sB}, y si ${sA} ya juega así`, `What works for ${sA} against ${sB}, and whether ${sA} already plays that way`)}</b></div>
-          {tusClaves.length === 0 && <p className="note">{L('Su estilo no tiene rasgos lo bastante claros.', 'His style has no clear enough traits.')}</p>}
-          {tusClaves.map(({ a, f }: Any) => (
-            <div key={a.id} className="du-key"><span className="du-kt"><b>{tx(a, 'titulo', sB)}</b><small>{tx(a, 'texto', sB)}</small></span>
-              <span className="du-kf"><FitTag f={f} mine />{f && <small>{f.parts.map((p: Any) => `${kName(p.k, glob)} ${sg(p.v)}σ`).join(' · ')}</small>}</span></div>
-          ))}
+      {[['op', ops, L(`Dónde puede ganar ${sA}`, `Where ${sA} can win it`), L(`${ops.length === 1 ? 'La ventaja más clara' : 'Las ventajas más claras'} de ${sA} contra ${sB}: lo que ${sB} concede y ${sA} sabe explotar.`, `${sA}'s clearest edges against ${sB}: what ${sB} concedes and ${sA} can exploit.`)],
+        ['riesgo', riesgos, L(`Qué tiene que cubrir ${sA}`, `What ${sA} must cover`), L(`Las armas de ${sB} que más pueden dañar a ${sA}.`, `${sB}'s weapons that can hurt ${sA} most.`)]].map(([tipo, lista, titulo, sub]: Any) => (
+        <div key={tipo} className="card">
+          <div className="tl-h"><b>{titulo}</b><span className="note">{sub}</span></div>
+          {lista.length === 0 && <p className="note">{tipo === 'op' ? L(`${sB} no tiene una debilidad de estilo clara: el partido se gana con lo propio.`, `${sB} has no clear stylistic weakness: win it on your own terms.`) : L(`${sB} no tiene un arma de estilo clara.`, `${sB} has no clear stylistic weapon.`)}</p>}
+          <div className="gp-grid">
+            {lista.map((x: Any, i: number) => { const e = encaje(x); return (
+              <div key={x.c.id} className={`gp-card ${tipo}`} style={{ ['--fc' as string]: FASE[x.c.fase][3] }}>
+                <div className="gp-top"><span className="gp-n">{i + 1}</span><span className="pl-fase"><Ico name={FASE[x.c.fase][2]} />{f(L(FASE[x.c.fase][0], FASE[x.c.fase][1]))}</span></div>
+                <b className="gp-t">{f(L(x.c.t[0], x.c.t[1]))}</b>
+                <ul className="gp-do">{x.c.hacer.map((h: [string, string], j: number) => <li key={j}>{L(h[0], h[1])}</li>)}</ul>
+                <div className="gp-why"><span>{L('Por qué', 'Why')}</span>{x.c.B.map(([k, sg_]: [string, number]) => ev(HB, k, sg_)).filter(Boolean).map((t: string, j: number) => <small key={j}>{sB} · {t}</small>)}</div>
+                {e && <div className="gp-fit"><Tag t={e[0]} c={e[1]} /><small>{e[2] ? `${sA}${e[2]}` : ''}</small></div>}
+                <div className="gp-watch"><Ico name="eye" />{L('Qué mirar en el partido: ', 'What to watch in the match: ')}{L(x.c.mirar[0], x.c.mirar[1])}</div>
+              </div>) })}
+          </div>
         </div>
-        <div className="card">
-          <div className="tl-h"><b>{L(`Lo que le funciona a ${sB} contra ${sA}, y si ${sB} lo hace`, `What works for ${sB} against ${sA}, and whether ${sB} does it`)}</b></div>
-          {susClaves.length === 0 && <p className="note">{L('Tu estilo no tiene rasgos lo bastante claros.', 'Your style has no clear enough traits.')}</p>}
-          {susClaves.map(({ a, f }: Any) => (
-            <div key={a.id} className="du-key"><span className="du-kt"><b>{tx(a, 'titulo', sA)}</b><small>{tx(a, 'texto', sA)}</small></span>
-              <span className="du-kf"><FitTag f={f} mine={false} />{f && <small>{f.parts.map((p: Any) => `${kName(p.k, glob)} ${sg(p.v)}σ`).join(' · ')}</small>}</span></div>
-          ))}
-        </div>
-      </div>
+      ))}
 
-      <div className="card">
-        <div className="tl-h"><b>{L('Duelos por fase', 'Duels by phase')}</b><Info>{L('Cada duelo cruza un rasgo de quien ataca con uno de quien defiende (estilo propio, en desviaciones típicas frente al DT promedio). Cuenta como claro desde 0.25.', 'Each duel crosses a trait of the attacker with one of the defender (own style, in standard deviations vs the average coach). It counts as clear from 0.25.')}</Info></div>
-        <div className="du-duels">
-          {duels.map(({ d, x, y, caso, fav }) => (
-            <div key={d.id} className="du-duel" style={{ ['--fc' as string]: FASE[d.fase][3] }}>
-              <span className="pl-fase"><Ico name={FASE[d.fase][2]} />{f(L(FASE[d.fase][0], FASE[d.fase][1]))}</span>
-              <b className="du-dt">{f(L(d.t[0], d.t[1]))}</b>
-              <div className="du-vs"><span>{d.att === 'A' ? sA : sB} · {kName(d.x[0], glob)} <em>{sg(x)}</em></span><span>{d.att === 'A' ? sB : sA} · {d.y[0] === 'ppda' ? L('Presión', 'Pressing') : kName(d.y[0], glob)} <em>{sg(y)}</em></span></div>
-              <p>{f(L(d.txt[caso][0], d.txt[caso][1]))}</p>
-              <FavTag f={fav} />
-            </div>
-          ))}
-          {vz && <div className="du-duel" style={{ ['--fc' as string]: 'var(--c-ctx)' }}>
-            <span className="pl-fase"><Ico name="flag" />{L('A balón parado', 'At set pieces')}</span>
-            <b className="du-dt">{L(`Los córners de ${sA} contra la zona débil de ${sB}`, `${sA}'s corners vs ${sB}'s weak zone`)}</b>
-            <div className="du-vs"><span>{sB} · {zEs(vz.zona)}: xG {fmt(vz.xg, 3)} <em>{L('liga', 'lg')} {fmt(vz.xg_liga, 3)}</em></span><span>{sA} · {L('manda ahí el', 'sends there')} <em>{fmt(myZ[vz.zona] ?? 0, 0)}%</em> ({L('liga', 'lg')} {fmt(lgZ[vz.zona] ?? 0, 0)}%)</span></div>
-            <p>{(myZ[vz.zona] ?? 0) >= (lgZ[vz.zona] ?? 0) + 3 ? L(`${sA} ya carga esa zona más que la liga: que insista ahí.`, `${sA} already loads that zone more than the league: keep at it.`) : L(`${sA} casi no manda ahí: vale la pena preparar una jugada a esa zona.`, `${sA} rarely goes there: worth preparing a routine to that zone.`)}{markB?.tipo ? ` ${L(`${sB} marca ${markB.tipo === 'hombre' ? 'al hombre: usa bloqueos' : markB.tipo === 'zonal' ? 'en zona: ataca los huecos con carreras desde atrás' : 'mixto'}.`, `${sB} marks ${markB.tipo === 'hombre' ? 'man-to-man: use screens' : markB.tipo === 'zonal' ? 'zonally: attack the gaps with late runs' : 'mixed'}.`)}` : ''}</p>
-            <FavTag f={(myZ[vz.zona] ?? 0) >= (lgZ[vz.zona] ?? 0) + 3 ? 'tu' : 'neutro'} />
+      {(vz || bTop) && <div className="card">
+        <div className="tl-h"><b>{L('Balón parado', 'Set pieces')}</b></div>
+        <div className="gp-grid">
+          {vz && <div className="gp-card op" style={{ ['--fc' as string]: 'var(--c-ctx)' }}>
+            <span className="pl-fase"><Ico name="flag" />{L(`Córners de ${sA}`, `${sA}'s corners`)}</span>
+            <b className="gp-t">{L(`Apunta los córners al ${vz.zona.toLowerCase()}`, `Aim corners at the ${zEs(vz.zona)}`)}</b>
+            <ul className="gp-do">
+              <li>{L(`Rutina ensayada al ${vz.zona.toLowerCase()}, con tu mejor cabeceador atacando esa zona.`, `A rehearsed routine to the ${zEs(vz.zona)}, with your best header attacking it.`)}</li>
+              {markB?.tipo === 'hombre' && <li>{L('Bloqueos y cortinas para soltarlo de su marcador: defienden al hombre.', 'Screens and blocks to free him from his marker: they man-mark.')}</li>}
+              {markB?.tipo === 'zonal' && <li>{L('Carreras desde atrás a los huecos entre sus defensores: defienden en zona.', 'Late runs into the gaps between defenders: they mark zonally.')}</li>}
+              {markB?.tipo === 'mixto' && <li>{L('Mezcla un bloqueo con una carrera desde atrás: su marca es mixta.', 'Mix a screen with a late run: their marking is mixed.')}</li>}
+            </ul>
+            <div className="gp-why"><span>{L('Por qué', 'Why')}</span><small>{sB} · {L(`concede ${fmt(vz.xg, 3)} xG por córner al ${vz.zona.toLowerCase()} (liga ${fmt(vz.xg_liga, 3)})`, `concedes ${fmt(vz.xg, 3)} xG per corner at the ${zEs(vz.zona)} (league ${fmt(vz.xg_liga, 3)})`)}</small><small>{sA} · {L(`manda ahí el ${fmt(myZ[vz.zona] ?? 0, 0)}% de sus córners (liga ${fmt(lgZ[vz.zona] ?? 0, 0)}%)`, `sends ${fmt(myZ[vz.zona] ?? 0, 0)}% of his corners there (league ${fmt(lgZ[vz.zona] ?? 0, 0)}%)`)}</small></div>
+          </div>}
+          {bTop && <div className="gp-card riesgo" style={{ ['--fc' as string]: 'var(--c-ctx)' }}>
+            <span className="pl-fase"><Ico name="shield" />{L(`Córners de ${sB}`, `${sB}'s corners`)}</span>
+            <b className="gp-t">{L(`En sus córners, cubre el ${bTop.toLowerCase()}`, `On their corners, cover the ${zEs(bTop)}`)}</b>
+            <ul className="gp-do"><li>{L(`Tu mejor defensor aéreo fijo en el ${bTop.toLowerCase()}.`, `Your best aerial defender fixed on the ${zEs(bTop)}.`)}</li>
+              {markA?.tipo === 'hombre' && <li>{L(`${sA} marca al hombre: ojo con sus bloqueos, cambia de marca si hace falta.`, `${sA} man-marks: watch their screens and switch markers if needed.`)}</li>}
+              {markA?.tipo === 'zonal' && <li>{L(`${sA} marca en zona: alguien tiene que salir al que llega desde atrás.`, `${sA} marks zonally: someone must pick up the late runner.`)}</li>}</ul>
+            <div className="gp-why"><span>{L('Por qué', 'Why')}</span><small>{sB} · {L(`manda el ${fmt(bZ[bTop], 0)}% de sus córners al ${bTop.toLowerCase()} (liga ${fmt(lgZ[bTop] ?? 0, 0)}%)`, `sends ${fmt(bZ[bTop], 0)}% of corners to the ${zEs(bTop)} (league ${fmt(lgZ[bTop] ?? 0, 0)}%)`)}</small></div>
           </div>}
         </div>
-      </div>
+      </div>}
 
       <div className="card">
-        <div className="tl-h"><b>{L(`Cómo cambia ${quienN} según el marcador y el minuto`, `How ${quienN} changes with score and minute`)}</b>
+        <div className="tl-h"><b>{L(`Momentos del partido: cómo cambia ${quienN} según el marcador y el minuto`, `Match moments: how ${quienN} changes with score and minute`)}</b>
           <Info wide>{L('Cada celda: el rasgo de esa faceta que más se separa del promedio de la liga en esa misma situación (en desviaciones típicas), ya sin el efecto de sus jugadores. Presión: ▲ = presiona más. Color: verde = bueno para él (más xG a favor, menos en contra), rojo = malo; en el resto, verde = más que la liga. Sólo situaciones con 40 tramos o más. Debajo, los momentos en que más cambia y qué hacer.', 'Each cell: the trait in that facet that moves furthest from the league average in that same situation (in standard deviations), net of his players. Pressing: ▲ = presses more. Colour: green = good for him (more xG for, less against), red = bad; elsewhere, green = more than the league. Only situations with 40+ spells. Below, the moments he changes most and what to do.')}</Info>
           <span style={{ marginLeft: 'auto' }}><div className="seg sm" role="group"><button aria-pressed={quien === 'el'} onClick={() => setQuien('el')}>{sB}</button><button aria-pressed={quien === 'tu'} onClick={() => setQuien('tu')}>{sA}</button></div></span></div>
         {Object.values(R.cell).some(c => Object.keys(c).length) && <div className="ti-heat">
