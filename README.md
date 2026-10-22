@@ -35,7 +35,7 @@ Los datos **no** viven en el repositorio: van en `~/coach-dna-data` (fuera de gi
 
 ```bash
 cp .env.example ~/coach-dna-data/.env     # SB_USER / SB_PASS (también vale ./.env)
-python3 -m venv .venv && .venv/bin/pip install pandas numpy scikit-learn lightgbm shap pyarrow fastapi uvicorn requests pyyaml pytest python-dotenv
+python3.13 -m venv .venv && .venv/bin/pip install -r requirements.txt   # versiones exactas usadas
 .venv/bin/python -m pipeline.sb_client    # descarga (≈1,780 partidos Liga MX 2021/22–2026/27)
 .venv/bin/python -m pipeline.process      # ≈30 min
 .venv/bin/python -m pipeline.build        # modelos + artefactos (--fast para saltar bootstrap/transferencia)
