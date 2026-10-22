@@ -63,9 +63,9 @@ export function Contexto({ art, glob }: P) {
               const weak = r.n_dt < MIN_N
               return (
                 <span key={i} className={`ctx-cell${weak ? ' weak' : ''}`} style={{ background: cellBg(v, mode === 'dif' ? maxD : 2) }}
-                  onMouseMove={e => tip.show(e, <><b>{label(x)}</b> · {td(r.nivel)}<br />{L('Él', 'Him')} {real(x, r.dt)} · {L('liga', 'league')} {real(x, r.liga)}<br />{r.n_dt} {L('segmentos', 'segments')}{weak ? ` · ${L('muestra chica', 'small sample')}` : ''}</>)} onMouseLeave={tip.hide}>
+                  onMouseMove={e => tip.show(e, <><b>{label(x)}</b> · {td(r.nivel)}<br />{L('Su cambio frente a su nivel normal', 'His shift vs his usual level')} {real(x, r.dt)} · {L('equipo promedio en la misma situación', 'average team in the same spot')} {real(x, r.liga)}<br />{r.n_dt} {L('segmentos', 'segments')}{weak ? ` · ${L('muestra chica', 'small sample')}` : ''}</>)} onMouseLeave={tip.hide}>
                   <b>{real(x, v)}</b>
-                  <small>{mode === 'dif' ? `${L('él', 'him')} ${realN(x, r.dt)} · ${L('liga', 'league')} ${realN(x, r.liga)}` : `${L('liga', 'league')} ${realN(x, r.liga)}`}</small>
+                  <small>{mode === 'dif' ? `${L('su cambio', 'his shift')} ${realN(x, r.dt)} · ${L('cambio típico', 'typical shift')} ${realN(x, r.liga)}` : `${L('típico', 'typical')} ${realN(x, r.liga)}`}</small>
                 </span>
               )
             })}

@@ -130,6 +130,7 @@ def main():
     pm["min"] = pm.dur / 60
     last_club = pm.sort_values("date").groupby("player_id").team_id.last().map(club_names)
     min_recent = pm[pm.season.isin(RECENT)].groupby("player_id")["min"].sum()
+    min_career = pm.groupby("player_id")["min"].sum()  # toda la muestra: es lo que sostiene su coeficiente
     lu = LU.dropna(subset=["position"]).drop_duplicates(["match_id", "player_id", "position"])
     pos = lu.groupby("player_id").position.agg(lambda s: s.value_counts().index[0]).map(lambda p: POS_ES.get(p, p))
     names = PL.drop_duplicates("player_id").set_index("player_id").player
@@ -141,6 +142,7 @@ def main():
         k = ("player", p)
         return {"n": names.get(p, str(p)), "pos": pos.get(p), "club": last_club.get(p),
                 "min": int(round(float(min_recent.get(p, 0)))),
+                "mc": int(round(float(min_career.get(p, 0)))),
                 "b": r3(coef.loc[k, kpis].values) if k in coef.index else None}
 
     players = {int(p): pinfo(p) for p in own}
