@@ -224,3 +224,12 @@ circle.oth { fill-opacity: .5; } circle.fam { stroke: var(--white); stroke-width
 #almada .legend { font-size: 16px; gap: 4px 16px; }
 #prueba .tile b { font-size: 38px; }
 #prueba .tile { padding: 10px 16px; }
+
+/* lámina «qué responde» */
+.grid4q { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.grid4q .card { display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; font-size: 19px; }
+.grid4q .card h4 { font-size: 23px; margin: 0; }
+.grid4q .card:nth-child(n+5) { border-top-color: var(--blue); }
+.grid4q .card.hl { border-top-color: var(--yellow); }
+.grid4q .go { margin-top: auto; font: 600 15px var(--mono); color: var(--blue); }
+.grid4q .card.hl .go { color: var(--yellow); }

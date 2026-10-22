@@ -550,9 +550,22 @@ def build():
   <p class="kicker">Hackathon Club América · ISAC 2026</p>
   <h1>Coach <span>DNA</span></h1>
   <p class="cover-q">Qué parte del estilo de un equipo es del entrenador y qué parte es de su plantilla. Primero, cómo lo medimos; después, un ejemplo completo: Guillermo Almada.</p>
-  <div class="tiles four">{tile(f'{M["partidos"]:,}', "partidos de Liga MX", "2021/22 a 2026/27")}{tile(f'{M["segmentos"]:,}', "tramos de partido", "sin cambios ni goles")}{tile(f'{M["jugadores_modelados"]}', "jugadores medidos", "sin su entrenador")}{tile(str(G["transferencia_resumen"]["etapas"]), "cambios de club", "para separar al DT")}</div>
   <p class="byline">Sebastian Dulong Salazar · octubre 2026 · <a href="{APP_URL}">Abrir la app</a></p>
 </section>''')
+
+    qs = [("Estilo con y sin balón", "Construcción, progresión y ocasiones; presión, organización defensiva y transiciones, por zonas de la cancha.", ["adn", "juega"]),
+          ("Identidad y contexto", "Si su idea se mantiene torneo a torneo y cómo cambia según rival, marcador, localía y minuto (tramos de 15).", ["contexto"]),
+          ("Uso de jugadores", "Dibujo de inicio, roles por línea, rotación del once y qué cambia después de cada sustitución.", ["jugadores"]),
+          ("Balón parado", "Córners, tiros libres y saques en zona de peligro; dónde rematan, cómo marcan y dónde sufren.", ["bp"]),
+          ("Evidencia cuantitativa", "xG, OBV, acciones progresivas, PPDA y field tilt, más una métrica propia: la huella del DT sin su plantilla.", ["adn", "suyo"]),
+          ("Marco explícito", "Cada objeto definido con sus umbrales, supuestos y límites; todas las vistas salen de las mismas definiciones.", ["marco"]),
+          ("Simulación para explicar", "Rejugamos cada partido con el xG de cada ocasión para separar mérito de suerte, no para pronosticar.", ["puntos"]),
+          ("Decisiones para el lunes", "Seguimiento semanal, fichajes a la medida y un plan para jugarle, cada uno con el dato que lo respalda.", ["america", "rival"])]
+    qh = "".join(f'<div class="card q{" hl" if i == 4 else ""}"><h4>{esc(a)}</h4><p>{esc(b)}</p><p class="go">→ lámina {" y ".join("§" + k + "§" for k in ks)}</p></div>' for i, (a, b, ks) in enumerate(qs))
+    slide("responde", "Coach DNA", "Qué responde", "Qué responde Coach DNA sobre cualquier entrenador", f'''
+<div class="grid4q">{qh}</div>
+<p class="note">Lo nuevo: medimos el estilo propio del DT, separado de su plantilla, con un método de economía laboral; y todo se ve en una app interactiva para los 76 DTs de la liga.</p>''',
+          "En esta lámina están las preguntas que contesta la herramienta y en qué parte de este reporte se ve cada respuesta, con Guillermo Almada como ejemplo.")
 
     slide("problema", "Coach DNA", "El problema", "El problema: separar al DT de sus jugadores", f'''
 <div class="split" style="grid-template-columns:1fr 740px">
@@ -788,6 +801,11 @@ JS = r"""
 
 def main():
     build()
+    ids = [s_.split('id="')[1].split('"')[0] for s_ in SLIDES]
+    for k, s_ in enumerate(SLIDES):
+        for j, i_ in enumerate(ids):
+            s_ = s_.replace(f"§{i_}§", str(j + 1))
+        SLIDES[k] = s_
     toc = "".join(f'<option value="{k}">{k + 1}. {esc(html.unescape(s.split("aria-label=")[1].split(chr(34))[1]))}</option>' for k, s in enumerate(SLIDES))
     lg = '<i class="logo logo-isac" role="img" aria-label="ISAC"></i><i class="logo logo-am" role="img" aria-label="Club América"></i>'
     slides = [s[: s.rindex("</section>")] + f'<footer class="sfoot">{lg}<span class="pg">{k + 1} / {len(SLIDES)}</span></footer></section>' for k, s in enumerate(SLIDES)]
