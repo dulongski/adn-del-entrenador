@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ClubLogo, CoachPhoto } from './charts'
 import { shortName, type Any } from './lib'
 import { L } from './settings'
@@ -27,7 +27,8 @@ export function searchCoaches(mapa: Any, media: Any, q: string) {
   }).filter(Boolean).sort((a: Any, b: Any) => a.score - b.score) as { p: Any; now?: string; clubHit?: string; score: number }[]
 }
 
-export default function MapSearch({ mapa, media, onPick, q, setQ, setPulse, hueOf }: {
+export default function MapSearch({ mapa, media, onPick, q, setQ, setPulse, hueOf, extra }: {
+  extra?: ReactNode
   mapa: Any; media: Any; onPick: (id: number) => void; q: string; setQ: (s: string) => void; setPulse: (id: number | null) => void; hueOf: (g: number) => string
 }) {
   const [open, setOpen] = useState(false)
@@ -91,6 +92,7 @@ export default function MapSearch({ mapa, media, onPick, q, setQ, setPulse, hueO
           {res.length > shown.length && <li className="msearch-more">{L(`${res.length - shown.length} más resaltados en el mapa`, `${res.length - shown.length} more highlighted on the map`)}</li>}
         </ul>
       )}
+      {!q && extra}
       {q && !open && <div className="msearch-count">{res.length} {res.length === 1 ? L('coincidencia', 'match') : L('coincidencias', 'matches')} {L('en el mapa', 'on the map')}</div>}
     </div>
   )

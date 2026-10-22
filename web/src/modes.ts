@@ -40,14 +40,9 @@ export const MODES: Mode[] = [
 /** Texto legible sobre el color del modo (oscuro sobre amarillo, blanco sobre el resto). */
 export const inkOn = (hex: string) => { const n = parseInt(hex.slice(1), 16); const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }; const L = 0.2126 * f(n >> 16 & 255) + 0.7152 * f(n >> 8 & 255) + 0.0722 * f(n & 255); return 1.05 / (L + 0.05) >= (L + 0.05) / 0.06 ? '#fff' : '#14100a' }   // el de mayor contraste (WCAG)
 
-/** Título que depende del DT: "Su ADN en dos ideas" si su resumen tiene dos rasgos claros, etc. */
-export function modeTitle(m: Mode, art?: { narrativa?: { principios?: unknown[] } } | null) {
-  if (m.k !== 'resumen') return m.title
-  const n = art?.narrativa?.principios?.length ?? 3
-  if (n === 0) return L('Su ADN', 'His DNA')
-  const i = Math.min(n, 8) - 1
-  return L(`Su ADN en ${['una idea', 'dos ideas', 'tres ideas', 'cuatro ideas', 'cinco ideas', 'seis ideas', 'siete ideas', 'ocho ideas'][i]}`,
-    `His DNA in ${['one idea', 'two ideas', 'three ideas', 'four ideas', 'five ideas', 'six ideas', 'seven ideas', 'eight ideas'][i]}`)
+/** Título de cada modo; el del resumen cuenta la historia y el ADN del DT. */
+export function modeTitle(m: Mode, _art?: unknown) {
+  return m.k === 'resumen' ? L('Su historia y su ADN', 'His story and his DNA') : m.title
 }
 
 export const modeOf = (t: View) => MODES.find(m => m.subs.some(([k]) => k === t)) ?? MODES[0]

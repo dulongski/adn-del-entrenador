@@ -567,3 +567,19 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 .sim-clubs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; }
 .sim-club-h { display: flex; align-items: center; gap: 8px; }
 .sim-clubs .up { color: var(--div-pos); } .sim-clubs .dn { color: var(--div-neg); }
+
+/* portada: indicación de clic + filtro de activos, debajo del buscador */
+.smap-hint { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-top: 10px; }
+.smap-hint-t { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink); padding: 6px 14px; border-radius: 999px;
+  background: color-mix(in oklab, var(--c-dt) 18%, var(--surface)); border: 1px solid color-mix(in oklab, var(--c-dt) 45%, transparent); box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+.smap-switch { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; padding: 6px 12px; border-radius: 999px;
+  background: color-mix(in oklab, var(--surface) 92%, transparent); border: 1px solid var(--rule); box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+.smap-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.smap-switch i { position: relative; width: 30px; height: 17px; border-radius: 999px; background: var(--rule); transition: background .15s; flex: none; }
+.smap-switch i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.smap-switch input:checked + i { background: #0ca30c; }
+.smap-switch input:checked + i::after { transform: translateX(13px); }
+.smap-switch input:focus-visible + i { outline: 2px solid var(--c-dt); outline-offset: 2px; }
+.ax-top { top: 128px; }
+@media (min-width: 701px) and (max-width: 1100px) { .ax-top { top: 196px !important; } }
+@media (max-width: 600px) { .smap-hint-t { font-size: 12.5px; padding: 5px 10px; } .smap-switch { font-size: 12px; } }
