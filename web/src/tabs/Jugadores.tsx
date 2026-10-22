@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { chatBus } from '../chatBus'
 import { HBar, PosTag } from '../charts'
 import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, sig, type Any } from '../lib'
 import { type P } from './common'
@@ -60,9 +61,15 @@ function huellaChip(kpi: string, efecto: number, glob: Any) {
 export function Jugadores({ art, glob, media }: P) {
   const J = art.jugadores
   const [X, setX] = useState<Any>(null)
-  const [pick, setPick] = useState<{ id: number; club: string } | null>(null)
+  // el chat de IA puede pedir un club (o «carrera») y una formación concretos; se consumen una vez
+  const [pick, setPick] = useState<{ id: number; club: string } | null>(() => (chatBus.jug ? { id: art.id, club: chatBus.jug.club } : null))
   const [allRows, setAllRows] = useState(false)
-  const [fmSel, setFmSel] = useState<{ key: string; f: string } | null>(null)
+  const [fmSel, setFmSel] = useState<{ key: string; f: string } | null>(() => { const j = chatBus.jug; chatBus.jug = null; return j?.f ? { key: `${art.id}|${j.club}`, f: j.f } : null })
+  useEffect(() => {
+    const f = () => setTimeout(() => { const j = chatBus.jug; if (!j) return; chatBus.jug = null; setPick({ id: art.id, club: j.club }); if (j.f) setFmSel({ key: `${art.id}|${j.club}`, f: j.f }) }, 0)
+    window.addEventListener('coachdna:go', f)
+    return () => window.removeEventListener('coachdna:go', f)
+  }, [art.id])
   useEffect(() => { setX(null); getJSON(dataUrl(`jugadores_${art.id}.json`)).then(setX).catch(() => setX(false)) }, [art.id])
 
   const actual: string | null = useMemo(() => {

@@ -12,6 +12,7 @@ import { L, LANG } from './settings'
 import { kpiLabel } from './i18n/data'
 import { MODES, TAB_KEYS } from './modes'
 import { chatBus } from './chatBus'
+import { CARRERA } from './tabs/JugOnce'
 import './styles/chat.css'
 
 const glob: Any = (boot as Any).global
@@ -287,6 +288,7 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
       execute: async ({ coach_id, kind, club }: Any) => {
         const id = Number(coach_id); if (!DT_BY_ID.has(id)) throw new Error('coach_id desconocido: usa find_coach')
         status(L('Revisando su balón parado…', 'Checking his set pieces…'))
+        { const v = kind === 'free_kicks' ? 'tl' : 'bp'; go(id, v); push({ t: 'go', coach: id, view: v }) }
         const [o, lg] = await Promise.all([getJSON(dataUrl(`corners_${id}.json`)), getJSON(dataUrl('corners_liga.json'))])
         const names = (top: Any[] | undefined) => (top ?? []).slice(0, 3).map(([pid, nm, pc]: Any) => `${jugadorShort(pid, nm)} ${pc}%`)
         if (kind === 'corners') {
@@ -347,6 +349,10 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
         const sel = key ? X.por_club[key] : X.carrera
         const fm = String(formation ?? sel.dibujo).replace(/\D/g, '')
         const once = sel.once_por_dibujo?.[fm]
+        // la respuesta vive en «Jugadores»: llevar ahí, en el club y la formación de la respuesta
+        chatBus.jug = { club: key ?? CARRERA, f: once ? fm : undefined }
+        go(id, 'jugadores')
+        push({ t: 'go', coach: id, view: 'jugadores' })
         return { donde: key ?? 'toda su carrera', partidos: sel.partidos, formaciones_usadas: Object.entries(sel.formaciones as Record<string, number>).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([f, n]) => `${f.split('').join('-')} (${n})`), formacion: fm.split('').join('-'), arranco_asi: once?.partidos ?? 0, once_mas_probable: once ? (once.once as Any[]).map(p => `${p.posicion}: ${jugadorShort(p.id, p.nombre)} (${p.tit})`) : 'no usó esa formación' }
       },
     },
@@ -420,7 +426,7 @@ Reglas:
 - Todo número sale de las herramientas. Nunca inventes datos ni uses lo que sepas de fuera. Si algo no está en los datos, dilo.
 - Antes de usar un coach_id, búscalo con find_coach (salvo que ya lo tengas).
 - Responde con texto. Las tarjetas (show=true) sólo cuando el usuario pide ver un ranking, una lista, una ficha, una tabla o una comparación; para una pregunta de un dato («¿cuántos puntos por partido tiene X?») basta una frase.
-- Balón parado (córners y tiros libres), once y formaciones y simulaciones del torneo salen de set_pieces, formation_xi y simulate_league; lleva al usuario con open_view (bp, tl, banda, bpdef, jugadores, liga). Las simulaciones son aproximadas: di el margen de error.
+- Balón parado (córners y tiros libres), once y formaciones y simulaciones del torneo salen de set_pieces, formation_xi y simulate_league. set_pieces y formation_xi ya llevan al usuario a su vista (bp, tl, jugadores) en el club de la respuesta; no llames open_view después de ellas. Para saques de banda, cómo defiende y el simulador usa open_view (banda, bpdef, liga). Las simulaciones son aproximadas: di el margen de error.
 - «¿Cómo le juego?», «¿qué jugadores le convienen?», «¿sigue jugando igual?» salen de game_plan; lleva al usuario a plan, fichajes, tablero o tiempo con open_view. «¿Cómo debería jugar X contra Y?» va a la vista duelo de X con open_view (other_coach_id = Y).
 - Resultados y récords (puntos por partido, G-E-P, goles, xG, tabla, local/visita) salen de rank_results, record y standings: nunca digas que no tienes ese cálculo ni que «va más allá de los datos»; úsalas. Estilo de juego (posesión, presión…) sale de rank_coaches y coach_profile.
 - No pidas aclaraciones salvo que la pregunta sea de verdad ambigua; elige la interpretación más razonable (todo el periodo de la muestra, fase regular) y dilo en una frase.
