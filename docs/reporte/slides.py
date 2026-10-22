@@ -31,6 +31,15 @@ PLAN = PLANF["dts"][DT_ID]
 TIEMPO = json.loads((DATA / "tiempo.json").read_text())
 VALID = json.loads((DATA / "validacion.json").read_text())
 H = {h["kpi"]: h for h in D["huella"]}
+ALL_H = {}
+for _f in sorted(DATA.glob("dt_*.json")):
+    _d = json.loads(_f.read_text())
+    ALL_H[str(_d["id"])] = {h["kpi"]: h["alpha"] for h in _d["huella"]}
+GRP_CLS = {0: "g0", 1: "g1", 2: "g2", 3: "g3", 4: "g4"}
+KPI_TXT = {"altura_presion": "Presiona arriba", "altura_defensiva": "Defiende adelantado", "recuperaciones_altas_90": "Roba en campo rival",
+           "posesion_rival_dur": "Recupera rápido", "linea_360": "Línea defensiva alta", "salida_corta": "Salida corta", "verticalidad": "Verticalidad",
+           "pases_por_posesion": "Pases por posesión", "transicion_def": "Contragolpes concedidos", "posesion": "Posesión", "contrapresion": "Contrapresión",
+           "intensidad_presion": "Intensidad de presión", "pase_largo": "Pase largo", "progresivos": "Acciones progresivas", "contraataque": "Contragolpes"}
 A = {a["kpi"]: a for a in D["atribucion"]}
 NAMES = boot["nombres"]
 MEDIA = boot["media"]["clubes"]
@@ -152,9 +161,9 @@ def ch_reparto(W=1472):
 
 def ch_transfer():
     tr = G["transferencia"]
-    W, Hh, L, Rr = 1472, 330, 30, 30
+    W, Hh, L, Rr = 1472, 250, 30, 30
     X = lambda r: L + (r - 1) / 69 * (W - L - Rr)
-    base = 280
+    base = 204
     b = [R(X(1) - 12, 8, X(10) - X(1) + 24, base - 8, "band-y", "Los 10 primeros lugares", 6), T(X(1), 34, "Top 10", "t b20"),
          Ln(X(35.5), 8, X(35.5), base, "azar"), T(X(35.5) + 10, 34, "Lugar esperado al azar: 36º", "t m"), Ln(L, base, W - Rr, base, "ax")]
     for r in (1, 10, 20, 30, 40, 50, 60, 70):
@@ -192,15 +201,37 @@ def ch_mapa(W=880, Hh=420):
     for p in pts:
         if p is a:
             continue
-        b.append(C(X(p["x"]), Y(p["y"]), 7.5, "d-near" if p["grupo"] == a["grupo"] else "d-map",
-                   f"{corto(p['id'], p['nombre'])} · {grp[p['grupo']]} · {p['partidos']} partidos"))
+        b.append(C(X(p["x"]), Y(p["y"]), 8, GRP_CLS[p["grupo"]] + (" fam" if p["grupo"] == a["grupo"] else " oth"),
+                   f"{corto(p['id'], p['nombre'])} · familia «{grp[p['grupo']]}» · {p['partidos']} partidos"))
     for q in sorted(pts, key=lambda q: (q["x"] - a["x"]) ** 2 + (q["y"] - a["y"]) ** 2)[1:4]:
         right = X(q["x"]) > X(a["x"])
         b.append(T(X(q["x"]) + (12 if right else -12), Y(q["y"]) - 10, corto(q["id"], q["nombre"]), "t s16", "start" if right else "end"))
-    b.append(C(X(a["x"]), Y(a["y"]), 13, "d-me", f"Guillermo Almada · {grp[a['grupo']]}"))
+    b.append(C(X(a["x"]), Y(a["y"]), 14, "d-almada", f"Guillermo Almada · familia «{grp[a['grupo']]}»"))
     b.append(T(X(a["x"]), Y(a["y"]) + 38, "Almada", "t b22", "middle"))
     return svg(W, Hh, "".join(b), "Mapa de estilos propios de los DTs")
 
+
+
+def fam_card():
+    """La familia de estilo de Almada: qué la define y quiénes la forman."""
+    pts = boot["mapa"]["puntos"]
+    a = [p for p in pts if str(p["id"]) == DT_ID][0]
+    g = [x for x in boot["mapa"]["grupos"] if x["id"] == a["grupo"]][0]
+    miembros = sorted((p for p in pts if p["grupo"] == a["grupo"] and p is not a), key=lambda p: (p["x"] - a["x"]) ** 2 + (p["y"] - a["y"]) ** 2)
+    W, rh = 520, 40
+    b = []
+    mx = max(abs(r["efecto"]) for r in g["rasgos"][:4]) or 1
+    for i, r in enumerate(g["rasgos"][:4]):
+        y = i * rh
+        v = -r["efecto"] if r["kpi"] in ("posesion_rival_dur", "ppda", "transicion_def") else r["efecto"]
+        b.append(T(0, y + 25, KPI_TXT.get(r["kpi"], r["kpi"]), "t"))
+        w = abs(v) / mx * 190
+        b.append(R(250, y + 9, w, 22, "f-dt" if v > 0 else "f-neg", f"La familia, en promedio: {v:+.2f} σ en {KPI_TXT.get(r['kpi'], r['kpi']).lower()} frente al DT típico", 3))
+        b.append(T(250 + w + 10, y + 26, f"{v:+.2f} σ", "t s16"))
+    chart = svg(W, 4 * rh, "".join(b), "Rasgos que definen la familia")
+    nombres = ", ".join(corto(p["id"], p["nombre"]) for p in miembros[:8])
+    return (f'<div class="card fam"><p class="ey">Su familia de estilo · {g["n"]} DTs</p><h4>{esc(g["nombre"])}</h4>{chart}'
+            f'<p class="fam-m"><b>Los más cercanos:</b> {esc(nombres)}{" y otros " + str(len(miembros) - 8) if len(miembros) > 8 else ""}.</p></div>')
 
 def rank_of(k, sign):
     """Lugar entre los DTs con perfil (1º = el que más lo empuja en esa dirección), del mismo percentil que usa la app."""
@@ -210,39 +241,47 @@ def rank_of(k, sign):
 
 
 def ch_adn():
-    spec = [("ppda", -1, "Presión intensa", "Deja muy pocos pases al rival antes de robar", lambda v: f"{v:.1f}", "PPDA (pases rivales por robo)"),
-            ("recuperaciones_altas_90", 1, "Roba en campo rival", "Recupera muchos balones arriba", lambda v: f"{v:.1f}", "robos en campo rival por 90"),
-            ("salida_corta", -1, "Saque largo del portero", "Evita el riesgo en la salida", lambda v: f"{v:.0f}%", "de salida corta"),
-            ("conduccion_prog", 1, "Avanza conduciendo", "Rompe líneas con el balón en los pies", lambda v: f"{v:.0f}%", "de su progresión es conduciendo"),
-            ("altura_defensiva", 1, "Defensa adelantada", "Sus acciones defensivas ocurren arriba", lambda v: f"{v:.1f} yd", "altura media al defender"),
-            ("field_tilt", 1, "Dominio territorial", "Juega más en el último tercio rival", lambda v: f"{v:.0f}%", "field tilt")]
-    W, rh, top = 1472, 80, 34
-    c2, c3, c4 = 430, 790, 1170
-    b = [T(16, 20, "RASGO", "t s15 m caps"), T(c2, 20, "SU EQUIPO · LIGA", "t s15 m caps"), T(c3, 20, "SU LUGAR ENTRE LOS 76 DTS", "t s15 m caps"),
-         T(c4, 20, "EFECTO PROPIO, SIN SU PLANTILLA", "t s15 m caps")]
-    sx = lambda r, n: c3 + (r - 1) / (n - 1) * 300
-    mid, sc = c4 + 10, 150
-    for i, (k, s, nm, ds, fm, unit) in enumerate(spec):
+    spec = [("ppda", -1, "Presión intensa", "PPDA: pases rivales por cada robo", lambda v: f"{v:.1f}", "pases por robo", "menos pases = más presión"),
+            ("recuperaciones_altas_90", 1, "Roba en campo rival", "Recuperaciones en campo rival por 90", lambda v: f"{v:.1f}", "robos por 90", ""),
+            ("salida_corta", -1, "Saque largo del portero", "% de saques de portero en corto", lambda v: f"{v:.0f}%", "salida corta", "menos = juega más largo"),
+            ("conduccion_prog", 1, "Avanza conduciendo", "% de su progresión que es conduciendo", lambda v: f"{v:.0f}%", "en conducción", ""),
+            ("altura_defensiva", 1, "Defensa adelantada", "Altura media de sus acciones defensivas", lambda v: f"{v:.1f} yd", "altura", ""),
+            ("field_tilt", 1, "Dominio territorial", "Field tilt: su % de pases en el último tercio", lambda v: f"{v:.0f}%", "field tilt", "")]
+    W, rh, top = 1472, 82, 36
+    c2, c3, cw = 470, 760, 600
+    b = [T(16, 20, "RASGO Y MÉTRICA", "t s15 m caps"), T(c2, 20, "SU EQUIPO · LIGA", "t s15 m caps"),
+         T(c3, 20, "EFECTO PROPIO DE CADA UNO DE LOS 76 DTS (SIN SU PLANTILLA) · ALMADA RESALTADO", "t s15 m caps")]
+    for i, (k, s_, nm, metr, fm, unit, nota) in enumerate(spec):
         y = top + i * rh
         h = H[k]
-        r, n = rank_of(k, s)
+        r, n = rank_of(k, s_)
+        vals = [(dt, al[k] * s_) for dt, al in ALL_H.items() if k in al]
+        lo, hi = min(v for _, v in vals), max(v for _, v in vals)
+        X = lambda v: c3 + (v - lo) / (hi - lo) * cw
         b.append(R(0, y, W, rh - 8, "rowbg", None, 10))
         b.append(T(16, y + 32, nm, "t b24"))
-        b.append(T(16, y + 58, ds, "t s17 m"))
+        b.append(T(16, y + 58, metr, "t s16 m"))
         b.append(T(c2, y + 40, fm(h["crudo"]), "t big"))
-        b.append(T(c2 + 140, y + 40, f"liga {fm(h['liga'])}", "t m"))
-        b.append(T(c2, y + 62, unit, "t s15 m"))
-        b.append(R(c3, y + 33, 300, 6, "track", None, 3))
-        b.append(T(c3, y + 62, "1º", "t s15 m"))
-        b.append(T(c3 + 300, y + 62, f"{n}º", "t s15 m", "end"))
-        b.append(C(sx(r, n), y + 36, 12, "d-me", f"{nm}: {r}º de {n} DTs (1º = el que más lo empuja en esa dirección)"))
-        b.append(T(c3 + 320, y + 44, f"{r}º", "t big"))
-        a, se = h["alpha"] * s, h["se"]
-        b.append(Ln(mid, y + 12, mid, y + rh - 20, "ax"))
-        b.append(R(mid, y + 24, a * sc, 24, "f-dt", f"Efecto propio de {N}: {h['alpha']:+.2f} σ (margen ±{1.96 * se:.2f}); más que {h['pct'] if s > 0 else 100 - h['pct']:.0f}% de los DTs", 3))
-        b.append(Ln(mid + (a - 1.96 * se) * sc, y + 36, mid + (a + 1.96 * se) * sc, y + 36, "wh"))
-        b.append(T(mid + (a + 1.96 * se) * sc + 12, y + 43, f"{a:+.2f} σ", "t b20"))
-    return svg(W, top + len(spec) * rh, "".join(b), "Los seis rasgos de Almada con su lugar entre los DTs")
+        b.append(T(c2 + 130, y + 40, f"liga {fm(h['liga'])}", "t m"))
+        b.append(T(c2, y + 62, nota or unit, "t s15 m"))
+        mid = y + 36
+        b.append(Ln(X(0), y + 12, X(0), y + rh - 20, "ax"))
+        seen: dict[int, int] = {}
+        for dt, v in sorted(vals, key=lambda t: t[1]):
+            if dt == DT_ID:
+                continue
+            col = int((X(v) - c3) / 9)
+            k_ = seen.get(col, 0)
+            seen[col] = k_ + 1
+            off = ((k_ + 1) // 2) * 9 * (1 if k_ % 2 else -1)
+            b.append(C(X(v), mid + off, 4.6, "d-dist", f"{corto(dt, dt)}: {v:+.2f} σ"))
+        a_ = h["alpha"] * s_
+        b.append(C(X(a_), mid, 11, "d-almada", f"{N}: {h['alpha']:+.2f} σ (±{1.96 * h['se']:.2f}); {r}º de {n} DTs en esa dirección"))
+        b.append(T(c3 + cw + 24, y + 34, f"{r}º", "t big"))
+        b.append(T(c3 + cw + 24, y + 58, f"de {n}", "t s15 m"))
+    b.append(T(c3, top + len(spec) * rh + 14, "← menos que el DT típico", "t s15 m"))
+    b.append(T(c3 + cw, top + len(spec) * rh + 14, "más que el DT típico →", "t s15 m", "end"))
+    return svg(W, top + len(spec) * rh + 20, "".join(b), "Los seis rasgos de Almada frente a la distribución de los 76 DTs")
 
 
 def ch_suyo():
@@ -511,11 +550,11 @@ def build():
   <p class="kicker">Hackathon Club América · ISAC 2026</p>
   <h1>Coach <span>DNA</span></h1>
   <p class="cover-q">Qué parte del estilo de un equipo es del entrenador y qué parte es de su plantilla. Primero, cómo lo medimos; después, un ejemplo completo: Guillermo Almada.</p>
-  <div class="tiles four">{tile(f'{M["partidos"]:,}', "partidos de Liga MX", "2021/22 a 2026/27")}{tile(str(M["dts"]), "entrenadores", "76 con perfil completo")}{tile(f'{M["jugadores_modelados"]}', "jugadores medidos", "sin su entrenador")}{tile("34", "indicadores de estilo", "con y sin balón")}</div>
+  <div class="tiles four">{tile(f'{M["partidos"]:,}', "partidos de Liga MX", "2021/22 a 2026/27")}{tile(f'{M["segmentos"]:,}', "tramos de partido", "sin cambios ni goles")}{tile(f'{M["jugadores_modelados"]}', "jugadores medidos", "sin su entrenador")}{tile(str(G["transferencia_resumen"]["etapas"]), "cambios de club", "para separar al DT")}</div>
   <p class="byline">Sebastian Dulong Salazar · octubre 2026 · <a href="{APP_URL}">Abrir la app</a></p>
 </section>''')
 
-    slide("problema", "Coach DNA", "El problema", "Lo que se ve de un equipo mezcla al DT con sus jugadores", f'''
+    slide("problema", "Coach DNA", "El problema", "El problema: separar al DT de sus jugadores", f'''
 <div class="split" style="grid-template-columns:1fr 740px">
   <div class="prose big">
     <p>Cuando un equipo presiona arriba, ¿es la idea del entrenador o son sus delanteros rápidos? Un perfil de equipo normal suma todo junto.</p>
@@ -533,7 +572,7 @@ def build():
                ("Balón parado", "Córner, tiro libre en campo rival o saque en el último tercio, y lo que sigue."),
                ("Tramo y minuto", "Pedazo de partido sin cambios ni goles (5 min o más); el partido se lee en grupos de 15 minutos.")]
     tb = "".join(f"<tr><th>{esc(a)}</th><td>{esc(b)}</td></tr>" for a, b in objetos)
-    slide("marco", "Coach DNA", "Marco analítico", "Primero definimos cada objeto; todo sale de ahí", f'''
+    slide("marco", "Coach DNA", "Marco analítico", "Definiciones y supuestos del análisis", f'''
 <div class="split" style="grid-template-columns:1fr 440px">
   <table class="defs"><tbody>{tb}</tbody></table>
   <div class="stack">
@@ -542,7 +581,7 @@ def build():
   </div>
 </div>''', "En esta lámina están las definiciones. Las 34 métricas, las gráficas y el modelo usan estos mismos objetos, así que no se contradicen.")
 
-    slide("metodo", "Coach DNA", "Cómo separamos al DT", "Un método de economía laboral, aplicado al estilo de juego", f'''
+    slide("metodo", "Coach DNA", "Cómo separamos al DT", "Cómo estimamos la parte de cada pieza", f'''
 <div class="grid3">
   <div class="card paper"><p class="ey">1 · La base</p><h4>Abowd, Kramarz y Margolis (1999), <i>Econometrica</i></h4><p>Separan cuánto gana un trabajador por mérito propio y cuánto por su empresa, siguiendo a quienes cambian de empleo. Aquí: los DTs que cambian de club.</p></div>
   <div class="card paper"><p class="ey">2 · El puente al futbol</p><h4>Muehlheusser et al. (2018), <i>J. of Sports Economics</i></h4><p>La misma idea con los entrenadores de la Bundesliga, para sus resultados. Nosotros la llevamos al <b>estilo</b>, rasgo por rasgo.</p></div>
@@ -551,34 +590,36 @@ def build():
 {fig("Resultado en toda la liga: qué explica que dos equipos jueguen distinto", ch_reparto(), '<p class="note">El DT pesa más en el <b>cómo</b> (16% en progresión, 15% en presión) que en el xG (7%), que depende más de los jugadores.</p>')}''',
           "En esta lámina explicamos la idea y los tres trabajos en los que nos basamos. Abajo, el resultado para toda la liga.")
 
-    slide("prueba", "Coach DNA", "¿Funciona?", "Si tapamos el nombre del DT, el modelo lo reconoce en su club nuevo", f'''
+    slide("prueba", "Coach DNA", "¿Funciona?", "La prueba: ¿reconoce el modelo al DT en un club nuevo?", f'''
+<div class="pasos">
+  <div><span>1</span><p><b>Estimamos</b> el estilo de cada DT sólo con sus partidos en <b>otros</b> clubes.</p></div>
+  <div><span>2</span><p>Tomamos los partidos de su <b>club nuevo</b> y escondemos quién dirigía.</p></div>
+  <div><span>3</span><p>Pedimos al modelo que <b>estime</b> quién es el DT, entre 70 posibles.</p></div>
+  <div class="why"><p>Si el estilo fuera de los jugadores, fallaría: en el club nuevo los jugadores son otros.</p></div>
+</div>
 <div class="tiles three-row">{tile(f'{TR["ajustado"]["top10"] * 100:.0f}%', "de las veces el DT real queda en el top 10 de 70", f'al azar, {TR["azar"]["top10"] * 100:.0f}%')}{tile(f'{TR["ajustado"]["mediana"]:.0f}º', "lugar típico del DT real", f'al azar, {TR["azar"]["mediana"]:.0f}º')}{tile(f'{TR["ajustado"]["mitad_superior"]} de {TR["etapas"]}', "casos con el DT real en la mitad de arriba", "al azar, la mitad")}</div>
-{fig(f"Cada punto es un DT en un club nuevo ({TR['etapas']} casos): aprendimos su estilo en sus otros clubes y pedimos al modelo adivinar quién dirigía", ch_transfer())}
-<p class="note">Con datos simulados, el modelo recupera un estilo sembrado con correlación {sint["modelo"]["media"]:.2f} (un perfil normal, {sint["ingenuo"]["media"]:.2f}) y no inventa estilo donde no lo hay.</p>''',
-          "En esta lámina está la prueba principal: si el estilo es del DT, se tiene que reconocer aunque cambien todos sus jugadores.")
+{fig(f"Resultado en los {TR['etapas']} cambios de club de la liga: cada punto es un DT, colocado en el lugar en que el modelo lo puso", ch_transfer())}
+''',
+          f"En esta lámina comprobamos que lo que estimamos sí es del DT: si un estilo es del entrenador, se reconoce aunque cambie de club y de jugadores. (Con datos simulados también recupera un estilo sembrado: correlación {sint['modelo']['media']:.2f}.)")
 
     et = D["etapas"]
     tot = sum(e["partidos"] for e in et)
     etb = "".join(f'<div class="et" style="flex:{max(e["partidos"] / tot, .2):.3f}" data-tip="{esc(e["club"])}: {e["partidos"]} partidos, {e["desde"]} a {e["hasta"]}">{logo(e["club"], 40)}<div><b>{esc(e["club"])}</b><span>{e["partidos"]} partidos · {e["desde"][:4]}{"" if e["desde"][:4] == e["hasta"][:4] else "–" + e["hasta"][:4]}</span></div></div>' for e in et)
-    slide("almada", "Almada", "El ejemplo", "Guillermo Almada: tres clubes, una misma idea", f'''
+    slide("almada", "Almada", "El ejemplo", "Guillermo Almada: trayectoria y familia de estilo", f'''
 <div class="etapas">{etb}</div>
-<div class="split" style="grid-template-columns:1fr 880px">
-  <div class="stack">
-    {tile(f'{D["identificabilidad"]["indice"]:.0f}/100', "qué tan bien se separa de su plantilla", "se separa muy bien")}
-    {tile(f'{D["identificabilidad"]["conectividad"] * 100:.0f}%', "de los minutos de sus jugadores", "son de jugadores que también tuvieron otros DTs")}
-    {tile(f'{D["identidad"]["lift"]:.0f}×', "más reconocible que al azar", "viendo un solo partido")}
-  </div>
-  {fig("Mapa de estilos propios: cada punto es un DT sin su plantilla", ch_mapa(), legend([("Almada", "d-me"), ("Su familia: presión alta y defensa adelantada", "d-near"), ("Otros DTs", "d-map")]))}
-</div>''', "En esta lámina presentamos a Almada y dónde cae entre los estilos de la liga. Sus vecinos más cercanos: Gago, Demichelis y Mohamed.")
+<div class="split" style="grid-template-columns:560px 1fr">
+  {fam_card()}
+  {fig("Mapa de estilos propios de los 76 DTs, por familia", ch_mapa(860, 360), legend([("Almada", "d-almada")] + [(f'{g["nombre"]} ({g["n"]})', GRP_CLS[g["id"]]) for g in boot["mapa"]["grupos"]]))}
+</div>''', "En esta lámina presentamos a Almada: sus clubes y su familia de estilo, que agrupa a los DTs por su estilo propio, ya sin su plantilla.")
 
-    slide("adn", "Almada", "Su ADN", "Seis rasgos que Almada lleva a cualquier club", fig("", ch_adn()),
+    slide("adn", "Almada", "Su ADN", "Sus seis rasgos más marcados frente a los 76 DTs", fig("", ch_adn()),
           "En esta lámina está cada rasgo con el dato de su equipo contra la liga, su lugar entre los 76 DTs y cuánto es propio una vez descontados sus jugadores.")
 
-    slide("suyo", "Almada", "¿Suyo o de la plantilla?", "Su presión es suya; sus tiros y su balón parado vienen de sus jugadores",
+    slide("suyo", "Almada", "¿Suyo o de la plantilla?", "Qué parte de cada rasgo pone Almada y qué parte su plantilla",
           fig("", ch_suyo(), legend([(n, f"f-{c}") for _, n, c in COMP] + [("Lo que se ve en sus partidos", "tot-sw")])),
           "En esta lámina repartimos cada rasgo entre las piezas del modelo. Lo que va a la derecha suma al rasgo; a la izquierda, lo frena.")
 
-    slide("juega", "Almada", "Cómo juega", "Presiona, roba arriba y sale rápido; con balón, va directo", f'''
+    slide("juega", "Almada", "Cómo juega", "Cómo juega con y sin balón, y en qué zonas", f'''
 <div class="tiles six">{tile(f'{H["ppda"]["crudo"]:.1f}', "PPDA", f'liga {H["ppda"]["liga"]:.1f}')}{tile(f'{H["posesion_rival_dur"]["crudo"]:.1f} s', "dura la posesión rival", f'liga {H["posesion_rival_dur"]["liga"]:.1f} s')}{tile(f'{H["contraataque"]["crudo"]:.0f}%', "robos que acaban en contragolpe", f'liga {H["contraataque"]["liga"]:.0f}%')}{tile(f'{H["salida_corta"]["crudo"]:.0f}%', "salida corta del portero", f'liga {H["salida_corta"]["liga"]:.0f}%')}{tile(f'{H["field_tilt"]["crudo"]:.0f}%', "field tilt", f'liga {H["field_tilt"]["liga"]:.0f}%')}{tile(f'{H["obv_90"]["crudo"]:.2f}', "OBV por 90", f'liga {H["obv_90"]["liga"]:.2f}')}</div>
 <div class="grid3 pitches">
   {fig("Dónde <b>presiona</b> más que la liga", ch_heat("presion"))}
@@ -590,7 +631,7 @@ def build():
 
     mn = cur["minuto"]["contraataque"]
     best = max((r for r in mn if r["dt"] is not None and r["liga"] is not None), key=lambda r: r["dt"] - r["liga"])
-    slide("contexto", "Almada", "Según el partido", "Cuando gana, la liga suelta la presión; Almada no", f'''
+    slide("contexto", "Almada", "Según el partido", "Cómo cambia según el marcador, el minuto y la localía", f'''
 <div class="grid3" style="grid-template-columns:420px 1fr 330px">
   {fig("Intensidad de presión según el marcador", ch_dumb("ppda", "marcador", -1, 392, title="Presión según el marcador"), cls="mini")}
   {fig("Contragolpes en cada tramo de 15 minutos", ch_dumb("contraataque", "minuto", 1, 640, title="Contragolpes por minuto"), cls="mini")}
@@ -605,7 +646,7 @@ def build():
         top += jug["mas_usados_por_linea"].get(ln, [])[:2]
     top = sorted(top, key=lambda p: -p["minutos"])[:5]
     th = "".join(f'<tr><th>{esc(short_player(p["nombre"]))}</th><td>{esc(p["posicion"])}</td><td class="num">{p["minutos"]:,.0f}</td><td class="num">{p["titularidades"]}</td></tr>' for p in top)
-    slide("jugadores", "Almada", "Sus jugadores", "4-2-3-1, mucha rotación y cambios que cierran el partido", f'''
+    slide("jugadores", "Almada", "Sus jugadores", "Dibujo, rotación y uso de los cambios", f'''
 <div class="split" style="grid-template-columns:720px 1fr">
   <div class="stack">
     {fig("Dibujo con el que arranca", ch_formaciones())}
@@ -617,7 +658,7 @@ def build():
   </div>
 </div>''', "En esta lámina vemos con qué dibujo arranca, cuánto rota y para qué hace sus cambios.")
 
-    slide("bp", "Almada", "Balón parado", "Córners al segundo palo y marcaje al hombre", f'''
+    slide("bp", "Almada", "Balón parado", "Balón parado: córners a favor y en contra", f'''
 <div class="split" style="grid-template-columns:560px 500px 1fr">
   {fig("Dónde caen sus córners <span class=m>· tamaño: cuántos · color: % que acaba en remate</span>", ch_corners())}
   {fig("A qué zona los manda", ch_zonas(), legend([(N, "f-dt"), ("Liga", "f-rs")]))}
@@ -633,20 +674,19 @@ def build():
         ps = club_matches(e)
         r, x = sum(p["puntos"] for p in ps), sum(p["xpts"] for p in ps)
         pc += fig(f'{logo(e["club"], 28)}<b>{esc(e["club"])}</b><span class="m"> · {r} reales vs {x:.0f} merecidos ({r - x:+.0f})</span>', ch_puntos_club(e), cls="mini")
-    slide("puntos", "Almada", "¿Merecía sus puntos?", f'{S["puntos"]} puntos reales y {S["xpts"]:.0f} merecidos: sumó un poco más en cada club', f'''
+    slide("puntos", "Almada", "¿Merecía sus puntos?", "Puntos reales contra puntos merecidos, club por club", f'''
 <div class="grid3">{pc}</div>
 {legend([("Puntos reales", "ln-r-sw"), ("Merecidos por el xG de cada ocasión", "ln-x-sw")])}
 <p class="note">Rejugamos cada partido 5,000 veces con la calidad de cada ocasión de los dos equipos. Cada club arranca en cero. La simulación sirve para explicar, no para pronosticar.</p>''',
           "En esta lámina usamos la simulación para separar mérito de suerte, club por club. Pasa el cursor por los puntos para ver cada partido.")
 
-    hd = "<thead><tr><th>Jugador</th><th>Posición</th><th>Club</th><th class=num>Minutos</th><th>Aporte a su estilo</th><th class=num>Encaje</th></tr></thead>"
-    slide("america", "Almada", "Qué hacer: América", "Vigilar seis rasgos cada semana y fichar para el estilo", f'''
+    hd = "<thead><tr><th>Jugador</th><th>Posición</th><th>Club</th><th class=num>Minutos</th><th>Recupera · roba · conduce</th><th class=num>Encaje</th></tr></thead>"
+    slide("america", "Almada", "Qué hacer: América", "Qué puede hacer América: seguimiento y fichajes", f'''
 <div class="split" style="grid-template-columns:600px 1fr">
   {fig(f"Seguimiento: últimos {tab['n']} partidos contra su rango normal", ch_tablero(600), legend([("Últimos 10", "d-me"), ("Su nivel de carrera", "tot-sw"), ("Rango normal", "f-band")]))}
   <div class="stack">
     <div class="card"><h4>Fichajes de la liga que empujan su estilo</h4><table class="list fich">{hd}<tbody>{fich_rows(fich["liga"][:5])}</tbody></table></div>
     <div class="card"><h4>En la plantilla de América, los que más suman</h4><table class="list fich">{hd}<tbody>{fich_rows(fich["suman"][:3])}</tbody></table></div>
-    <p class="note">Aporte: recupera rápido · roba arriba · conduce, medido sin su entrenador.</p>
   </div>
 </div>''', "En esta lámina pasamos a las decisiones de su club. Las barras dicen cuánto empuja cada jugador los tres rasgos clave de Almada, medido sin su entrenador.")
 
@@ -673,11 +713,22 @@ def build():
                 dato = (con_num[0] if con_num else "").rstrip(".")
                 if len(dato) > 110:
                     dato = dato[:dato.rfind(" ", 0, 108)] + "…"
-            lis += f'<li><b>{esc(a["titulo"].replace("{N}", N))}</b>{f"<small>{esc(dato)}</small>" if dato else ""}</li>'
+            viz = ""
+            try:
+                v1 = float(str(ev.get("sello", "")).replace("%", "").replace(" s", "")); v2 = float(str(ev.get("liga", "")).replace("%", "").replace(" s", ""))
+                mxv = max(v1, v2) or 1
+                pc = ev.get("pct")
+                pill = f'<em>{"más" if pc >= 50 else "menos"} que el {min(pc if pc >= 50 else 100 - pc, 99):.0f}% de los DTs</em>' if pc is not None else ""
+                viz = (f'<span class="mb" data-tip="{esc(ev.get("etiqueta", ""))}: {N} {esc(ev["sello"])} · liga {esc(ev["liga"])}">'
+                       f'<i class="a" style="width:{v1 / mxv * 100:.0f}%"></i><i class="l" style="width:{v2 / mxv * 100:.0f}%"></i></span>{pill}')
+                viz = f'<span class="vz">{viz}</span>'
+            except (TypeError, ValueError):
+                pass
+            lis += f'<li><b>{esc(a["titulo"].replace("{N}", N))}</b>{f"<small>{esc(dato)}</small>" if dato else ""}{viz}</li>'
         cards[f] = f'<div class="card plan"><h4>{esc(fases[f]["es"].replace("{N}", N))}</h4><ul>{lis}</ul></div>'
     g = lambda *ks: "".join(cards.get(k, "") for k in ks)
     cols = f'<div class="stack">{g("con")}</div><div class="stack">{g("sin", "trans")}</div><div class="stack">{g("bp", "partido")}</div>'
-    slide("rival", "Almada", "Qué hacer: el rival", "Cómo jugarle a Almada, por situación de juego", f'<div class="grid3 plans">{cols}</div>',
+    slide("rival", "Almada", "Qué hacer: el rival", "Cómo jugarle a Almada, por situación de juego", f'<div class="grid3 plans">{cols}</div>' + legend([(N, "f-dt"), ("Liga", "f-rs")]),
           "En esta lámina está el plan para quien lo enfrente. Cada punto sale de un rasgo propio de Almada que destaca contra la liga, con su dato.")
 
     SLIDES.append(f'''<section class="slide cover end" id="cierre" aria-label="Cierre">

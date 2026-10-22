@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { asset, dataUrl, fmt, getJSON, jugadorCorto, matchColors, pct, sig, simulateMatch, type Any } from '../lib'
-import { ClubName, Legend, Pitch, useTip } from '../charts'
+import { ClubLogo, ClubName, Legend, Pitch, useTip } from '../charts'
 import { Seg } from './common'
 import MatchSim from '../MatchSim'
 import { L, LOCALE } from '../settings'
@@ -40,10 +40,18 @@ export function Simulador({ art, media, glob }: { art: Any; media?: Any; glob?: 
     }).catch(e => setErr(e.message))
   }
   useEffect(run, [mid, fx]) // eslint-disable-line react-hooks/exhaustive-deps
-  const pts = useMemo(() => {
-    let a = 0, e = 0
-    return S.partidos.map((p: Any) => { a += p.puntos; e += p.xpts; return { a, e } })
-  }, [S])
+  // una curva por club, cada una desde cero: así no se mezcla una etapa buena con una mala
+  const porClub = useMemo(() => {
+    const info = new Map<number, Any>((art.partidos || []).map((p: Any) => [p.match_id, p]))
+    const g = new Map<string, { a: number; e: number; p: Any }[]>()
+    for (const p of S.partidos) {
+      const c = info.get(p.match_id)?.club ?? '—'
+      const prev = g.get(c)?.at(-1)
+      const row = { a: (prev?.a ?? 0) + p.puntos, e: (prev?.e ?? 0) + p.xpts, p }
+      g.set(c, [...(g.get(c) ?? []), row])
+    }
+    return [...g.entries()]
+  }, [S, art])
   const cols = res ? matchColors(res.partido.club, res.partido.rival, media) : ['var(--c-dt)', 'var(--c-plantilla)']
   const golSim = new Set<number>(res?.golesSim || [])
   const shooters: [number, string][] = res?.data?.s || []
@@ -96,9 +104,18 @@ export function Simulador({ art, media, glob }: { art: Any; media?: Any; glob?: 
         <div className="card"><div className="note">{L('Puntos esperados (xPts)', 'Expected points (xPts)')}</div><div className="big">{fmt(S.xpts)}</div><div className="note">{S.puntos >= S.xpts ? L('Sumó más de lo que generó', 'Took more points than his chances suggested') : L('Sumó menos de lo que generó', 'Took fewer points than his chances suggested')} ({sig((S.puntos - S.xpts) / 1).replace('σ', '')} pts)</div></div>
         <div className="card"><div className="note">{L('Dominio medio (cuota de xG)', 'Average dominance (xG share)')}</div><div className="big">{pct(S.dominio_medio)}</div></div>
       </div>
-      <div className="card" style={{ marginTop: 16 }}>
-        <div className="h3">{L('Puntos reales vs esperados, acumulados', 'Actual vs expected points, cumulative')}</div>
-        <CumPts rows={pts} />
+      <div className="sim-clubs">
+        {porClub.map(([club, rows]) => {
+          const last = rows.at(-1)!
+          const d = last.a - last.e
+          return (
+            <div className="card" key={club}>
+              <div className="h3 sim-club-h"><ClubLogo club={club} media={media} size={22} />{club}</div>
+              <div className="note">{rows.length} {L('partidos', 'matches')} · {last.a} {L('reales vs', 'actual vs')} {fmt(last.e, 0)} {L('esperados', 'expected')} (<b className={d >= 0 ? 'up' : 'dn'}>{d >= 0 ? '+' : '−'}{fmt(Math.abs(d), 0)}</b>)</div>
+              <CumPts rows={rows} />
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -174,21 +191,26 @@ function SimScoreGrid({ r, media }: { r: Any; media?: Any }) {
   )
 }
 
-function CumPts({ rows }: { rows: { a: number; e: number }[] }) {
-  const W = 900, H = 170, P = { l: 36, r: 92, t: 10, b: 20 }
+function CumPts({ rows }: { rows: { a: number; e: number; p: Any }[] }) {
+  const W = 420, H = 200, P = { l: 30, r: 70, t: 10, b: 20 }
+  const tip = useTip()
   const max = Math.max(...rows.map(r => Math.max(r.a, r.e)), 1)
   const x = (i: number) => P.l + i / Math.max(rows.length - 1, 1) * (W - P.l - P.r)
   const y = (v: number) => P.t + (1 - v / max) * (H - P.t - P.b)
   const last = rows.at(-1)!
   return (
-    <div className="tbl-wrap"><svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: 520, maxWidth: 1100, display: 'block', margin: '0 auto' }}>
+    <div className="tbl-wrap"><svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }}>
       <polyline points={rows.map((r, i) => `${x(i)},${y(r.e)}`).join(' ')} fill="none" stroke="var(--ink-3)" strokeWidth={2} strokeDasharray="5 4" />
       <polyline points={rows.map((r, i) => `${x(i)},${y(r.a)}`).join(' ')} fill="none" stroke="var(--c-dt)" strokeWidth={2.5} />
+      {rows.map((r, i) => (
+        <circle key={i} cx={x(i)} cy={y(r.a)} r={rows.length > 60 ? 2.6 : 4} fill="var(--c-dt)" stroke="var(--surface)" strokeWidth={1}
+          onMouseMove={e => tip.show(e, <><b>{r.p.date}</b> · {r.p.local ? 'vs' : L('en', 'at')} {r.p.rival} {r.p.gf}-{r.p.gc}<br />{r.p.puntos} pts · {L('merecía', 'deserved')} {fmt(r.p.xpts, 1)}<br />{L('Acumulado', 'Running total')}: {r.a} vs {fmt(r.e, 0)}</>)} onMouseLeave={tip.hide} />
+      ))}
       <text x={x(rows.length - 1) + 6} y={y(last.a) + 4} fontSize={12} fill="var(--ink)">{L('Reales', 'Actual')} {last.a}</text>
       <text x={x(rows.length - 1) + 6} y={y(last.e) + 16} fontSize={12} fill="var(--ink-3)">xPts {Math.round(last.e)}</text>
       <text x={P.l} y={H - 4} fontSize={11} fill="var(--ink-3)">{L('partido', 'match')} 1</text>
       <text x={W - P.r} y={H - 4} fontSize={11} textAnchor="end" fill="var(--ink-3)">{L('partido', 'match')} {rows.length}</text>
-    </svg></div>
+    </svg>{tip.el}</div>
   )
 }
 

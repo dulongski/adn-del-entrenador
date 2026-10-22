@@ -15,6 +15,8 @@ import { chatBus } from './chatBus'
 import './styles/chat.css'
 
 const glob: Any = (boot as Any).global
+// último partido con datos: el «hoy» de la app
+const lastDate: string = (glob.dts as Any[]).flatMap(d => d.clubes.map((c: Any) => c.hasta as string)).sort().at(-1) ?? ''
 const media: Any = (boot as Any).media
 const DTS: Any[] = glob.dts
 const DT_BY_ID = new Map<number, Any>(DTS.map(d => [d.id, d]))
@@ -246,6 +248,25 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
       },
     },
     {
+      name: 'next_matches',
+      description: 'Partidos que faltan por jugar del torneo en curso (Apertura 2026, temporada 2026/27), por jornada. Con club devuelve sus próximos rivales en orden; sin club, la siguiente jornada completa. Úsala para «¿contra quién juega X?», «¿cuál es su siguiente partido?».',
+      inputSchema: { type: 'object', properties: { club: { type: 'string' }, n: { type: 'number', description: '1 a 6' } } },
+      execute: async ({ club, n = 3 }: Any) => {
+        status(L('Revisando el calendario…', 'Checking the schedule…'))
+        const cal = (await getJSON(dataUrl('calendario.json'))) as { r: number; h: string; a: string }[]
+        if (!cal.length) throw new Error('No quedan partidos por jugar en el calendario.')
+        const k = Math.max(1, Math.min(6, Number(n) || 3))
+        if (club) {
+          const q = norm(String(club))
+          const mine = cal.filter(f => norm(f.h).includes(q) || norm(f.a).includes(q)).sort((a, b) => a.r - b.r).slice(0, k)
+          if (!mine.length) throw new Error('Ese club no tiene partidos pendientes en el calendario.')
+          return { torneo: 'Apertura 2026', proximos: mine.map(f => ({ jornada: f.r, partido: `${f.h} vs ${f.a}`, local: norm(f.h).includes(q) })) }
+        }
+        const r0 = Math.min(...cal.map(f => f.r))
+        return { torneo: 'Apertura 2026', jornada: r0, partidos: cal.filter(f => f.r === r0).map(f => `${f.h} vs ${f.a}`) }
+      },
+    },
+    {
       name: 'standings',
       description: 'Tabla general de la fase regular de un torneo (season "2025/26" + tournament "Apertura" o "Clausura"): puesto, puntos, G-E-P, goles. Devuelve la tabla completa (18 equipos).',
       inputSchema: { type: 'object', properties: { season: { type: 'string' }, tournament: { type: 'string', enum: ['Apertura', 'Clausura'] }, show: { type: 'boolean', description: 'true sólo si piden ver la tabla' } }, required: ['season', 'tournament'] },
@@ -315,13 +336,14 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
     },
     {
       name: 'formation_xi',
-      description: 'Formaciones de un DT (opcionalmente en un club): las que usa y su once más probable en una formación concreta (por ejemplo "4231"). Para verla, open_view con view "jugadores".',
-      inputSchema: { type: 'object', properties: { coach_id: { type: 'number' }, club: { type: 'string' }, formation: { type: 'string', description: 'sólo dígitos, p. ej. 433 o 4231' } }, required: ['coach_id'] },
-      execute: async ({ coach_id, club, formation }: Any) => {
+      description: 'Formaciones de un DT y su once más probable en una formación (por ejemplo "4231"). Por defecto usa su club ACTUAL (lo que la gente quiere decir con «su alineación» o «su once»); pasa career=true sólo si piden toda su carrera, o club para otro club suyo. Para verla, open_view con view "jugadores".',
+      inputSchema: { type: 'object', properties: { coach_id: { type: 'number' }, club: { type: 'string' }, career: { type: 'boolean', description: 'true sólo si piden explícitamente toda su carrera' }, formation: { type: 'string', description: 'sólo dígitos, p. ej. 433 o 4231' } }, required: ['coach_id'] },
+      execute: async ({ coach_id, club, career = false, formation }: Any) => {
         const id = Number(coach_id); if (!DT_BY_ID.has(id)) throw new Error('coach_id desconocido: usa find_coach')
         status(L('Buscando su once…', 'Looking for his XI…'))
         const X = await getJSON(dataUrl(`jugadores_${id}.json`))
-        const key = club ? (X.clubes as string[]).find(c => norm(c).includes(norm(String(club)))) : undefined
+        const want = club ?? (career ? undefined : dtClub(id))
+        const key = want ? (X.clubes as string[]).find(c => norm(c).includes(norm(String(want)))) : undefined
         const sel = key ? X.por_club[key] : X.carrera
         const fm = String(formation ?? sel.dibujo).replace(/\D/g, '')
         const once = sel.once_por_dibujo?.[fm]
@@ -392,6 +414,7 @@ function rules(view: string, coach: number | null) {
   const kp = Object.entries(glob.kpis as Record<string, Any>).map(([k, v]) => `${k}: ${kl(k)} (${v.familia})`).join('\n')
   const views = ['mapa', 'hub', ...TAB_KEYS].map(v => `${v}: ${VIEW_NAMES[v] ?? v}`).join('; ')
   return `Eres Golito, el asistente de IA de Coach DNA (un balón simpático), una app sobre el estilo de juego de los entrenadores de Liga MX (temporadas ${glob.muestra.temporadas[0]} a ${glob.muestra.temporadas.at(-1)}, datos StatsBomb, ${glob.muestra.partidos} partidos, ${DTS.length} DTs con perfil).
+Los datos llegan hasta el ${lastDate} (temporada en curso: ${glob.muestra.temporadas.at(-1)}, Apertura 2026). «Ahora», «este torneo» o «el actual» se refieren a eso; los partidos que faltan están en next_matches. «Su once», «su alineación» o «su formación» de un DT se refieren a su club actual salvo que pidan otro club o su carrera.
 Responde en ${LANG === 'en' ? 'inglés' : 'español'}, en 1 a 3 frases, con tono natural y directo. Sin listas largas ni tablas.
 Reglas:
 - Todo número sale de las herramientas. Nunca inventes datos ni uses lo que sepas de fuera. Si algo no está en los datos, dilo.

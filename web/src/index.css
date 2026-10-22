@@ -564,3 +564,6 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 .mt-more { margin: 18px 0 0; border-top: 1px solid var(--rule); padding-top: 12px; }
 .mt-more > summary { cursor: pointer; font-weight: 600; color: var(--ink-2); padding: 6px 0; }
 .mt-more > summary:hover { color: var(--ink); }
+.sim-clubs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; }
+.sim-club-h { display: flex; align-items: center; gap: 8px; }
+.sim-clubs .up { color: var(--div-pos); } .sim-clubs .dn { color: var(--div-neg); }

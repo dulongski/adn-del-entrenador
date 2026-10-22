@@ -36,7 +36,7 @@ header { display: grid; gap: 8px; }
 .eyebrow span { color: var(--ink); background: var(--yellow); padding: 5px 9px; border-radius: 4px; }
 h2 { font: 800 50px/1 var(--display); text-transform: uppercase; margin: 0; text-wrap: balance; }
 .lede { font-size: 22px; line-height: 1.35; color: var(--ink-2); max-width: 100ch; }
-.body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+.body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 16px; justify-content: safe center; }
 h4 { font-size: 23px; line-height: 1.2; margin: 0 0 8px; color: var(--ink); }
 .note { font-size: 18px; color: var(--ink-3); }
 .prose p + p { margin-top: 18px; }
@@ -67,7 +67,7 @@ h4 { font-size: 23px; line-height: 1.2; margin: 0 0 8px; color: var(--ink); }
 .card .ey { font: 600 14px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--blue); margin-bottom: 10px; }
 .card.paper h4 i { font-weight: 400; }
 .plan { font-size: 19px; }
-.plan ul { padding-left: 18px; gap: 12px; }
+.plan ul { padding-left: 18px; gap: 9px; }
 .plan li b { display: block; color: var(--ink); font-weight: 600; line-height: 1.25; }
 .plans { align-items: start; }
 .plan li small { display: block; font: 15px/1.3 var(--body); color: var(--ink-3); margin-top: 3px; }
@@ -114,7 +114,7 @@ h1 span { color: var(--blue); }
 
 /* etapas */
 .etapas { display: flex; gap: 6px; }
-.et { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 10px; background: var(--surface-2); border-top: 6px solid var(--blue); min-width: 0; cursor: help; }
+.et { display: flex; align-items: center; gap: 14px; padding: 10px 18px; border-radius: 10px; background: var(--surface-2); border-top: 6px solid var(--blue); min-width: 0; cursor: help; }
 .et:last-child { border-top-color: var(--yellow); }
 .et b { display: block; font-size: 23px; }
 .et span { font-size: 17px; color: var(--ink-3); }
@@ -196,3 +196,31 @@ line.hov { stroke-width: 6px; }
 .prog { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: rgb(255 255 255 / 15%); }
 .prog i { display: block; height: 100%; width: 0; background: var(--yellow); transition: width .25s; }
 html:not(.js) .ctrl { display: none; }
+
+/* familias de estilo (mapa) */
+.g0, .sw.g0 { fill: #199e70; background: #199e70; } .g1, .sw.g1 { fill: #8a7bd1; background: #8a7bd1; } .g2, .sw.g2 { fill: #2f6fd6; background: #2f6fd6; }
+.g3, .sw.g3 { fill: #d95926; background: #d95926; } .g4, .sw.g4 { fill: #c98500; background: #c98500; }
+.sw.g0, .sw.g1, .sw.g2, .sw.g3, .sw.g4, .sw.d-almada { border-radius: 50%; }
+circle.oth { fill-opacity: .5; } circle.fam { stroke: var(--white); stroke-width: 2; }
+.d-almada, .sw.d-almada { fill: var(--ink); background: var(--ink); stroke: var(--yellow); stroke-width: 4; }
+.sw.d-almada { box-shadow: 0 0 0 2px var(--yellow); }
+.d-dist { fill: #b3bac8; }
+.fam h4 { font-size: 28px; margin-bottom: 14px; }
+.fam-m { font-size: 18px; margin-top: 12px; }
+
+/* la prueba, en pasos */
+.pasos { display: grid; grid-template-columns: repeat(3, 1fr) 1.15fr; gap: 14px; }
+.pasos > div { display: flex; gap: 12px; align-items: flex-start; background: var(--surface-2); border-radius: 12px; padding: 14px 16px; font-size: 20px; }
+.pasos span { flex: none; width: 38px; height: 38px; border-radius: 8px; background: var(--yellow); display: grid; place-items: center; font: 900 26px var(--display); }
+.pasos .why { background: var(--blue); color: #fff; font-weight: 600; }
+
+/* cómo jugarle: barra de Almada contra la liga y percentil */
+.plan .vz { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+.plan .mb { display: block; width: 150px; flex: none; }
+.plan .mb i { display: block; height: 7px; border-radius: 4px; margin: 2px 0; }
+.plan .mb .a { background: var(--c-dt); } .plan .mb .l { background: var(--c-rs); }
+.plan em { display: inline-block; font: 600 13px var(--mono); font-style: normal; color: var(--ink); background: color-mix(in oklab, var(--yellow) 40%, transparent); padding: 2px 7px; border-radius: 4px; }
+
+#almada .legend { font-size: 16px; gap: 4px 16px; }
+#prueba .tile b { font-size: 38px; }
+#prueba .tile { padding: 10px 16px; }
