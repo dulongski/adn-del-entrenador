@@ -60,7 +60,7 @@
 \end{center}
 \vspace{2pt}
 \noindent\begin{minipage}{\textwidth}
-\small\noindent\textbf{Resumen.} Cuando un equipo presiona alto, ¿es por el entrenador o por los jugadores que tiene? Los dos aparecen juntos en cada partido, así que cualquier perfil del equipo los mezcla. Tomamos un método de la economía laboral, pensado para separar el mérito de un trabajador del de su empresa, y lo aplicamos al estilo de juego. La clave son los DTs que cambian de club y los jugadores que juegan con distintos DTs. Con 1,807 partidos de Liga MX (2021/22 a 2026/27) y 103 DTs encontramos que la plantilla explica casi la mitad de las diferencias de estilo entre equipos y el DT alrededor del 14\%; que aun así el estilo del DT viaja con él cuando cambia de club, y que el DT decide sobre todo \emph{cómo} se juega, mientras que \emph{cuánto} peligro se genera depende más de los jugadores. Además, un modelo de aprendizaje multitarea con dos factores latentes de estilo mejora la separación justo en los rasgos más difíciles de separar.
+\small\noindent\textbf{Resumen.} Cuando un equipo presiona alto, ¿es por el entrenador o por los jugadores que tiene? Los dos aparecen juntos en cada partido, así que cualquier perfil del equipo los mezcla. Este trabajo propone, hasta donde sabemos, la primera descomposición del \emph{estilo de juego} que separa al DT de su plantilla, y lo hace con tres ideas que no se habían combinado en el futbol. \textbf{(1)}~Llevamos al estilo el método de efectos fijos de dos vías de la economía laboral (Abowd, Kramarz y Margolis), que en futbol sólo se había usado para medir \emph{resultados} de entrenadores. \textbf{(2)}~Le sumamos a los jugadores que están en la cancha en cada tramo, como el \emph{plus-minus} regularizado del básquetbol, para separar en 34 rasgos al DT, la plantilla, el club, el rival y el contexto. \textbf{(3)}~Lo estimamos con estadística bayesiana en dos capas: un \emph{prior} por pieza que no le inventa estilo a un DT con pocos datos, y una \emph{huella latente} empírico-bayesiana que comparte información entre rasgos con dos factores de estilo, y que mejora la separación justo en los DTs más difíciles de separar. Con 1,807 partidos de Liga MX (2021/22 a 2026/27) y 103 DTs, la plantilla explica casi la mitad de las diferencias de estilo entre equipos y el DT alrededor del 14\%; el DT decide sobre todo \emph{cómo} se juega y los jugadores \emph{cuánto} peligro se genera. Validamos el método fuera de muestra: si escondemos un club entero, el modelo reconoce al DT real en la mitad de arriba de 70 candidatos en 50 de 63 casos, y en datos simulados recupera un estilo sembrado mucho mejor que un perfil de equipo. Todo se convierte en decisiones (plan contra un rival, fichajes a la medida y seguimiento) en una app interactiva para los 76 DTs con perfil.
 \end{minipage}
 \vspace{12pt}
 }]
@@ -70,6 +70,15 @@
 Lo que vemos en un partido mezcla cinco cosas: las ideas del \textbf{DT}, la calidad de su \textbf{plantilla}, lo propio del \textbf{club}, el \textbf{rival} de ese día y el \textbf{contexto} (marcador, minuto, localía). Decir ``el Pachuca de Almada presiona alto'' no aclara si eso lo pone Almada o lo ponen sus jugadores, porque cada partido del DT es también un partido de su plantel. Promediar sus partidos no los separa.
 
 Nuestra pregunta es otra: ¿qué variación de los datos nos deja ver al DT sin sus jugadores? La Figura~\ref{fig:flujo} resume el camino.
+
+\textbf{Qué es nuevo.} Hasta donde sabemos, ningún trabajo público combina estas piezas para el estilo de un DT:
+\begin{itemize}\setlength\itemsep{1pt}
+\item \textbf{Estilo, no resultados.} El método de economía laboral que separa a un trabajador de su empresa se había aplicado a los \emph{resultados} de entrenadores en la Bundesliga; aquí separa cada uno de 34 rasgos de estilo.
+\item \textbf{Cinco piezas a la vez.} DT, jugadores en cancha (a la manera del \emph{plus-minus} del básquetbol), club, rival y contexto, con tramos de partido sin cambios ni goles como unidad.
+\item \textbf{Bayesiano en dos capas.} Un \emph{prior} por pieza (no inventa estilos con pocos datos) y una huella latente empírico-bayesiana que aprende de todos los rasgos a la vez.
+\item \textbf{Pruebas fuera de muestra.} Esconder clubes enteros, sembrar estilos conocidos en datos simulados y seguir a los DTs que cambian de club.
+\item \textbf{Del número a la decisión.} Plan contra un rival, fichajes, seguimiento semanal y simulación para explicar resultados, en una app abierta.
+\end{itemize}
 
 \begin{figure*}[t]
 \centering
@@ -123,7 +132,7 @@ Con una regresión \emph{ridge}: busca las piezas que mejor explican los datos, 
 \begin{equation}
 \min \; \sum_{\text{tramos}} w\,(z - \text{piezas})^2 \;+\; \lambda \cdot \lVert\text{piezas}\rVert^2 .
 \end{equation}
-El efecto práctico es que, cuando los datos no alcanzan para separar al DT de su plantilla, el modelo lo deja cerca del promedio de la liga en vez de inventarle un estilo. Es una postura conservadora: al DT solo se le atribuye lo que los datos respaldan. Además, cada DT lleva un \emph{índice de identificabilidad} de 0 a 100 según cuántos clubes dirigió y cuántos de sus jugadores jugaron con otros DTs (Almada: 96). Como último paso, la huella pasa por un modelo de aprendizaje multitarea que comparte información entre rasgos (Sección~\ref{sec:latente}).
+Esta penalización es estadística bayesiana: equivale a suponer, antes de ver los datos, que cada pieza vale cero (el promedio de la liga) con una incertidumbre propia, y quedarse con la estimación más probable una vez vistos los partidos. Cada pieza tiene su propio $\lambda$ (su ``prior''): al DT se le pide más evidencia que al contexto, y a un jugador más que al DT. El efecto práctico es que, cuando los datos no alcanzan para separar al DT de su plantilla, el modelo lo deja cerca del promedio de la liga en vez de inventarle un estilo. Es una postura conservadora: al DT solo se le atribuye lo que los datos respaldan. Además, cada DT lleva un \emph{índice de identificabilidad} de 0 a 100 según cuántos clubes dirigió y cuántos de sus jugadores jugaron con otros DTs (Almada: 96). Como último paso, la huella pasa por un modelo de aprendizaje multitarea que comparte información entre rasgos (Sección~\ref{sec:latente}).
 
 \subsection{Cuánto pesa cada pieza}
 Con el modelo estimado podemos medir qué parte de las diferencias de estilo entre equipos explica cada pieza $m$:
