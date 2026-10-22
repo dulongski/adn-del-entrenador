@@ -120,22 +120,22 @@ export class Season {
 
 /** Miles de torneos rápidos: probabilidad de cada club de avanzar a liguilla y de ser campeón. */
 export function manySeasons(make: () => Season, n: number, seed0 = 1) {
-  const out: Record<string, { top6: number; liguilla: number; final: number; title: number; pts: number }> = {}
+  const out: Record<string, { top6: number; liguilla: number; final: number; title: number; pts: number; pos: number }> = {}
   for (let i = 0; i < n; i++) {
     setSeed(seed0 * 100003 + i * 7919)     // mismos «dados» en cada configuración: la diferencia entre ellas casi no tiene ruido
     const s = make()
     s.run(() => false, true)
     const finalists = new Set(s.done.filter(t => t.fase === 'final').flatMap(t => [t.hi, t.lo]))
     s.seeds.forEach((c, k) => {
-      const o = (out[c] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0 })
+      const o = (out[c] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0, pos: 0 })
       if (k < 4) o.top6++
       if (k < 8) o.liguilla++
       if (finalists.has(c)) o.final++
       if (s.champion === c) o.title++
     })
-    s.table().forEach(r => { (out[r.club] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0 }).pts += r.pts })
+    s.table().forEach((r, k) => { const o = (out[r.club] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0, pos: 0 }); o.pts += r.pts; o.pos += k + 1 })
   }
   setSeed(null)
-  for (const k of Object.keys(out)) { const o = out[k]; o.top6 /= n; o.liguilla /= n; o.final /= n; o.title /= n; o.pts /= n }
+  for (const k of Object.keys(out)) { const o = out[k]; o.top6 /= n; o.liguilla /= n; o.final /= n; o.title /= n; o.pts /= n; o.pos /= n }
   return out
 }

@@ -35,6 +35,14 @@ export function DtVsPlantilla({ art, glob }: P) {
         : <>Cada fila es un rasgo de su forma de jugar. La primera barra es lo que se ve en sus partidos comparado con la liga.
           Las demás dicen quién lo empuja: él, sus jugadores, el club, los rivales o el contexto (localía, marcador, minuto).
           Hacia la derecha lo sube, hacia la izquierda lo baja. <b>Toca una fila</b> para ver dónde queda entre todos los DTs.</>}</div>
+      {(() => {
+        const tr: Any[] = art.transferencia || []
+        const last = art.etapas?.[art.etapas.length - 1]?.club
+        const t = tr.find(x => x.club === last) ?? tr[0] ?? null
+        if (!t) return null
+        return <p className="att-viaja">{L(`¿Este estilo viaja de club en club? Escondimos sus ${t.partidos} partidos en ${t.club} y el modelo, viendo sólo esos partidos, lo puso ${t.rank_ajustado}º entre ${t.n_clases} técnicos (al azar saldría cerca del ${Math.round(t.rank_nulo)}º). El detalle de esta prueba está en Método.`,
+          `Does this style travel from club to club? We hid his ${t.partidos} matches at ${t.club} and the model, seeing only those matches, ranked him ${t.rank_ajustado} of ${t.n_clases} coaches (chance would put him near ${Math.round(t.rank_nulo)}). The full test is in Method.`)}</p>
+      })()}
       <div className="att-fams" role="group" aria-label={L('Filtrar por familia', 'Filter by family')}>
         {[['todas', L('Todas', 'All')], ...FAM_ORDER.filter(f => byFam.some(([g, rs]) => g === f && rs.length)).map(f => [f, famLabel(f)])].map(([k, l]) => (
           <button key={k} type="button" aria-pressed={fam === k} onClick={() => setFam(k)}>{(() => { const n = iconFor(k, l); return n ? <Ico name={n} /> : null })()}{l}</button>

@@ -75,7 +75,7 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
     setBusy(true); setProg(0); setProbs(null)
     const CH = 250, acc = (parts: Any[]) => {
       const out: Any = {}
-      for (const p of parts) for (const [c, o] of Object.entries(p as Record<string, Any>)) { const t = (out[c] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0 }); for (const k of Object.keys(t)) t[k] += (o as Any)[k] / parts.length }
+      for (const p of parts) for (const [c, o] of Object.entries(p as Record<string, Any>)) { const t = (out[c] ??= { top6: 0, liguilla: 0, final: 0, title: 0, pts: 0, pos: 0 }); for (const k of Object.keys(t)) t[k] += (o as Any)[k] / parts.length }
       return out
     }
     const yp: Any[] = [], bp: Any[] = []
@@ -117,6 +117,14 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
       )}
 
       {S && (
+        <div className="card lg-prob">
+          <div className="h3">{L('¿Dónde terminaría?', 'Where would it finish?')} <Info wide>{L(`Se juegan ${3000} torneos completos (sólo marcadores) con esta misma configuración y se cuenta cuántas veces cada club llega a liguilla, a la final y es campeón. «Con su DT actual» es el mismo torneo sin tocar nada del club, jugado con los mismos «dados», así que la diferencia entre ambos casi no tiene ruido. Margen de error de cada porcentaje: ±1–2 puntos.`, `${3000} full tournaments are played (scores only) with this same set-up and we count how often each club reaches the playoffs, the final and wins it. "With the current coach" is the same tournament with nothing changed at the club, played with the same "dice", so the difference between the two is almost noise-free. Margin of error of each percentage: ±1–2 points.`)}</Info></div>
+          <button className="btn" disabled={busy} onClick={doProbs}>{busy ? `${L('Jugando', 'Playing')} ${N_SIMS.toLocaleString()} ${L('torneos', 'tournaments')}… ${Math.round(prog * 100)}%` : L(`Jugar ${N_SIMS.toLocaleString()} torneos`, `Play ${N_SIMS.toLocaleString()} tournaments`)}</button>
+          {probs && <Probs probs={probs} club={club} media={media} coach={coachName} sameCoach={sameCoach && !dz} color={color} />}
+        </div>
+      )}
+
+      {S && (
         <>
           <div className="lg-bar card">
             <div className="lg-bar-t"><ClubLogo club={club} media={media} size={26} /><b>{coachName} · {club}</b><span className="note">{phaseName}{S.phase === 'liga' ? ` · ${S.fxLeft().length} ${L('partidos por jugar', 'matches to play')}` : ''}</span></div>
@@ -151,13 +159,6 @@ function Body({ art, media, pk }: { art: Any; media: Any; pk: Pack }) {
         </>
       )}
 
-      {S && (
-        <div className="card lg-prob">
-          <div className="h3">{L('Probabilidades', 'Probabilities')} <Info wide>{L(`Se juegan ${3000} torneos completos (sólo marcadores) con esta misma configuración y se cuenta cuántas veces cada club llega a liguilla, a la final y es campeón. «Con su DT actual» es el mismo torneo sin tocar nada del club, jugado con los mismos «dados», así que la diferencia entre ambos casi no tiene ruido. Margen de error de cada porcentaje: ±1–2 puntos.`, `${3000} full tournaments are played (scores only) with this same set-up and we count how often each club reaches the playoffs, the final and wins it. "With the current coach" is the same tournament with nothing changed at the club, played with the same "dice", so the difference between the two is almost noise-free. Margin of error of each percentage: ±1–2 points.`)}</Info></div>
-          <button className="btn" disabled={busy} onClick={doProbs}>{busy ? `${L('Jugando', 'Playing')} ${N_SIMS.toLocaleString()} ${L('torneos', 'tournaments')}… ${Math.round(prog * 100)}%` : L(`Jugar ${N_SIMS.toLocaleString()} torneos`, `Play ${N_SIMS.toLocaleString()} tournaments`)}</button>
-          {probs && <Probs probs={probs} club={club} media={media} coach={coachName} sameCoach={sameCoach && !dz} color={color} />}
-        </div>
-      )}
     </div>
   )
 }
@@ -282,6 +283,12 @@ function Probs({ probs, club, media, coach, sameCoach, color }: { probs: { you: 
   const d = (v: number) => `${v >= 0 ? '+' : '−'}${fmt(Math.abs(v) * 100, 0)} pts`
   return (
     <div className="lg-pr">
+      <div className="lg-pr-pos">
+        <span className="note">{L(`Posición media de ${club} en la tabla`, `${club}'s average league position`)}</span>
+        <b>{fmt(y.pos, 1)}º</b>
+        <small>{sameCoach ? L(`de 18, al final de la fase regular, en ${probs.n.toLocaleString()} torneos`, `of 18, at the end of the regular season, over ${probs.n.toLocaleString()} tournaments`)
+          : L(`con ${coach}; con su DT actual, ${fmt(b.pos, 1)}º (de 18, al final de la fase regular)`, `with ${coach}; with the current coach, ${fmt(b.pos, 1)} (of 18, end of the regular season)`)}</small>
+      </div>
       <div className="lg-pr-h">
         <div><span className="note">{L('Liguilla', 'Playoffs')}</span><b>{pct(100 * y.liguilla, 0)}</b>{!sameCoach && <small className={y.liguilla >= b.liguilla ? 'up' : 'dn'}>{d(y.liguilla - b.liguilla)}</small>}</div>
         <div><span className="note">{L('Final', 'Final')}</span><b>{pct(100 * y.final, 0)}</b>{!sameCoach && <small className={y.final >= b.final ? 'up' : 'dn'}>{d(y.final - b.final)}</small>}</div>
@@ -290,7 +297,7 @@ function Probs({ probs, club, media, coach, sameCoach, color }: { probs: { you: 
       </div>
       {!sameCoach && <div className="note">{L(`Frente a «con su DT actual» (${fmt(b.title * 100, 1)}% de ser campeón).`, `Versus "with the current coach" (${fmt(b.title * 100, 1)}% to be champion).`)}</div>}
       <div className="lg-pr-t">{rows.slice(0, 10).map(([c, o]) => (
-        <div key={c} className={`lg-pr-r${c === club ? ' me' : ''}`}><ClubLogo club={c} media={media} size={18} /><span>{c}</span><span className="bar"><i style={{ width: `${Math.min(100, o.title * 100 * 3)}%`, background: c === club ? color : undefined }} /></span><b>{pct(100 * o.title, 1)}</b><small>{pct(100 * o.liguilla, 0)} {L('liguilla', 'playoffs')}</small></div>))}</div>
+        <div key={c} className={`lg-pr-r${c === club ? ' me' : ''}`}><ClubLogo club={c} media={media} size={18} /><span>{c}</span><span className="bar"><i style={{ width: `${Math.min(100, o.title * 100 * 3)}%`, background: c === club ? color : undefined }} /></span><b>{pct(100 * o.title, 1)}</b><small>{fmt(o.pos, 1)}º {L('media', 'avg')} · {pct(100 * o.liguilla, 0)} {L('liguilla', 'playoffs')}</small></div>))}</div>
     </div>
   )
 }

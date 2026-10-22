@@ -19,8 +19,8 @@ export const MODES: Mode[] = [
   { k: 'resumen', name: L('Resumen', 'Summary'), title: L('Su ADN en tres ideas', 'His DNA in three ideas'), q: L('¿Cómo juega este DT?', 'How does this coach play?'), color: '#3987e5',
     desc: L('Los rasgos que son suyos y no de sus jugadores, con los números clave de su carrera y cómo vigilar si sigue jugando igual.', 'The traits that belong to him, not his players, plus the key numbers of his career and how to track whether he still plays the same way.'), subs: [['resumen', L('Resumen', 'Summary')], ['tablero', L('Seguimiento', 'Tracking')]] },
   { k: 'separar', name: L('¿DT o plantilla?', 'Coach or squad?'), title: L('¿DT o plantilla?', 'Coach or squad?'), q: L('¿El estilo es suyo o de sus jugadores?', 'Is the style his, or his players\'?'), color: '#e0662f',
-    desc: L('Cuánto de cada rasgo pone el DT, la plantilla, el club y el rival, y si su estilo viaja con él de club en club.', 'How much of each trait comes from the coach, squad, club and opponent, and whether his style travels with him.'),
-    subs: [['dt', L('DT vs plantilla', 'Coach vs squad')], ['transfer', L('Prueba de transferencia', 'Transfer test')]] },
+    desc: L('Cuánto de cada rasgo pone el DT, la plantilla, el club, el rival y el contexto.', 'How much of each trait comes from the coach, squad, club, opponent and context.'),
+    subs: [['dt', L('DT vs plantilla', 'Coach vs squad')]] },
   { k: 'juego', name: L('Cómo juega', 'How he plays'), title: L('Cómo juega', 'How he plays'), q: L('¿Dónde y cómo ataca y defiende?', 'How does he attack and defend?'), color: '#1fae7a',
     desc: L('Cómo crea peligro y cómo defiende, sus formaciones con y sin balón, mapas de presión y tiro, y cómo cambia según marcador, minuto y rival, y si se mantiene con el tiempo.', 'How it creates danger and defends, line-ups with and without the ball, pressing and shot maps, how it shifts with score, clock and opponent, and whether it holds over time.'),
     subs: [['fases', L('Estilo y zonas', 'Style & zones')], ['contexto', L('Según el partido', 'Game situations')], ['tiempo', L('A lo largo del tiempo', 'Over time')]] },
@@ -34,7 +34,7 @@ export const MODES: Mode[] = [
   { k: 'vs', name: L('Cara a cara', 'Head to head'), title: L('Cara a cara', 'Head to head'), q: L('¿En qué se parece a otro DT?', 'Who does he play like?'), color: '#e5484d',
     desc: L('Compara su estilo propio contra cualquier otro entrenador, cómo jugarle a él y el plan concreto para enfrentar a un técnico o equipo.', 'Compare his own style with any other coach, how to play against him and the concrete plan to face a specific coach or team.'), subs: [['vs', '1 vs 1'], ['plan', L('Cómo jugarle', 'How to play him')], ['duelo', L('Plan contra un rival', 'Game plan vs a rival')]] },
   { k: 'metodo', name: L('Método', 'Method'), title: L('Método', 'Method'), q: L('¿Cómo se calcula todo esto?', 'How is all this calculated?'), color: '#8a9a92',
-    desc: L('El modelo, sus supuestos y sus límites.', 'The model, its assumptions and its limits.'), subs: [['metodo', L('Método', 'Method')]] },
+    desc: L('El modelo, sus supuestos y sus límites.', 'The model, its assumptions and its limits.'), subs: [['metodo', L('Método', 'Method')], ['transfer', L('Prueba de transferencia', 'Transfer test')]] },
 ]
 
 /** Texto legible sobre el color del modo (oscuro sobre amarillo, blanco sobre el resto). */

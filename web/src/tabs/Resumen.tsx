@@ -17,7 +17,7 @@ const SEC: Record<string, { color: string; tab: TabKey }> = {
   identidad: { color: '#3987e5', tab: 'dt' },
   ofensiva: { color: '#1fae7a', tab: 'fases' },
   defensiva: { color: '#2ab3cf', tab: 'fases' },
-  dt_vs_plantilla: { color: '#e0662f', tab: 'transfer' },
+  dt_vs_plantilla: { color: '#e0662f', tab: 'dt' },
   contexto: { color: '#e5484d', tab: 'contexto' },
   jugadores: { color: '#e8b10c', tab: 'jugadores' },
   balon_parado: { color: '#de4f87', tab: 'bp' },

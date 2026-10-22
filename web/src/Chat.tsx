@@ -309,7 +309,7 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
         const N = 600
         const a = manySeasons(() => buildSeason(pk, cl, id, null, !!fresh, true), N, 7)[cl]
         const b = id === real ? a : manySeasons(() => buildSeason(pk, cl, id, null, !!fresh, false), N, 7)[cl]
-        const f = (o: Any) => ({ liguilla_pct: Math.round(o.liguilla * 100), final_pct: Math.round(o.final * 100), campeon_pct: +(o.title * 100).toFixed(1), puntos_esperados: +o.pts.toFixed(1) })
+        const f = (o: Any) => ({ liguilla_pct: Math.round(o.liguilla * 100), final_pct: Math.round(o.final * 100), campeon_pct: +(o.title * 100).toFixed(1), puntos_esperados: +o.pts.toFixed(1), posicion_media: +o.pos.toFixed(1) })
         return { club: cl, torneo: fresh ? 'nuevo desde cero' : 'resto del Apertura 2026 (partidos reales hasta la jornada ' + pk.lastRound + ')', simulaciones: N, margen_error: '±2 puntos porcentuales', con_su_dt_actual: { dt: dtName(real), ...f(b) }, con_el_dt_pedido: { dt: dtName(id), ...f(a) }, nota: 'Estilo propio del DT con la plantilla actual del club; sin sustituciones, lesiones ni fair play en las simulaciones rápidas.' }
       },
     },
