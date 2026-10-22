@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ClubLogo } from '../charts'
 import { Ico, type IconName } from '../icons'
 import Info from '../Info'
@@ -124,6 +124,7 @@ export function Fichajes({ art, glob, media }: { art: Any; glob: Any; media: Any
           {f.restan.length === 0 && <p className="note">{L('Nadie de su plantilla con minutos va claramente en contra de su estilo.', 'No one in his squad with minutes clearly pulls against his style.')}</p>}
         </div>
       </div>
+      <PlayerFit f={f} glob={glob} media={media} />
     </div>
   )
 }
@@ -174,3 +175,73 @@ export function Tablero({ art, glob }: { art: Any; glob: Any }) {
     </div>
   )
 }
+
+const normTxt = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+/** Buscador: el encaje de CUALQUIER jugador con su estilo, con la misma fórmula que la lista (plan.py · fichajes):
+ *  promedio de sus efectos en los rasgos del DT, cada uno en desviaciones entre jugadores y con el signo del DT,
+ *  ponderado por qué tan marcado es cada rasgo. Los efectos salen de whatif.json (coeficientes de jugador del modelo). */
+function PlayerFit({ f, glob, media }: { f: Any; glob: Any; media: Any }) {
+  const [W, setW] = useState<Any>(null)
+  const [q, setQ] = useState('')
+  const [sel, setSel] = useState<string | null>(null)
+  useEffect(() => { getJSON(dataUrl('whatif.json')).then(setW, () => setW(false)) }, [])
+  const M = useMemo(() => {
+    if (!W) return null
+    const idx: Record<string, number> = Object.fromEntries((W.kpis as Any[]).map((k: Any, i: number) => [k.k, i]))
+    const R = (f.rasgos as Any[]).filter(r => idx[r.kpi] != null)
+    const ids = Object.keys(W.players).filter(id => Array.isArray(W.players[id].b))
+    const sd: Record<string, number> = {}
+    for (const r of R) {
+      const v = ids.map(id => W.players[id].b[idx[r.kpi]] as number), m = v.reduce((a, b) => a + b, 0) / v.length
+      sd[r.kpi] = Math.sqrt(v.reduce((a, b) => a + (b - m) ** 2, 0) / Math.max(v.length - 1, 1)) || 1
+    }
+    const wsum = R.reduce((a, r) => a + Math.abs(r.alpha), 0) || 1
+    const score: Record<string, number> = {}
+    for (const id of ids) score[id] = R.reduce((a, r) => a + Math.sign(r.alpha) * (W.players[id].b[idx[r.kpi]] / sd[r.kpi]) * Math.abs(r.alpha), 0) / wsum
+    const pool = ids.filter(id => W.players[id].min >= 900 && !/portero|goalkeeper/i.test(W.players[id].pos ?? '')).map(id => score[id]).sort((a, b) => a - b)
+    return { idx, R, score, pool }
+  }, [W, f])
+  if (W === false) return null
+  const hits = M && q.trim().length >= 2
+    ? Object.entries(W.players as Record<string, Any>).filter(([, p]) => Array.isArray(p.b) && normTxt(p.n ?? '').includes(normTxt(q.trim()))).sort((a, b) => b[1].min - a[1].min).slice(0, 6) : []
+  const p = sel && W?.players[sel]
+  const sc = p && M ? M.score[sel!] : 0
+  const pct = p && M ? Math.round((100 * M.pool.filter((v: number) => v < sc).length) / Math.max(M.pool.length, 1)) : 0
+  const verdict = pct >= 85 ? L('le encaja muy bien', 'a great fit') : pct >= 60 ? L('le encaja', 'a good fit') : pct >= 40 ? L('neutro para su estilo', 'neutral for his style') : L('va en contra de su estilo', 'pulls against his style')
+  return (
+    <div className="card pf">
+      <div className="tl-h"><b>{L('¿Y este jugador le encajaría?', 'Would this player fit him?')}</b></div>
+      <p className="note">{L(`Busca a cualquiera de los ${M ? Object.keys(M.score).length : '…'} jugadores con coeficiente propio en el modelo y mira cómo empujaría sus rasgos.`, 'Search any player with his own coefficient in the model and see how he would push this coach\'s traits.')}</p>
+      <input className="pf-q" value={q} placeholder={L('Escribe un jugador (p. ej. Henry Martín)…', 'Type a player (e.g. Henry Martín)…')} aria-label={L('Buscar jugador', 'Search player')}
+        onChange={e => { setQ(e.target.value); setSel(null) }} />
+      {!p && hits.length > 0 && (
+        <div className="pf-hits">{hits.map(([id, h]) => (
+          <button key={id} className="pf-hit" onClick={() => { setSel(id); setQ(h.n) }}>
+            {h.club && <ClubLogo club={h.club} media={media} size={18} />}<b>{jugadorCorto(Number(id), h.n)}</b><small>{h.pos} · {h.club} · {fmt(h.min, 0)} min</small>
+          </button>))}</div>
+      )}
+      {!p && q.trim().length >= 2 && hits.length === 0 && M && <p className="note">{L('Ningún jugador con ese nombre tiene coeficiente propio (menos minutos de los que pide el modelo).', 'No player by that name has his own coefficient.')}</p>}
+      {p && M && (
+        <div className="pf-res">
+          <div className="pf-top">
+            {p.club && <ClubLogo club={p.club} media={media} size={30} />}
+            <div><b className="pf-n">{jugadorCorto(Number(sel), p.n)}</b><small>{p.pos} · {p.club} · {fmt(p.min, 0)} min</small></div>
+            <div className={`pf-v ${pct >= 60 ? 'up' : pct < 40 ? 'dn' : ''}`}><b>{pct}</b><small>{L('de 100', 'of 100')}</small></div>
+          </div>
+          <p className="pf-say"><b>{cap1(verdict)}:</b> {L(`encaja mejor que el ${pct}% de los jugadores de la liga con 900 minutos o más.`, `fits better than ${pct}% of league players with 900+ minutes.`)}{p.min < 900 ? L(' Ojo: tiene pocos minutos, el dato es poco firme.', ' Careful: few minutes, the estimate is shaky.') : ''}</p>
+          <div className="pf-rows">{M.R.map((r: Any) => {
+            const b = p.b[M.idx[r.kpi]] as number, good = Math.sign(r.alpha) * b >= 0
+            return (
+              <div key={r.kpi} className="pf-row">
+                <span>{kName(r.kpi, glob)} <small>{r.alpha >= 0 ? L('el DT lo sube', 'coach pushes it up') : L('el DT lo baja', 'coach pushes it down')}</small></span>
+                <em className={good ? 'up' : 'dn'}>{real(r.kpi, b)} {L('cuando juega', 'when he plays')}</em>
+              </div>)
+          })}</div>
+          <p className="note">{L('Efectos del modelo con sus compañeros de siempre, encogidos por el ridge: sirven para una lista corta, no para decidir un fichaje solos.', 'Model effects with his usual team-mates, ridge-shrunk: good for a shortlist, not to decide a signing alone.')}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+const cap1 = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)

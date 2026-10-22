@@ -78,14 +78,48 @@ export function Contexto({ art, glob }: P) {
       <h3 className="h2">{L('Qué le hace cambiar de un partido a otro', 'What changes his approach from match to match')}</h3>
 <div className="tab-sub">{L('Qué es lo que más cambia su forma de jugar de un partido a otro: jugar en casa, la fuerza del rival, el marcador o ', 'What shifts his style most from one match to the next: playing at home, the opponent\'s strength, the scoreline or ')}<b>{L('cómo juega el rival', 'how the opponent plays')}</b>{L(' (si presiona, si tiene el balón, si es directo). Cada punto es un partido.', ' (whether they press, keep the ball or go direct). Each dot is a match.')}</div>
       <Seg opts={KEY.filter(x => C.motores?.[x]).slice(0, 8).map(x => [x, label(x)] as [string, string])} v={k} set={setK} />
-      {C.motores?.[k] ? <Drivers rows={C.motores[k]} /> : <div className="note">{L('Hacen falta al menos 15 partidos.', 'Needs at least 15 matches.')}</div>}
+      {C.motores?.[k] ? <Drivers rows={C.motores[k]} k={k} kn={label(k).replace(/\s*\(.*\)$/, '').toLowerCase()} /> : <div className="note">{L('Hacen falta al menos 15 partidos.', 'Needs at least 15 matches.')}</div>}
 
     </div>
   )
 }
 
 const VAR_ES: Record<string, string> = { local: L('Juega de local', 'Playing at home'), fuerza_rival: L('Fuerza del rival', 'Opponent strength'), dif_goles_media: L('Diferencia de goles', 'Goal difference'), rival_presion: L('Presión del rival', 'Opponent pressing'), rival_posesion: L('Posesión del rival', 'Opponent possession'), rival_verticalidad: L('Verticalidad del rival', 'Opponent directness') }
-function Drivers({ rows }: { rows: Any[] }) {
+/** Cómo se lee cada factor, en sus dos extremos y en el medio. */
+const ENDS: Record<string, [string, string, string]> = {
+  fuerza_rival: [L('contra rivales débiles', 'against weak opponents'), L('contra rivales medios', 'against mid-table opponents'), L('contra rivales fuertes', 'against strong opponents')],
+  dif_goles_media: [L('cuando va perdiendo', 'when losing'), L('con el marcador parejo', 'with the score level'), L('cuando va ganando', 'when winning')],
+  local: [L('de visita', 'away'), '', L('de local', 'at home')],
+  rival_presion: [L('contra rivales que presionan poco', 'against teams that press little'), L('contra rivales de presión media', 'against average pressers'), L('contra rivales que presionan mucho', 'against heavy pressers')],
+  rival_posesion: [L('contra rivales que ceden el balón', 'against teams that cede the ball'), L('contra rivales de posesión media', 'against average-possession teams'), L('contra rivales de posesión', 'against possession teams')],
+  rival_verticalidad: [L('contra rivales elaborados', 'against patient teams'), L('contra rivales intermedios', 'against in-between teams'), L('contra rivales directos', 'against direct teams')],
+}
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
+const amt = (k: string, z: number) => real(k, Math.abs(z)).replace(/^[+−-]/, '')
+
+/** Forma de la curva a partir de los puntos SHAP (x = factor, y = cuánto movió su estilo ese partido):
+ *  promedios por tercio (o por valor, si es sí/no) → sube, baja, en U, en ∩ o casi plano, con su tamaño real. */
+function shape(r: Any, k: string, kn: string) {
+  const pts = [...(r.puntos ?? [])].sort((a: number[], b: number[]) => a[0] - b[0])
+  const E = ENDS[r.variable] ?? ['', '', '']
+  const mean = (a: number[][]) => a.reduce((s, p) => s + p[1], 0) / Math.max(a.length, 1)
+  const bin = r.variable === 'local'
+  const g = bin ? [pts.filter(p => p[0] < 0.5), [], pts.filter(p => p[0] >= 0.5)]
+    : [pts.slice(0, Math.floor(pts.length / 3)), pts.slice(Math.floor(pts.length / 3), Math.floor((2 * pts.length) / 3)), pts.slice(Math.floor((2 * pts.length) / 3))]
+  const [lo, mid, hi] = g.map(mean)
+  const d = hi - lo, bump = mid - (lo + hi) / 2
+  if (Math.max(Math.abs(d), bin ? 0 : Math.abs(bump)) < 0.08) return { ico: '→', cls: 'flat', txt: L(`Casi no mueve su ${kn}: menos de ${amt(k, 0.08)} de diferencia.`, `Barely moves his ${kn}.`) }
+  if (!bin && Math.abs(bump) > Math.abs(d) * 0.75 && E[1]) {
+    const more = bump > 0
+    return { ico: more ? '∩' : '∪', cls: 'flat', txt: L(`${cap(E[1])} tiene ${amt(k, bump)} ${more ? 'más' : 'menos'} de ${kn} que ${E[0]} o ${E[2]}: no es una línea recta.`,
+      `${cap(E[1])} his ${kn} is ${amt(k, bump)} ${more ? 'higher' : 'lower'} than ${E[0]} or ${E[2]}.`) }
+  }
+  const more = d > 0
+  return { ico: more ? '↗' : '↘', cls: more ? 'up' : 'dn', txt: L(`${cap(E[2])} tiene ${amt(k, d)} ${more ? 'más' : 'menos'} de ${kn} que ${E[0]}.`,
+    `${cap(E[2])} his ${kn} is ${amt(k, d)} ${more ? 'higher' : 'lower'} than ${E[0]}.`) }
+}
+
+function Drivers({ rows, k, kn }: { rows: Any[]; k: string; kn: string }) {
   const max = Math.max(...rows.map(r => r.importancia), 1e-6)
   return (
     <div className="card ctx-drivers">
@@ -94,25 +128,25 @@ function Drivers({ rows }: { rows: Any[] }) {
         const xs = pts.map(p => p[0]), ys = pts.map(p => p[1])
         const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys)
         const sx = (v: number) => 4 + ((v - x0) / Math.max(x1 - x0, 1e-9)) * 112, sy = (v: number) => 4 + (1 - (v - y0) / Math.max(y1 - y0, 1e-9)) * 40
-        const mx = xs.reduce((a, b) => a + b, 0) / Math.max(xs.length, 1), my = ys.reduce((a, b) => a + b, 0) / Math.max(ys.length, 1)
-        const vx = xs.reduce((a, b) => a + (b - mx) ** 2, 0), cv = xs.reduce((a, b, j) => a + (b - mx) * (ys[j] - my), 0)
-        const b1 = vx > 0 ? cv / vx : 0
-        const flat = Math.abs(r.direccion) < 0.2
-        const up = r.direccion > 0
+        const sh = shape(r, k, kn)
         return (
           <div key={r.variable} className="ctx-drv2" style={{ ['--i' as string]: i }}>
             <span className="ctx-rank">{i + 1}</span>
-            <div className="ctx-dn"><b>{VAR_ES[r.variable] || r.variable}</b>
+            <div className="ctx-dn">
+              <span className="ctx-dh"><b>{VAR_ES[r.variable] || r.variable}</b><em title={L('Cuánto mueve este factor su estilo en un partido típico', 'How much this factor moves his style in a typical match')}>{L('mueve', 'moves')} ±{amt(k, r.importancia)} {L('por partido', 'per match')}</em></span>
               <span className="ctx-dbar"><i style={{ width: `${(r.importancia / max) * 100}%` }} /></span>
+              <span className="ctx-dtxt">{sh.txt}</span>
             </div>
             <svg className="ctx-sc" viewBox="0 0 120 48" preserveAspectRatio="none" aria-hidden>
-              {pts.map((p, j) => <circle key={j} cx={sx(p[0])} cy={sy(p[1])} r={1.7} fill="var(--c-dt)" opacity={0.4} />)}
-              {vx > 0 && <line x1={sx(x0)} y1={sy(my + b1 * (x0 - mx))} x2={sx(x1)} y2={sy(my + b1 * (x1 - mx))} stroke="var(--ink)" strokeWidth={1.6} strokeLinecap="round" />}
+              {pts.map((p, j) => <circle key={j} cx={sx(p[0])} cy={sy(p[1])} r={1.7} fill="var(--c-dt)" opacity={0.45} />)}
+              <line x1={4} x2={116} y1={sy(0)} y2={sy(0)} stroke="var(--ink-3)" strokeDasharray="2 3" strokeWidth={0.8} />
             </svg>
-            <span className={`ctx-dir ${flat ? 'flat' : up ? 'up' : 'dn'}`}>{flat ? '↔' : up ? '↗' : '↘'}<small>{flat ? L('depende del caso', 'it depends') : up ? L('cuanto más, más sube', 'the more, the higher') : L('cuanto más, más baja', 'the more, the lower')}</small></span>
+            <span className={`ctx-dir ${sh.cls}`}>{sh.ico}</span>
           </div>
         )
       })}
+      <p className="note ctx-dnote">{L('Cada punto del mini gráfico es un partido: a la derecha, más del factor (rival más fuerte, más ventaja en el marcador…); arriba, el factor subió su estilo ese partido; la línea punteada es «no cambió nada». Sale de un modelo de árboles con valores SHAP, ya sin el efecto de sus jugadores.',
+        'Each dot is a match: right = more of the factor; up = it pushed his style up that match; dotted line = no change. From a tree model with SHAP values, net of his players.')}</p>
     </div>
   )
 }

@@ -104,7 +104,7 @@
 .ctx-leg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; } .ctx-leg i.neg { background: var(--div-neg); } .ctx-leg i.pos { background: var(--div-pos); }
 .ctx-leg-bar { width: 60px; height: 6px; border-radius: 4px; background: linear-gradient(90deg, var(--div-neg), var(--div-cen), var(--div-pos)); }
 .ctx-drivers { display: flex; flex-direction: column; gap: 4px; }
-.ctx-drv2 { display: grid; grid-template-columns: 24px minmax(120px, 1.3fr) 120px minmax(120px, 170px); gap: 14px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--rule); animation: ctx-in .45s both; animation-delay: calc(var(--i, 0) * 50ms); }
+.ctx-drv2 { display: grid; grid-template-columns: 24px minmax(0, 1fr) 120px 34px; gap: 14px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--rule); animation: ctx-in .45s both; animation-delay: calc(var(--i, 0) * 50ms); }
 .ctx-drv2:last-child { border-bottom: 0; }
 .ctx-rank { font-family: var(--display); font-size: 22px; color: var(--ink-3); text-align: center; }
 .ctx-dn { display: flex; flex-direction: column; gap: 6px; } .ctx-dn b { font-size: 14px; }
@@ -113,3 +113,7 @@
 .ctx-dir { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 800; } .ctx-dir small { font-size: 12px; font-weight: 500; color: var(--ink-2); line-height: 1.15; }
 .ctx-dir.up { color: color-mix(in oklab, var(--div-pos) 74%, var(--ink)); } .ctx-dir.dn { color: color-mix(in oklab, var(--div-neg) 78%, var(--ink)); } .ctx-dir.flat { color: var(--ink-3); }
 @media (max-width: 620px) { .ctx-drv2 { grid-template-columns: 22px minmax(0, 1fr) 92px; } .ctx-drv2 .ctx-dir { grid-column: 2 / -1; } .ctx-sc { width: 92px; } .ctx-hero-n { font-size: 36px; } }
+.ctx-dh { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.ctx-dh em { font-style: normal; font: 700 12.5px var(--mono); color: var(--ink-2); }
+.ctx-dtxt { font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
+.ctx-dnote { margin: 12px 4px 4px; }
