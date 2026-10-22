@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { asset, dataUrl, fmt, getJSON, shortName, type Any } from './lib'
+import { asset, attRows, dataUrl, fmt, getJSON, shortName, type Any } from './lib'
 import { MODES, modeTitle, type Mode, type TabKey } from './modes'
 import { similares } from './Compare'
 import './hub.css'
@@ -32,7 +32,7 @@ function ArtPhoto({ art, media }: { art: Any; media: Any }) {
 
 function ArtPrism({ art }: { art: Any }) {
   const comp: [string, string][] = [['coach', 'var(--c-dt)'], ['player', 'var(--c-plantilla)'], ['club', 'var(--c-club)'], ['opp', 'var(--c-rival)'], ['ctx', 'var(--c-ctx)']]
-  const rows = [...(art.atribucion ?? [])].sort((a: Any, b: Any) => Math.abs(b.observado) - Math.abs(a.observado)).slice(0, 14)
+  const rows = [...attRows(art)].sort((a: Any, b: Any) => Math.abs(b.observado) - Math.abs(a.observado)).slice(0, 14)
   return (
     <svg viewBox="0 0 200 280" preserveAspectRatio="xMaxYMid slice">
       {rows.map((r: Any, i: number) => {

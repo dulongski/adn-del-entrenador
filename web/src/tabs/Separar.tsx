@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react'
 import { Ico, iconFor } from '../icons'
-import { COMP, fmt, pct, real, realN, shortName, unitOf, type Any } from '../lib'
+import { attRows, COMP, fmt, pct, real, realN, shortName, unitOf, type Any } from '../lib'
 import { ClubName, HBar, How, Legend, PrismDetail, prismSentence, useTip } from '../charts'
 import { FAM_ORDER, type P } from './common'
 import { useDistData } from '../Dist'
@@ -19,7 +19,7 @@ import '../styles/resumen.css'
 
 export function DtVsPlantilla({ art, glob }: P) {
   const [fam, setFam] = useState('todas')
-  const rows = art.atribucion.filter((a: Any) => !a.kpi.startsWith('arq_'))
+  const rows = attRows(art).filter((a: Any) => !a.kpi.startsWith('arq_'))
   const byFam = FAM_ORDER.map(f => [f, rows.filter((r: Any) => glob.kpis[r.kpi].familia === f)] as [string, Any[]])
   const hu = Object.fromEntries(art.huella.map((h: Any) => [h.kpi, h]))
   const id = art.identificabilidad
@@ -59,14 +59,14 @@ export function DtVsPlantilla({ art, glob }: P) {
         <How>
           AKM model (Abowd, Kramarz and Margolis, 1999), the one Muehlheusser et al. (2018) use to separate the coach from the club in results, applied here to <i>style</i> and extended with the players on the pitch (RAPM-style ridge).
           Unit: a segment of ≥5 min with no substitutions and no change in the score. z = α<sub>coach</sub> + φ<sub>club</sub> + Σβ<sub>player</sub>·exposure + γ<sub>opponent·season</sub> + δ·context + ε,
-          with a ridge penalty per block (coach {glob.lambda.coach}, club {glob.lambda.club}, players {glob.lambda.player}). Values are in each stat's own unit (the model works in standard deviations across teams and converts back).
+          with a ridge penalty per block (coach {glob.lambda.coach}, club {glob.lambda.club}, players {glob.lambda.player}). Values are in each stat's own unit (the model works in standard deviations across teams and converts back). "What we see" is the plain difference of his matches minus the league; the model splits it stretch by stretch within each match, so the parts may not add up exactly.
           What separates a coach from his squad: the same players playing under other coaches, the coach moving clubs, and rotation within his spell.
         </How>
       ) : (
         <How>
           Modelo AKM (Abowd, Kramarz y Margolis, 1999), el que Muehlheusser et al. (2018) usan para separar al DT del club en resultados, aplicado aquí a <i>estilo</i> y ampliado con jugadores en cancha (ridge tipo RAPM).
           Unidad: segmento de ≥5 min sin cambios de jugadores ni de marcador. z = α<sub>DT</sub> + φ<sub>club</sub> + Σβ<sub>jugador</sub>·exposición + γ<sub>rival·temporada</sub> + δ·contexto + ε,
-          con penalización ridge por bloque (DT {glob.lambda.coach}, club {glob.lambda.club}, jugadores {glob.lambda.player}). Los valores están en la unidad de cada estadística (el modelo trabaja en desviaciones estándar entre equipos y luego regresa a la unidad real).
+          con penalización ridge por bloque (DT {glob.lambda.coach}, club {glob.lambda.club}, jugadores {glob.lambda.player}). Los valores están en la unidad de cada estadística (el modelo trabaja en desviaciones estándar entre equipos y luego regresa a la unidad real). «Lo que se ve» es la resta simple de sus partidos menos la liga; el modelo reparte la diferencia tramo por tramo de cada partido, por eso las partes pueden no sumar exacto.
           Lo que separa al DT de su plantilla es que los mismos jugadores jueguen con otros DTs, que el DT cambie de club y las rotaciones dentro de su etapa.
         </How>
       )}

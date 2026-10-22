@@ -60,6 +60,15 @@ export const real = (k: string | undefined | null, z: number | null | undefined)
   const d = sd >= 1.5 ? 1 : sd >= 0.15 ? 2 : 3   // decimales según la escala del indicador
   return `${v >= 0 ? '+' : '−'}${a.toLocaleString(LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d })}${unitOf(k!)}`
 }
+/** Reparto por indicador con «lo que se ve» = sus partidos − liga (la misma resta que se muestra al lado).
+ *  El modelo promedia por tramos de partido y da un número parecido pero no idéntico; las partes no cambian. */
+export const attRows = (art: Any): Any[] => {
+  const H = Object.fromEntries((art.huella ?? []).map((h: Any) => [h.kpi, h]))
+  return (art.atribucion ?? []).map((a: Any) => {
+    const h = H[a.kpi], sd = KP[a.kpi]?.sd
+    return h?.crudo != null && h?.liga != null && sd ? { ...a, observado: (h.crudo - h.liga) / sd } : a
+  })
+}
 /** Igual que real() pero sin la unidad, para celdas chicas. */
 export const realN = (k: string | undefined | null, z: number | null | undefined) => {
   const s = real(k, z), u = k ? unitOf(k) : ''

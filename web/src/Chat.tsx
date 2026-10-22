@@ -458,9 +458,12 @@ function localAnswer(q: string): Msg {
   const cards: Card[] = []
   const m: Msg = { role: 'assistant', text: '', cards, local: true }
   const refresh = () => window.dispatchEvent(new Event('coachdna:chat-refresh'))
-  const STOP = new Set(['quien', 'tiene', 'cual', 'cuanto', 'como', 'contra', 'mejor', 'which', 'what', 'coach', 'entrenador', 'partido', 'partidos', 'match', 'matches', 'with', 'para', 'about', 'genera', 'parecen', 'america'])
+  const STOP = new Set(['quien', 'tiene', 'cual', 'cuanto', 'como', 'contra', 'mejor', 'which', 'what', 'coach', 'entrenador', 'partido', 'partidos', 'match', 'matches', 'with', 'para', 'about', 'genera', 'parecen', 'america', 'bueno', 'buena', 'buenos', 'malo', 'mala', 'juega', 'juegan', 'gana', 'ganar', 'liga', 'mexico'])
   const nameWords = t.split(/[^a-z0-9ñ]+/).filter(w => w.length >= 4 && !STOP.has(w))
-  const coaches = DTS.filter(d => nameWords.some(w => norm(`${d.nombre} ${dtName(d.id)}`).split(/\s+/).includes(w))).slice(0, 2)
+  // un nombre pegado a otro con mayúscula que no es del DT («Henry Martín») es de otra persona, no de Martín Varini
+  const raw = q.split(/[^\p{L}0-9]+/u).filter(Boolean)
+  const capNext = (w: string, nm: string[]) => raw.some((x, i) => norm(x) === w && [raw[i - 1], raw[i + 1]].some(y => y && /^\p{Lu}/u.test(y) && y.length >= 3 && !nm.includes(norm(y)) && !STOP.has(norm(y)) && !Object.keys(media.clubes ?? {}).some(c => norm(c).split(/\s+/).includes(norm(y)))))
+  const coaches = DTS.filter(d => { const nm = norm(`${d.nombre} ${dtName(d.id)}`).split(/\s+/); return nameWords.some(w => nm.includes(w) && !capNext(w, nm)) }).slice(0, 2)
   const clubs = Object.keys(media.clubes ?? {}).filter(c => t.includes(norm(c)) || norm(c).split(/\s+/).some(w => w.length >= 5 && t.split(/[^a-z0-9ñ]+/).includes(w)))
   const syn = SYN.find(([re]) => re.test(t))
   const words = t.split(/\W+/).filter(w => w.length > 3)
@@ -482,6 +485,118 @@ function localAnswer(q: string): Msg {
     go(a.id, 'vs'); cards.push({ t: 'go', coach: a.id, view: 'vs' })
     m.text = pre + L(`Te llevo al cara a cara de ${dtName(a.id)} y ${dtName(b.id)}: ahí están sus rasgos en común y en qué difieren.`, `Taking you to ${dtName(a.id)} vs ${dtName(b.id)}.`)
     return m
+  }
+  // saludo / ayuda
+  if (/^(hola|hey|buenas|que tal|que onda)\b|que puedes|que sabes|ayuda|help|que haces/.test(t) && !coaches.length && !clubs.length) {
+    m.text = pre + L('Puedo buscarte: el ranking de DTs en cualquier indicador («¿quién presiona más alto?»), el dato de un DT («xG de Almada»), récords («¿quién es el DT más ganador?»), un club contra otro («Tigres contra Monterrey»), el próximo partido de un club, y llevarte a la vista de un DT: su estilo, alineación, balón parado, cómo jugarle, fichajes o simulaciones.',
+      'I can rank coaches on any indicator, give a coach\'s number, records, club vs club, next fixtures, and take you to any coach view.')
+    return m
+  }
+  // pronósticos: explicamos, no predecimos; el simulador sí juega el torneo
+  if (/campeon|quien va a ganar|quien gana la liga|ganara|prediccion|pronostic|apuesta|quien sube|descien/.test(t) && !kHit) {
+    const id = coaches[0]?.id ?? DTS.find(d => media.dts?.[d.id]?.vigente && dtClub(d.id) === (clubs[0] ?? 'América'))?.id ?? null
+    if (id != null) { go(id, 'liga'); cards.push({ t: 'go', coach: id, view: 'liga' }) }
+    m.text = pre + L('Coach DNA explica cómo juega cada DT, no pronostica. Pero el Simulador de liga juega el resto del torneo miles de veces con el calendario real y te dice qué tan seguido cada club llega a liguilla, a la final o sale campeón. Te llevo ahí.',
+      'Coach DNA explains, it does not predict; the league simulator plays the rest of the season thousands of times. Taking you there.')
+    return m
+  }
+  // método / cómo se calcula
+  if (/metodo|como se calcula|como lo calculan|como funciona|modelo|bayes|akm|rapm|ridge|confiable|validaci/.test(t) && !kHit) {
+    go(coaches[0]?.id ?? null, 'metodo'); cards.push({ t: 'go', coach: coaches[0]?.id ?? null, view: 'metodo' })
+    m.text = pre + L('En corto: cada tramo de partido se explica como la suma del DT, los 11 jugadores en la cancha, el club, el rival y el contexto (marcador, minuto, localía). Como los DTs cambian de club y los jugadores de DT, el modelo puede separar cada parte; una capa bayesiana evita inventarle estilo a quien tiene pocos datos. Te llevo al Método.',
+      'Each match stretch is explained as coach + players on the pitch + club + opponent + context; movers identify each part, and a Bayesian prior shrinks thin samples. Taking you to Method.')
+    return m
+  }
+  // qué es un indicador
+  if (kHit && /que es|que significa|que mide|define|definicion|explica/.test(t) && !coaches.length) {
+    const d = glob.kpis[kHit]?.descripcion
+    m.text = pre + L(`«${kl(kHit)}»: ${d ?? 'uno de los 34 indicadores de estilo.'} La media de la liga es ${fmt(glob.kpis[kHit]?.media, 1)}.`, `"${kl(kHit)}": ${d ?? ''}`)
+    return m
+  }
+  // próximo partido
+  if (/proxim|siguiente partido|cuando juega|calendario|le toca|juega contra quien/.test(t) && (clubs.length || coaches.length)) {
+    const club = clubs[0] ?? dtClub(coaches[0].id)
+    m.text = pre + L(`Buscando los próximos partidos de ${club}…`, `Looking up ${club}'s next matches…`)
+    getJSON(dataUrl('calendario.json')).then((cal: Any) => {
+      const mine = (cal as { r: number; h: string; a: string }[]).filter(x => x.h === club || x.a === club).slice(0, 3)
+      if (!mine.length) { m.text = pre + L(`${club} no tiene partidos pendientes en el calendario que tengo.`, `${club} has no pending matches.`); refresh(); return }
+      cards.unshift({ t: 'list', title: L(`Próximos partidos · ${club}`, `Next matches · ${club}`), sub: L('calendario', 'schedule'), rows: mine.map(x => { const riv = x.h === club ? x.a : x.h; return { club: riv, main: x.h === club ? L('local', 'home') : L('visita', 'away'), note: `${L('Jornada', 'Matchday')} ${x.r}`, w: 0 } }) })
+      const x = mine[0], riv = x.h === club ? x.a : x.h
+      m.text = pre + L(`El próximo de ${club} es contra ${riv} (jornada ${x.r}, ${x.h === club ? 'de local' : 'de visita'}). Para prepararlo, abre «Cara a cara → Plan contra un rival».`, `${club} next plays ${riv} (matchday ${x.r}).`)
+      refresh()
+    })
+    return m
+  }
+  // récords: mejor / más ganador / más goles … (sin indicador de estilo)
+  const recQ = /mejor|peor|ganador|gana mas|mas gana|puntos|record|victorias|exitoso|resultados|le ha ido|le fue/.test(t)
+  if (recQ && !(syn && !/mejor|peor/.test(t)) && clubs.length < 2) {
+    const metric = /gol.*(recib|contra)|defensa|menos goles/.test(t) ? 'ga' : /gol/.test(t) ? 'gf' : /xg/.test(t) ? 'xgd' : /victoria|gana/.test(t) ? 'win_pct' : 'ppg'
+    const M = METRICS[metric], low = LOWER_BETTER.has(metric) !== /peor/.test(t)
+    m.text = pre + L('Revisando los resultados…', 'Checking results…')
+    partidosP().then(P => {
+      const R = recordsOf(matchRows(P), 'coach')
+      if (coaches.length) {
+        const id = coaches[0].id, r = R.get(id)
+        if (!r) return
+        m.text = pre + L(`${dtName(id)} desde 2021: ${r.n} partidos, ${r.w} ganados, ${r.d} empatados y ${r.l} perdidos (${fmt(pts(r) / r.n, 2)} puntos por partido), ${r.gf} goles a favor y ${r.gc} en contra, xG ${fmt(r.xg / r.n, 2)} a favor y ${fmt(r.xga / r.n, 2)} en contra por partido.`,
+          `${dtName(id)} since 2021: ${r.n} matches, ${r.w}-${r.d}-${r.l}, ${fmt(pts(r) / r.n, 2)} pts/match.`)
+        cards.push({ t: 'go', coach: id, view: 'sim' })
+      } else {
+        const top = [...R.entries()].filter(([, v]) => v.n >= 30).map(([k, v]) => ({ k: Number(k), v, x: M.f(v) as number })).sort((a, b) => (low ? a.x - b.x : b.x - a.x)).slice(0, 5)
+        const mx = Math.max(...top.map(o => Math.abs(o.x)))
+        cards.unshift({ t: 'list', title: L(M.es, M.en), sub: L('mín. 30 partidos desde 2021', 'min. 30 matches since 2021'), rows: top.map(o => ({ id: o.k, club: dtClub(o.k), main: M.fmt(o.x), note: `${o.v.n} ${L('partidos', 'matches')} · ${o.v.w}-${o.v.d}-${o.v.l}`, w: Math.abs(o.x) / mx })) })
+        m.text = pre + L(`Por resultados («${M.es.toLowerCase()}», con al menos 30 partidos desde 2021) el primero es ${dtName(top[0].k)}, seguido de ${dtName(top[1].k)} y ${dtName(top[2].k)}. «Mejor» por estilo depende de qué buscas: pregúntame por un indicador, como «¿quién presiona más?».`,
+          `By results (${M.en}, min. 30 matches) the top coach is ${dtName(top[0].k)}, then ${dtName(top[1].k)} and ${dtName(top[2].k)}.`)
+      }
+      refresh()
+    })
+    return m
+  }
+  // un club solo → su DT actual
+  if (clubs.length === 1 && !coaches.length && !kHit) {
+    const club = clubs[0]
+    const cur = DTS.find(d => media.dts?.[d.id]?.vigente && dtClub(d.id) === club) ?? DTS.filter(d => d.clubes.some((c: Any) => c.club === club)).sort((a, b) => (a.clubes.at(-1).hasta < b.clubes.at(-1).hasta ? 1 : -1))[0]
+    if (cur) {
+      m.text = pre + L(`El DT ${media.dts?.[cur.id]?.vigente ? 'actual' : 'más reciente'} de ${club} en los datos es ${dtName(cur.id)}. Abre su ADN para ver cómo juega:`, `${club}'s coach is ${dtName(cur.id)}.`)
+      coaches.push(cur)
+    }
+  }
+  // un DT + un tema → su vista
+  if (coaches.length === 1) {
+    const id = coaches[0].id
+    const V: [RegExp, string, string][] = [
+      [/fich|refuerz|contrat|a su medida|le encaj|deberia traer/, 'fichajes', L('los jugadores de la liga que mejor encajan con su estilo', 'players who fit his style')],
+      [/balon parado|corner|tiro libre|tiros libres|saque|pelota parada|abp/, /tiro libre|tiros libres/.test(t) ? 'tl' : 'bp', L('su balón parado', 'his set pieces')],
+      [/jugarle|ganarle|le gano|vencer|enfrentar|plan|debilidad|punto debil|explotar/, 'plan', L('cómo jugarle: sus claves y debilidades', 'how to play him')],
+      [/simul|liguilla|campeon|rejug|merec|suerte|xpts/, /liguilla|campeon/.test(t) ? 'liga' : 'sim', L('el laboratorio de simulación', 'the simulation lab')],
+      [/ganando|perdiendo|empat|marcador|minuto|local|visita|rival fuerte|reaccion|contexto/, 'contexto', L('cómo cambia según el marcador, el minuto, la localía y el rival', 'how he changes with the game state')],
+      [/cambio|sustitu|banca|rota|rotacion|jugadores|plantilla actual|usa/, 'jugadores', L('cómo usa a sus jugadores', 'how he uses his players')],
+      [/de quien|suyo|plantilla|separ|merito/, 'dt', L('cuánto del estilo es suyo y cuánto de su plantilla', 'how much is his vs his squad')],
+      [/parec|similar|igual a/, 'vs', L('a quién se parece', 'who he resembles')],
+      [/otro club|si dirigiera|si llegara|whatif/, 'whatif', L('qué pasaría en otro club', 'what if he coached elsewhere')],
+      [/tiempo|evoluci|cambiado|torneo a torneo|consisten/, 'tiempo', L('cómo ha evolucionado torneo a torneo', 'how he evolved')],
+    ]
+    const hit = V.find(([re]) => re.test(t))
+    if (hit && !kHit) {
+      if (hit[1] === 'jugadores') chatBus.jug = { club: dtClub(id) }
+      go(id, hit[1]); cards.push({ t: 'go', coach: id, view: hit[1] })
+      m.text = pre + L(`Te llevo a ${hit[2]} de ${dtName(id)}.`, `Taking you to ${hit[2]} for ${dtName(id)}.`)
+      return m
+    }
+    if (!kHit) {
+      // cómo juega: sus ideas, del resumen
+      m.text = pre + L(`Buscando el ADN de ${dtName(id)}…`, `Looking up ${dtName(id)}'s DNA…`)
+      cards.push({ t: 'go', coach: id, view: 'resumen' })
+      getJSON(dataUrl(`dt_${id}.json`)).then((A: Any) => {
+        const N = LANG === 'en' && A.narrativa_en ? A.narrativa_en : A.narrativa
+        const P = (N?.principios ?? []) as Any[]
+        m.text = pre + (P.length
+          ? L(`Cómo juega ${dtName(id)}, ya sin lo que ponen sus jugadores: `, `How ${dtName(id)} plays, net of his players: `) + P.map(p => `${p.titulo.toLowerCase()} (${p.descripcion.replace(/\.$/, '').toLowerCase()})`).join('; ') + '.'
+          : L(`${dtName(id)} no tiene rasgos que se separen con claridad de la liga: juega parecido al DT promedio.`, `${dtName(id)} has no trait clearly apart from the league.`))
+        refresh()
+      })
+      return m
+    }
   }
   // 3) cómo le fue a un club contra otro → sus partidos
   if (clubs.length >= 2 && !coaches.length) {
@@ -525,6 +640,10 @@ function localAnswer(q: string): Msg {
   if (coaches.length) {
     coaches.forEach(d => cards.push({ t: 'go', coach: d.id, view: 'resumen' }))
     m.text = pre + L('Encontré a este DT; ábrelo para ver su ADN:', 'Found this coach; open him to see his DNA:')
+    return m
+  }
+  if (raw.some((x, i) => i > 0 && /^\p{Lu}/u.test(x) && x.length >= 3)) {
+    m.text = pre + L('Golito habla de entrenadores. A los jugadores el modelo los mide dentro del estilo de cada DT: búscalos en «Jugadores» de su entrenador (por ejemplo «¿qué jugadores le encajan a Almada?»).', 'Golito talks about coaches; players are measured within each coach\'s style, see his Players tab.')
     return m
   }
   m.text = pre + L('No encontré un DT, un club o un indicador con esas palabras. Prueba con «¿quién presiona más?» o «alineación de Almada».', 'I found no coach, club or indicator with those words.')

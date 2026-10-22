@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import { fmt, real, type Any } from '../lib'
+import { attRows, fmt, real, type Any } from '../lib'
 import { ClubLogo, PrismDetail, prismSentence } from '../charts'
 import { useDistData } from '../Dist'
 import { MODES, type TabKey } from '../modes'
@@ -28,7 +28,7 @@ const tabLabel = (t: TabKey) => MODES.flatMap(m => m.subs).find(([k]) => k === t
 export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) {
   const N = (LANG === 'en' && art.narrativa_en) || art.narrativa
   const dd = useDistData()
-  const att = Object.fromEntries(art.atribucion.map((a: Any) => [a.kpi, a]))
+  const att = Object.fromEntries(attRows(art).map((a: Any) => [a.kpi, a]))
   const tr = art.transferencia as Any[]
   const best = tr.length ? tr.reduce((a, b) => (a.rank_ajustado <= b.rank_ajustado ? a : b)) : null
   const S = art.simulacion
