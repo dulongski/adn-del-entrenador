@@ -11,7 +11,12 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from pipeline.framework import CFG
 from pipeline.models import decomposition as dec
+
+C = CFG()
+_E = C["contexto"]["minute_buckets"]
+MIN_LABELS = [f"{a}-{b}'" for a, b in zip(_E[:-2], _E[1:-1])] + [f"{_E[-2]}'+"]
 
 KEY_KPIS = ["posesion", "verticalidad", "ppda", "altura_presion", "linea_360", "contraataque",
             "xg_90", "xg_contra_90", "pase_largo", "field_tilt"]
@@ -36,7 +41,9 @@ def context_bins(seg: pd.DataFrame) -> pd.DataFrame:
     gd = seg.goal_diff
     b["marcador"] = np.select([gd < -0.5, gd > 0.5], ["Perdiendo", "Ganando"], "Empatando")
     tm = seg.w_tmid / 60
-    b["minuto"] = pd.cut(tm, [-1, 30, 60, 75, 200], labels=["0-30'", "30-60'", "60-75'", "75'+"]).astype(str)
+    # grupos de 15 minutos del marco (config/framework.yaml → contexto.minute_buckets)
+    edges = [-1] + list(C["contexto"]["minute_buckets"][1:])
+    b["minuto"] = pd.cut(tm, edges, labels=MIN_LABELS).astype(str)
     b["localia"] = np.where(seg.home == 1, "Local", "Visitante")
     osd = pd.Series(opp_strength(seg), index=seg.index).astype(float)
     q = osd.quantile([1 / 3, 2 / 3]).values
@@ -62,7 +69,7 @@ def reaction_curves(seg: pd.DataFrame, F: dec.Fit, coach_id: int, kpis=KEY_KPIS)
                 c, cw, cn = wmean(me)
                 l, lw, ln = wmean(~me)
                 rows.append({"nivel": lvl, "dt": c, "liga": l, "n_dt": cn})
-            order = {"marcador": ["Perdiendo", "Empatando", "Ganando"], "minuto": ["0-30'", "30-60'", "60-75'", "75'+"],
+            order = {"marcador": ["Perdiendo", "Empatando", "Ganando"], "minuto": MIN_LABELS,
                      "localia": ["Local", "Visitante"], "rival": ["Rival débil", "Rival medio", "Rival fuerte"]}[dim]
             rows.sort(key=lambda r: order.index(r["nivel"]) if r["nivel"] in order else 99)
             out[dim][k] = rows

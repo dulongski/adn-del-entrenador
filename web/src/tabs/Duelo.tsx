@@ -93,7 +93,8 @@ const REC: Record<string, [[string, string], [string, string]]> = {
 }
 const SITS: [string, string, string, string, string][] = [
   ['marcador', 'Perdiendo', 'Cuando {X} va perdiendo', 'When {X} is losing', L('Perdiendo', 'Losing')], ['marcador', 'Empatando', 'Con el empate', 'When level', L('Empate', 'Level')], ['marcador', 'Ganando', 'Cuando {X} va ganando', 'When {X} is winning', L('Ganando', 'Winning')],
-  ['minuto', "0-30'", "Del 0' al 30'", "0'–30'", "0-30'"], ['minuto', "30-60'", "Del 30' al 60'", "30'–60'", "30-60'"], ['minuto', "60-75'", "Del 60' al 75'", "60'–75'", "60-75'"], ['minuto', "75'+", "Del 75' al final", "75' to the end", "75'+"],
+  ...([[0, 15], [15, 30], [30, 45], [45, 60], [60, 75]] as const).map(([a, b]): [string, string, string, string, string] => ['minuto', `${a}-${b}'`, `Del ${a}' al ${b}'`, `${a}'–${b}'`, `${a}-${b}'`]),
+  ['minuto', "75'+", "Del 75' al final", "75' to the end", "75'+"],
 ]
 const FROWS: [string, string, string][] = [['con', 'Con el balón', 'With the ball'], ['sin', 'Sin el balón', 'Without the ball'], ['trans', 'Transiciones', 'Transitions'], ['peligro', 'Peligro', 'Danger']]
 
@@ -282,7 +283,7 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
           <span style={{ marginLeft: 'auto' }}><div className="seg sm" role="group"><button aria-pressed={quien === 'el'} onClick={() => setQuien('el')}>{sB}</button><button aria-pressed={quien === 'tu'} onClick={() => setQuien('tu')}>{sA}</button></div></span></div>
         {Object.values(R.cell).some(c => Object.keys(c).length) && <div className="ti-heat">
           <table className="ti-tbl du-tbl">
-            <thead><tr><th className="l" />{SITS.map(([dim, lvl, , , sh]) => <th key={dim + lvl} className={lvl === "0-30'" ? 'sep' : ''}>{sh}</th>)}</tr></thead>
+            <thead><tr><th className="l" />{SITS.map(([dim, lvl, , , sh]) => <th key={dim + lvl} className={lvl === "0-15'" ? 'sep' : ''}>{sh}</th>)}</tr></thead>
             <tbody>{FROWS.map(([f, es, en]) => (
               <tr key={f}><td className="l">{L(es, en)}</td>
                 {SITS.map(([dim, lvl]) => {
@@ -290,7 +291,7 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
                   const best = xs[0]
                   const v = best ? (best.k === 'ppda' ? -best.d : best.d) : null
                   const good = best ? (best.k === 'xg_contra_90' ? -1 : 1) * (v ?? 0) : 0
-                  return <td key={dim + lvl} className={lvl === "0-30'" ? 'sep' : ''} style={{ background: v == null ? 'transparent' : `color-mix(in oklab, ${good >= 0 ? 'var(--div-pos)' : 'var(--div-neg)'} ${Math.round(8 + Math.min(1, Math.abs(v) / 1.2) * 52)}%, var(--surface))` }} title={best ? `${kName(best.k, glob)} ${sg(best.d)}σ` : ''}>{best ? <><small>{best.k === 'ppda' ? L('Presión', 'Pressing') : kName(best.k, glob)}</small>{v! >= 0 ? '▲' : '▼'}{fmt(Math.abs(v!), 1)}</> : '—'}</td>
+                  return <td key={dim + lvl} className={lvl === "0-15'" ? 'sep' : ''} style={{ background: v == null ? 'transparent' : `color-mix(in oklab, ${good >= 0 ? 'var(--div-pos)' : 'var(--div-neg)'} ${Math.round(8 + Math.min(1, Math.abs(v) / 1.2) * 52)}%, var(--surface))` }} title={best ? `${kName(best.k, glob)} ${sg(best.d)}σ` : ''}>{best ? <><small>{best.k === 'ppda' ? L('Presión', 'Pressing') : kName(best.k, glob)}</small>{v! >= 0 ? '▲' : '▼'}{fmt(Math.abs(v!), 1)}</> : '—'}</td>
                 })}
               </tr>))}</tbody>
           </table>

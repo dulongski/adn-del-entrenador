@@ -602,11 +602,11 @@ DIM_A = {"marcador": "al marcador", "minuto": "al minuto de juego", "localia": "
 DIM_A_EN = {"marcador": "to the scoreline", "minuto": "to the game clock", "localia": "to home and away",
             "rival": "to the opponent's strength"}
 NIVEL_ES = {"Perdiendo": "cuando pierde", "Empatando": "cuando empata", "Ganando": "cuando gana",
-            "0-30'": "en el 0-30'", "30-60'": "en el 30-60'", "60-75'": "en el 60-75'",
+            "0-15'": "en el 0-15'", "15-30'": "en el 15-30'", "30-45'": "en el 30-45'", "45-60'": "en el 45-60'", "60-75'": "en el 60-75'",
             "75'+": "desde el 75'", "Local": "de local", "Visitante": "de visitante",
             "Rival débil": "ante rivales débiles", "Rival medio": "ante rivales medios", "Rival fuerte": "ante rivales fuertes"}
 NIVEL_EN = {"Perdiendo": "when losing", "Empatando": "when level", "Ganando": "when winning",
-            "0-30'": "in minutes 0-30", "30-60'": "in minutes 30-60", "60-75'": "in minutes 60-75",
+            "0-15'": "in minutes 0-15", "15-30'": "in minutes 15-30", "30-45'": "in minutes 30-45", "45-60'": "in minutes 45-60", "60-75'": "in minutes 60-75",
             "75'+": "from the 75th minute", "Local": "at home", "Visitante": "away",
             "Rival débil": "against weaker sides", "Rival medio": "against mid-table sides", "Rival fuerte": "against stronger sides"}
 # Rasgos que dicen casi lo mismo: en una idea solo entra uno por grupo
