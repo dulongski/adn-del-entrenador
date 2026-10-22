@@ -1,68 +1,71 @@
-# Coach DNA · guion del video (≈ 4 min 40 s)
+# Coach DNA · guion del video, toma 2 (≈ 5 min 45 s)
 
-Léelo con tu voz y tu ritmo; no hace falta que sea palabra por palabra. Lo importante es **decir las frases que abren cada escena** (las de **negritas**): con ellas sincronizo la app con tu voz.
+Es tu toma 1, con tus palabras, pero sin rodeos: cada escena dice una idea y pasa a la siguiente. Léelo en voz alta a buen ritmo (≈ 150 palabras por minuto). Las frases en **negritas** abren cada escena: con ellas corto la pantalla y la sincronizo con tu voz.
 
-Cómo grabar: una sola toma o varias, en `.m4a` o `.wav`, en un cuarto sin eco. Deja un segundo de silencio entre escenas. Si quieres salir en cámara, graba también el video de tu cara (lo pongo en una esquina en la intro y el cierre).
+La columna «Pantalla» dice qué tramo de tu grabación de pantalla del 21 oct (20.25.07) uso; no hace falta volver a grabarla.
 
 ---
 
-### 1 · Intro (0:00, 25 s) · En pantalla: logo de Coach DNA y la portada
+### 1 · Intro (0:00, 25 s) · Pantalla: tu cámara
 
-**Hola, soy Sebastian Dulong y voy a presentar Coach DNA, mi solución para el Hackathon del Club América.**
-Quería construir una herramienta que respondiera cómo juega un entrenador, cuáles son sus ideas, qué tan consistente es según el rival, cómo ajusta de acuerdo con el marcador y el minuto, cómo usa a sus jugadores, qué hace a balón parado. Todo con métricas propias, un marco claro y simulación. Para esto, es importante entender ¿qué parte de ese estilo es del entrenador y qué parte es de sus jugadores?
+**Hola, soy Sebastian Dulong y esta es Coach DNA, mi solución para el hackathon de ISAC con el Club América.**
+Quería una herramienta que respondiera cómo juega un entrenador: su estilo, sus ideas, qué tan consistente es, cómo usa a sus jugadores, cómo cambia según el marcador o el minuto y qué hace a balón parado. Y para eso hay una pregunta antes que todas: ¿qué parte de ese estilo es del entrenador y qué parte es de sus jugadores?
 
-### 2 · Método (0:25, 45 s) · En pantalla: Método, el diagrama del flujo y la gráfica de cuánto pesa cada pieza
+### 2 · Método (0:25, 40 s) · Pantalla: 0:00–0:40 (Método y el diagrama)
 
 **Para separarlo me basé en un método de economía laboral.**
-Abowd, Kramarz y Margolis lo publicaron en Econometrica en 1999 para separar lo que gana un trabajador por mérito propio de lo que gana por la empresa en la que está, siguiendo a la gente que cambia de trabajo. En 2018, Muehlheusser y sus coautores lo usaron para medir a los entrenadores de la Bundesliga por sus resultados. Yo lo apliqué al estilo de juego: los DTs que cambian de club y los jugadores que pasan por varios DTs permiten separar a uno del otro. A eso le sumé a los jugadores que están en la cancha en cada momento, como se hace en el básquetbol para medir a cada jugador. Y lo estimé con estadística bayesiana: si los datos no alcanzan, al DT no se le inventa un estilo.
-También, en esta gráfica podemos ver el resultado para toda la liga: el DT explica cerca del 14% de las diferencias de estilo. Decide cómo se juega; cuánto peligro sale de ahí depende más de los jugadores.
+Se publicó en 1999 para separar lo que gana un trabajador por mérito propio de lo que gana por la empresa en la que está. En 2018 se usó para medir a los entrenadores de la Bundesliga por sus resultados. Yo lo apliqué al estilo de juego: los DTs que cambian de club y los jugadores que pasan por varios DTs nos permiten separar a uno del otro. Le sumé a los jugadores que están en la cancha en cada momento, como el plus-minus del básquetbol, y una capa bayesiana: si los datos no alcanzan, al DT no se le inventa un estilo.
 
-### 3 · Mapa de estilos (1:10, 15 s) · En pantalla: la portada, zoom suave
+### 3 · Mapa de estilos (1:05, 20 s) · Pantalla: 1:20–1:50 (mapa, familias y 3D)
 
-**Esta es la portada: la liga según el estilo propio de cada DT, ya sin su plantilla.**
-En este mapa, cada punto es un entrenador y los que están cerca tienen ideas parecidas. Desde aquí se abre cualquier DT.
+**Esta es la liga según el estilo propio de cada DT, ya sin su plantilla.**
+Cada punto es un entrenador; los que están cerca juegan parecido, y se forman familias. Lo podemos ver en 2D, en 3D o comparando las variables que queramos.
 
-### 4 · Resumen de Almada (1:25, 20 s) · En pantalla: buscar «Almada», abrir su resumen
+### 4 · Su ADN (1:25, 30 s) · Pantalla: 2:00–2:50 (perfil y resumen)
 
-**Abro a Guillermo Almada.**
-En esta sección está su resumen: las ideas que más lo distinguen, cada una con su número contra la liga y su lugar entre todos los DTs. En el caso de Almada son tres: presión intensa, roba en campo rival y su portero juega largo.
+**Para el ejemplo abro a Guillermo Almada.**
+El resumen dice en qué se distingue del resto de la liga: presión muy intensa, roba mucho en campo rival, su portero saca largo, progresa más conduciendo que pasando, defiende adelantado y domina el último tercio. Cada idea aparece porque destaca de forma estadísticamente significativa frente a los otros DTs, ya separada de su plantilla.
 
-### 5 · ¿DT o plantilla? (1:45, 25 s) · En pantalla: «DT vs plantilla» y su nota «¿Este estilo viaja de club en club?»
+### 5 · ¿DT o plantilla? (1:55, 25 s) · Pantalla: 3:00–3:40
 
 **Aquí respondemos si el estilo es suyo o de sus jugadores.**
-En esta sección cada rasgo se reparte entre el DT, la plantilla, el club, el rival y el contexto. Por ejemplo, de su salida larga el 37% es de Almada; el resto lo explican el club, sus porteros y los partidos que le tocaron. También podemos ver si su estilo viaja con él: escondimos sus partidos en América y el modelo lo reconoce primero entre 70 entrenadores.
+Cada estadística se reparte entre el DT, sus jugadores, el club, el rival y el contexto, contra lo que se observa. Por ejemplo, de su salida larga el 37% es de Almada; el resto lo explican el club, sus porteros y los partidos que le tocaron.
 
-### 6 · Cómo juega (2:10, 30 s) · En pantalla: «Estilo y zonas», «Según el partido», «A lo largo del tiempo»
+### 6 · Cómo juega (2:20, 35 s) · Pantalla: 3:40–4:40
 
-**Esta sección explica cómo juega, con y sin balón.**
-Primero están sus zonas: dónde progresa, dónde presiona y dónde recupera, siempre comparado con la liga. Luego, según el partido, vemos cómo cambia con el marcador, el minuto, la localía y el rival: cuando va ganando, Almada sigue presionando mucho más que la liga, y del minuto 60 al 75 contragolpea más. Y a lo largo del tiempo podemos ver que es de los DTs más consistentes: cada torneo se parece al resto de su carrera.
+**En «Cómo juega» vemos cómo arma y cómo termina sus jugadas.**
+Almada termina con remates de lejos mucho más que la liga. Están sus formaciones con y sin balón, dónde presiona, dónde recupera y cómo progresa frente a la liga. Y según el partido: cómo cambia con el marcador, el minuto, la localía y la fuerza del rival. Cuando va ganando, sigue presionando mucho más que la liga.
 
-### 7 · Jugadores (2:40, 20 s) · En pantalla: «Jugadores» y «Jugadores a su medida»
+### 7 · Jugadores (2:55, 25 s) · Pantalla: 4:40–5:15
 
-**En esta sección vemos cómo usa a sus jugadores.**
-Está su dibujo base, el 4-2-3-1, quiénes juegan en cada línea, cuánto rota, cuándo hace sus cambios y qué cambia cuando entran. También, como el modelo mide a cada jugador sin su entrenador, la app sugiere a quién fichar: los que más empujan su estilo.
+**En jugadores vemos cómo usa a su plantilla.**
+Su dibujo base es el 4-2-3-1: quién juega en cada línea, cuánto rota, en qué minuto hace sus cambios y de qué tipo. Y como el modelo mide a cada jugador sin su entrenador, sugiere fichajes a su medida y quién de su plantilla actual suma o va en contra de su estilo.
 
-### 8 · Balón parado (3:00, 20 s) · En pantalla: córners en 2D y 3D, saques de banda, «Cómo defiende»
+### 8 · Balón parado (3:20, 25 s) · Pantalla: 5:20–5:55
 
-**Aquí está todo el balón parado, a favor y en contra.**
-En esta sección hay córners en 2D y en 3D, tiros libres y saques de banda: a dónde los manda, cuánto peligro generan y quién los cobra. Y en defensa, con las fotos 360 medimos si marca al hombre o en zona: Almada es de los que más marcan al hombre en toda la liga.
+**El balón parado, a favor y en contra.**
+Con los datos 360 vemos cómo se paran sus jugadores en los córners, a dónde manda los centros y cuánto xG sale de cada zona, quién los cobra, y lo mismo para tiros libres, saques de banda y cómo defiende.
 
-### 9 · Laboratorio (3:20, 25 s) · En pantalla: «Rejugar partidos» y «Simulador de liga»
+### 9 · Laboratorio (3:45, 40 s) · Pantalla: 6:00–7:30
 
 **En el laboratorio usamos la simulación para explicar resultados.**
-En esta sección rejugamos cada partido 5,000 veces con el xG de cada jugada, para separar mérito de suerte: sus equipos sumaron 284 puntos y su juego merecía 270. También podemos llevarlo a otro club, o jugar lo que falta del Apertura y ver en qué posición media terminaría su equipo.
+Rejugamos cada partido con el xG de cada tiro: contra León el marcador real fue 5-3, pero el más probable era 2-2. Club por club comparamos sus puntos reales contra los que merecía, para saber si va más allá de lo que dice el xG. También lo podemos llevar a otro club, como el Atlante, y simular el resto del torneo moviendo su estilo, para ver qué tan seguido llega a liguilla, a la final o sale campeón.
 
-### 10 · Cara a cara (3:45, 30 s) · En pantalla: «1 vs 1», «Cómo jugarle», «Plan contra un rival»
+### 10 · Cara a cara (4:25, 40 s) · Pantalla: 7:40–9:05
 
-**Y lo más útil para un cuerpo técnico: el cara a cara.**
-En esta sección lo comparo con cualquier entrenador, veo cómo jugarle según la situación del partido y armo el plan contra su próximo rival. Para cada partido dice dónde puede ganar, qué tiene que cubrir, qué hacer en la cancha y qué mirar durante el juego, con los números que lo respaldan.
+**Y lo más accionable para un cuerpo técnico: el cara a cara.**
+Lo comparo con cualquier entrenador; el más parecido a Almada es Demichelis. Veo cómo jugarle según la situación del partido y armo el plan contra un rival. Por ejemplo, contra Hernán Crespo: Almada puede ganar presionando la salida corta, porque Crespo sale corto mucho más que la liga y Almada presiona muy alto. Cada recomendación trae los números que la respaldan y qué mirar durante el juego.
 
-### 11 · Golito e informe (4:15, 10 s) · En pantalla: abrir Golito con una pregunta; menú «Informe»
+### 11 · Golito (5:05, 20 s) · Pantalla: 9:20–10:30
 
-**Golito responde preguntas con los datos de la app.**
-Y cualquier sección sale como informe en PDF.
+**Golito es un asistente de IA que responde con los datos de la app.**
+Le pregunto qué DT tiene más el balón y responde Osorio, seguido de Anselmi y Larcamón. Si le pregunto la alineación más común de Almada en América, me lleva directo a la pestaña de jugadores.
 
-### 12 · Cierre (4:25, 15 s) · En pantalla: Método (pruebas) y la portada
+### 12 · Cierre (5:25, 20 s) · Pantalla: la portada (mapa)
 
-**Todo está probado.**
-Con datos simulados, escondiendo clubes enteros y siguiendo los cambios de club. Coach DNA te dice qué parte del estilo es del entrenador y qué hacer con eso. Gracias.
+**Coach DNA te dice cómo juega un entrenador, de una forma estadísticamente robusta.**
+Y no sólo eso: qué podemos hacer con eso, desglosado en cada parte del juego. Muchas gracias a ISAC y al Club América.
+
+---
+
+**Qué cambió frente a la toma 1:** quité las repeticiones («o sea», «bueno», «también podemos ver»), la segunda visita al Método, el «no nos sale nada» de qué cubrir contra Crespo y el final donde Golito tardaba. Corregí «roba en campo rival» (en la toma dijiste «el tercero va mucho en campo rival») y «dibujo base».

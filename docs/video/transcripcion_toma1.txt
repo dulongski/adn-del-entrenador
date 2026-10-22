@@ -1,0 +1,112 @@
+Hola, soy Sebastián Dulón y voy a presentar mi solución para el hackatón de Isaac con el Club América, Coach DNA.
+La idea detrás de mi solución viene de que quería construir una herramienta que respondiera cómo juega un entrenador,
+cuál es su estilo, cuáles son sus ideas, qué tan consistente es, cómo usa sus jugadores, cómo cambia dependiendo del contexto,
+del minuto, de si va ganando o si va perdiendo, qué hace a balón parado y demás.
+Para poder saber cuál es el estilo de un entrenador, una de las primeras preguntas que nos tenemos que hacer
+es qué parte de ese estilo es del entrenador y qué parte de ese estilo es de sus jugadores.
+Porque nosotros cuando vemos un partido realmente vemos todo junto, pero necesitamos un método estadístico
+un poco más complejo para poder hacer esta separación de qué es del entrenador, qué es del contexto,
+qué es los jugadores, qué es el club y demás cosas.
+Bueno, entonces vamos allá.
+Aquí, bueno, para poder separar todos estos efectos, me basé en un método de economía laboral.
+Es un paper que se publicó en 1999, primero para separar lo que gana un trabajador por mérito propio
+de lo que gana por la empresa en la que está.
+En 2018 este mismo método se utilizó para medir a los entrenadores de la Bundesliga por sus resultados,
+o sea, para saber qué de los resultados era de ellos y qué de los resultados era de los jugadores.
+Yo lo apliqué al estilo de juego, o sea, porque nosotros sabemos que los DTs que cambian de club
+y los jugadores que pasan por varios DTs nos permiten separar a un DT de un jugador.
+Y a eso le sumamos los jugadores que están en la cancha en cada momento, en cada minuto,
+cómo se hace en el básquetbol para medir a cada jugador, una especie de plus-minus, nada muy complejo ahí.
+Y le agregamos una capa bayesiana, lo que implica que si los datos no alcanzan para estimar el estilo,
+no le estamos inventando un estilo.
+Es decir, no estamos presuponiendo nada, sino estamos propiamente usando solamente lo que observamos del entrenador.
+Y se puede ver un poco aquí en esta gráfica que usamos todas estas cosas para poder estimar un estilo verdadero
+en cuanto a todas las métricas que identifiquen a un entrenador.
+Bueno, si vamos a la landing page de la solución, nosotros podemos ver un mapa de estilos.
+Así se ve la liga según el estilo propio de cada DT, ya sin su plantilla.
+En este mapa cada uno de los puntos es un entrenador y si están más cerca tienen ideas parecidas.
+Incluso podemos ver familias de entrenadores que juegan parecidos entre sí.
+Y aquí nosotros lo podemos ver incluso en tercera dimensión, viéndolo en sus tres componentes principales o en dos.
+Lo podemos ver comparando las dos o tres variables que nosotros queramos entre los entrenadores.
+Y también solo podemos ver los DTs que están activos en liga en este momento.
+Para este ejemplo vamos a usar a Guillermo Almada, donde tenemos varios submenús, pero nosotros básicamente podemos ver el principal
+que nos dice cuáles son las ideas principales que tiene y en qué destaca versus el resto de la liga.
+Entonces aquí nosotros podemos ver las ideas que más distinguen a Guillermo Almada es que tiene presión intensa, muy intensa respecto al resto de la liga.
+El tercero va mucho en campo rival, que es muy parecido al anterior, con el portero saca largo, de hecho progresa mucho conduciendo más que pasando, juega con una defensa adelantada y bueno, tiene un dominio territorial importante, ya que juega en el tercio rival más que los otros equipos.
+Entonces sabemos todo esto porque destaca de forma estadísticamente significativa en su estilo separado versus los otros DTs de la liga.
+Luego si vamos a la sección de DT o plantilla, aquí respondemos si el estilo es suyo, de sus jugadores, del club, del rival o del contexto.
+Aquí nosotros podemos ver cómo se reparte, o sea, el observado de cada uno de las variables que estamos midiendo, de las estadísticas que estamos midiendo
+y podemos ver qué efecto es suyo, qué efecto es de sus jugadores y al final el observado.
+Y de hecho podemos ver cómo se compara versus a los otros DTs de la liga, entonces sabemos si destaca en ciertas áreas o no.
+También en el área de cómo juega, aquí explicamos cómo juega con y sin balón, cómo empieza a armar sus jugadas, cómo las termina.
+Aquí podemos ver que respecto a la liga, termina sus jugadas con remates de lejos mucho más que el resto de la liga.
+Podemos ver sus formaciones más comunes, cómo se ve cuando tienen el balón, las posiciones promedio de los jugadores y cómo se ven sin balón en promedio también los jugadores.
+También vemos cómo presiona, dónde recupera, cómo progresa versus la liga y también su propio volumen del DT.
+Podemos ver también desde dónde tira y la huella de su estilo que también ya lo habíamos visto.
+Podemos ver esto también según cómo cambia esto respecto al partido, en el marcador, en minutos, si es local o no, qué tan fuerte es el rival.
+Y también nosotros podemos ver cómo cambia esto de un partido a otro.
+Es decir, cómo cambia cada una de estas estadísticas, de acuerdo, y qué lo hace más cambiar en este tipo de situaciones.
+Para sus jugadores, aquí podemos ver cómo los usan en su dibujo Basus, el 4-2-3-1.
+Podemos ver quién es más común que juegue en cada línea, cuánto rota, cuánto hace sus cambios, en qué minutos los hace, qué tipos de cambio hace.
+Y bueno, también lo que podemos ver es jugadores a su medida, es decir, qué jugadores favorecen más al estilo con el que el entrenador juega,
+y qué jugadores le favorecen más en la plantilla que ya están, y también cuáles van en contra del estilo del director técnico.
+En balón parado nosotros podemos ver sus cobradores más comunes.
+También podemos ver cómo se para a favor y en contra, dónde le caen los tiros de esquina, desde la izquierda, desde la derecha.
+Podemos ver cómo se paran sus jugadores usualmente.
+Esto es con datos de 360 en los tiros de esquina.
+Y podemos ver hacia dónde manda los centros y cuánto XG generan desde cada una de las zonas.
+También podemos ver lo mismo para tiros libres, para saques de banda, y también cómo defiende el balón parado.
+También en la parte de laboratorios nosotros podemos ver estadísticamente cuál era el marcador más probable,
+de acuerdo al XG y a los tiros que hubo durante el partido, cuál era el marcador más probable si se rejugara varias veces.
+Por ejemplo, en el último partido versus el León, el marcador real fue 5-3, pero el más probable era 2-2.
+Aquí podemos ver el mapa de calor, de cuáles eran los marcadores más probables.
+Y también podemos ver en cada uno de sus clubes cuál era el... o sea, cuál era sus expected points versus lo que realmente tuvo en cada uno de los clubes,
+para saber si realmente va más allá de lo que el XG dice o no.
+También podemos simular partidos jugada a jugada, para entender un poco las situaciones de peligro de cada uno de los clubes.
+Y también podemos hacer una simulación de cómo se vería si lleváramos al DT a otro club.
+O sea, por ejemplo, si lo lleváramos al Atlante, cómo cambiarían las estadísticas del Atlante en este otro club.
+E incluso podemos simular el resto del torneo, moviendo ciertos estilos del DT para ver capaz si mejora esta cosa o empeora esta cosa,
+cómo afectaría eso la simulación del club.
+Entonces podemos jugar partido a partido, e incluso podemos jugar muchísimos para tener una estimación de dónde quedaría el club,
+de qué porcentaje de veces llega a la liguilla, la final, campeón, cuántos puntos, todo eso.
+También tenemos esta sección de cara a cara, que capaz es de lo más útil en términos de accionabilidad,
+porque en esta sección lo podemos comparar contra cualquier entrenador,
+vemos cómo jugarle según la situación del partido,
+y también armar el plan en contra contra su próximo rival.
+Porque para cada partido sabemos dónde puede ganar, qué tiene que cubrir, qué hacen en la cancha,
+y qué observar durante el juego con los números que lo respaldan.
+Aquí nosotros podemos ver cuál es el DT más parecido a él, que nos indica que es de Michelis,
+pero nosotros también aquí podemos ver cómo jugarle a Guillermo Almada.
+O sea, si yo fuera un entrenador que le fuera a jugar a Guillermo Almada,
+qué es lo que yo haría, de acuerdo a las estadísticas que veo respecto al resto de la liga.
+Y también cómo planear contra un rival.
+O sea, por ejemplo, Guillermo Almada contra Hernán Crespo.
+¿Dónde podemos ganar? Es presionando la salida corta,
+porque Hernán Crespo sale mucho más corto que el resto de la liga,
+y bueno, y Almada ya tiene una presión muy alta.
+Entonces, eso es donde podemos ganar.
+Aquí, en qué tiene que cubrir Almada, bueno, no nos sale nada,
+lo que nos indica que, o sea, realmente no hay algo que encontremos que sea significativo,
+que tengamos que cubrir contra Hernán Crespo.
+E incluso podemos ver las ventajas en los corners de Almada contra los de Crespo, ¿no?
+Y bueno, aquí en Método tenemos otra vez cómo hacemos toda esta separación,
+toda la estadística detrás de esto.
+Y bueno, algo que también está muy bueno es que tenemos un asistente de IA
+que le podemos hacer cualquier pregunta si estamos medio perdidos de dónde encontrar ciertos datos.
+Podemos preguntar, o sea, tenemos preguntas prehechas,
+podemos preguntar quién es el DT que más tiene el balón,
+y va a pensar un momento y nos va no solo a decir quién es,
+sino, o sea, bueno, aquí nos dice justo que el que tiene más posesión es Juan Osorio,
+seguido de Martín Anselmi y Nicolás Larcamón,
+y incluso nos puede llevar a las pestañas específicas que buscamos.
+O sea, por ejemplo, si yo le pregunto cuál es la alineación más común de Almada en América,
+me va a llevar a la pestaña de jugadores.
+Ah, exacto. O sea, bueno, ahora me va a llevar a la pestaña de jugadores.
+Ahorita arreglo eso.
+Y bueno, me gustaría cerrar diciendo que Coach DNA te dice el estilo de entrenador.
+Como juega, de una forma estadísticamente robusta.
+Y no solo eso, sino qué podemos hacer con eso,
+qué podemos accionar, qué podemos mejorar,
+y lo podemos desglosar en cada una de las partes importantes del juego.
+Bueno, muchas gracias Isaac, muchas gracias América,
+y nada, espero que les guste.

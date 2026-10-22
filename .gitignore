@@ -10,3 +10,9 @@ trailer/node_modules/
 trailer/out/
 docs/reporte/publicar.html
 docs/reporte/publicar-largo.html
+trailer/public/demo/
+.DS_Store
+# video de entrega y medios de terceros del tráiler (clips, fotos, voces, música, capturas): no van al repo
+docs/video/*.mp4
+trailer/public/
+trailer/out/
