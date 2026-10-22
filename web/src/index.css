@@ -599,3 +599,13 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 .hero-marcas { margin-left: auto; align-self: flex-start; }
 @media (max-width: 900px) { .hero-marcas { display: none; } }
 @media (max-width: 900px) { .landing-marcas { display: none; } }
+
+/* sello en la barra de cada vista + pie */
+.cb-subrow { position: relative; }
+.cb-marcas { position: absolute; right: 0; bottom: 2px; display: inline-flex; }
+.cb-marcas .marcas { padding: 3px 10px; gap: 7px; }
+@media (max-width: 1000px) { .cb-marcas { display: none; } }
+.site-pie { display: flex; align-items: center; gap: 22px; max-width: 1240px; margin: 24px auto 0; padding: 22px 40px 36px; border-top: 1px solid var(--rule); box-sizing: border-box; }
+@media (min-width: 1500px) { .site-pie { max-width: min(2000px, 90vw); } }
+.site-pie p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-3); max-width: 90ch; }
+@media (max-width: 700px) { .site-pie { flex-direction: column; align-items: flex-start; gap: 12px; padding: 18px 16px 90px; } }

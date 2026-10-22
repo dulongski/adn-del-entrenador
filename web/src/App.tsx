@@ -224,6 +224,7 @@ export default function App() {
                 {tab === 'metodo' && <Metodo glob={glob} />}
               </section>
             )}
+            <Pie />
           </>
         )}
       </main>
@@ -275,9 +276,21 @@ function CoachBar({ art, media, tab, setTab }: { art: Any; media: Any; tab: View
               {mode.subs.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}><SubIcon k={k} />{l}</button>)}
             </div>
           )}
+          <span className="cb-marcas"><Marcas h={16} /></span>
         </div>
       )}
     </div>
+  )
+}
+
+/** Pie de cada vista del DT: sello del evento y aviso de que es trabajo independiente. */
+function Pie() {
+  return (
+    <footer className="site-pie">
+      <Marcas h={20} />
+      <p>{L('Proyecto para el Hackathon ISAC 2026, reto del Club América, hecho por Sebastian Dulong Salazar. Trabajo independiente: no es un producto oficial de ISAC ni del club. Los datos de StatsBomb se usan sólo para esta competencia; aquí ves resultados, nunca los datos.',
+        'Project for the ISAC 2026 Hackathon, Club América challenge, by Sebastian Dulong Salazar. Independent work, not an official ISAC or club product. StatsBomb data is used only for this competition; you see results here, never the data.')}</p>
+    </footer>
   )
 }
 
