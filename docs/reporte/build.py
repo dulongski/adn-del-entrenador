@@ -806,7 +806,7 @@ HEAD = '<title>Coach DNA: Almada</title>\n<meta name="claude:viewport-fit-sides"
 
 if __name__ == "__main__":
     body = build()
-    (OUT / "coach-dna-reporte.html").write_text(
+    (OUT / "coach-dna-reporte-largo.html").write_text(
         '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' + HEAD + "</head><body>" + body + "</body></html>")
-    (OUT / "publicar.html").write_text(HEAD + body)
+    (OUT / "publicar-largo.html").write_text(HEAD + body)
     print("ok", len(body) // 1024, "KB")
