@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import { attRows, fmt, real, type Any } from '../lib'
+import { attRows, fmt, real, shortName, type Any } from '../lib'
 import { ClubLogo, PrismDetail, prismSentence } from '../charts'
 import { useDistData } from '../Dist'
 import { MODES, type TabKey } from '../modes'
@@ -38,7 +38,13 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
   return (
     <div className="rs">
 
-      <p className="eyebrow">{L('Su ADN en pocas palabras', 'His DNA in a nutshell')}</p>
+      <p className="eyebrow">{L('Su historia', 'His story')}</p>
+      <h3 className="h2 rs-title">{L(`La historia de ${shortName(art.nombre)} en ${secs.length} claves`, `${shortName(art.nombre)}'s story in ${secs.length} keys`)}</h3>
+      <p className="rs-sub">{L('De quién es, cómo ataca y defiende, qué tanto es suyo, cómo reacciona, a quién usa, el balón parado y si merecía sus puntos. Toca una clave para ver todos sus números.', 'Who he is, how he attacks and defends, how much is his, how he reacts, who he uses, set pieces and whether he deserved his points. Tap a key to see all its numbers.')}</p>
+      <StoryGrid secs={secs} art={art} glob={glob} media={media} dd={dd} open={open} />
+
+
+      <p className="eyebrow rs-gap">{L('Su ADN en pocas palabras', 'His DNA in a nutshell')}</p>
       <h3 className="h2 rs-title">{N.titular.split(': ').slice(1).join(': ') || N.titular}</h3>
       <p className="rs-sub">{LANG === 'en'
         ? <>His clearest ideas, the ones he keeps with any squad. Each card shows what was seen in his matches, <b>his imprint</b> (what his teams would do with average players, club and opponents) and the league, plus where he ranks among the {nDT} coaches.</>
@@ -66,11 +72,6 @@ export function Resumen({ art, glob, media, go }: P & { go: (t: Any) => void }) 
         </div>
       ) : <p className="rs-empty">{L('Ningún rasgo suyo destaca con claridad: con los datos que hay, su estilo se confunde con el de sus jugadores.', "None of his traits stands out clearly: with the data available, his style blends into his players'.")}</p>}
 
-      <h3 className="h2 rs-h">{L(`La historia en ${secs.length} claves`, `The story in ${secs.length} keys`)}</h3>
-<div className="tab-sub">{L('Toca un dato con flechita para ver dónde queda entre todos los DTs.', 'Tap a stat with an arrow to see where he ranks among all coaches.')}</div>
-      <div className="rs-chapters">
-        {secs.map(sec => <Chapter key={sec.id} sec={sec} art={art} glob={glob} media={media} dd={dd} open={open} />)}
-      </div>
       <h3 className="h2 rs-h">{L('Sus números', 'His numbers')}</h3>
 <div className="tab-sub">{L(`Todos los números salen de ${glob.muestra.partidos.toLocaleString(LOCALE)} partidos de Liga MX y un solo modelo.`,
         `Every number comes from ${glob.muestra.partidos.toLocaleString(LOCALE)} Liga MX matches and a single model.`)}</div>
@@ -92,6 +93,48 @@ const NOTE_KIND: Record<string, string> = {
 }
 /** Ordinal en inglés (1st, 2nd, 3rd, 22nd…). */
 const ordEn = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`
+
+/** Las claves de la historia como tarjetas de color: idea + dos datos grandes; al tocar una se abre su detalle debajo. */
+function StoryGrid({ secs, art, glob, media, dd, open }: { secs: Any[]; art: Any; glob: Any; media: Any; dd: Any; open: (t: TabKey) => void }) {
+  const [sel, setSel] = useState<string | null>(null)
+  const cur = secs.find(x => x.id === sel)
+  return (
+    <>
+      <div className="rs-story">
+        {secs.map((sec, i) => {
+          const S = SEC[sec.id] ?? { color: DT_BLUE, tab: 'resumen' as TabKey }
+          const pts: Any[] = (sec.puntos ?? []).filter((p: Any) => !/^Club(es|s)?$/.test(p.texto) && p.dato)
+          const hero = pts.slice(0, 2)
+          const on = sel === sec.id
+          return (
+            <button key={sec.id} className={`rs-st${on ? ' on' : ''}`} style={{ ['--acc' as string]: S.color }} aria-expanded={on}
+              onClick={() => setSel(on ? null : sec.id)}>
+              <span className="rs-st-top"><i>{i + 1}</i>{sec.titulo}</span>
+              <span className="rs-st-idea">{sec.idea}</span>
+              {sec.id === 'identidad' && art.etapas?.length > 0 && (
+                <span className="rs-st-clubs">{art.etapas.map((e: Any, j: number) => <ClubLogo key={j} club={e.club} media={media} size={22} />)}</span>
+              )}
+              <span className="rs-st-nums">
+                {hero.map((p, j) => {
+                  const m = String(p.dato).match(/^([\d.,−+-]+×?%?)(.*)$/)
+                  return (
+                    <span key={j} className="rs-st-num">
+                      <b>{m ? m[1] : p.dato}{m && m[2].trim().length <= 3 ? m[2] : ''}</b>
+                      <small>{p.texto}{p.liga ? ` · ${p.liga}` : ''}</small>
+                    </span>
+                  )
+                })}
+              </span>
+              <span className="rs-st-more">{on ? L('Cerrar', 'Close') : L('Ver todo', 'See all')} {on ? '▴' : '▾'}</span>
+            </button>
+          )
+        }).flatMap((card, i) => secs[i].id === sel && cur
+          ? [card, <div key="open" className="rs-st-open"><Chapter sec={cur} art={art} glob={glob} media={media} dd={dd} open={open} /></div>]
+          : [card])}
+      </div>
+    </>
+  )
+}
 
 function Chapter({ sec, art, glob, media, dd, open }: { sec: Any; art: Any; glob: Any; media: Any; dd: Any; open: (t: TabKey) => void }) {
   const [openK, setOpenK] = useState<number | null>(null)
