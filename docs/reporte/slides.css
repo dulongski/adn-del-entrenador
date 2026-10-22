@@ -233,3 +233,14 @@ circle.oth { fill-opacity: .5; } circle.fam { stroke: var(--white); stroke-width
 .grid4q .card.hl { border-top-color: var(--yellow); }
 .grid4q .go { margin-top: auto; font: 600 15px var(--mono); color: var(--blue); }
 .grid4q .card.hl .go { color: var(--yellow); }
+
+/* impresión / PDF: una lámina por página de 1600×900, sin controles */
+@media print {
+  @page { size: 1600px 900px; margin: 0; }
+  html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
+  .deck { position: static !important; }
+  .slide { position: relative !important; left: auto !important; top: auto !important; transform: none !important; opacity: 1 !important;
+    margin: 0 !important; box-shadow: none !important; break-after: page; page-break-after: always; }
+  .ctrl, #tip { display: none !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
