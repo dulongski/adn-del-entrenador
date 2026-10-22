@@ -18,6 +18,7 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{titlesec}
 \usepackage{stfloats}
+\usepackage{float}
 
 \definecolor{azul}{HTML}{2563EB}
 \definecolor{azulsuave}{HTML}{9DBBF6}
@@ -51,6 +52,7 @@
 }
 \newcommand{\clave}[1]{\par\smallskip\noindent\colorbox{azul!8}{\parbox{\dimexpr\columnwidth-2\fboxsep}{\small\itshape #1}}\par\smallskip}
 
+\raggedbottom
 \begin{document}
 \twocolumn[{%
 \begin{center}
@@ -62,7 +64,25 @@
 \noindent\begin{minipage}{\textwidth}
 \small\noindent\textbf{Resumen.} Cuando un equipo presiona alto, ¿es por el entrenador o por los jugadores que tiene? Los dos aparecen juntos en cada partido, así que cualquier perfil del equipo los mezcla. Este trabajo propone, hasta donde sabemos, la primera descomposición del \emph{estilo de juego} que separa al DT de su plantilla, y lo hace con tres ideas que no se habían combinado en el futbol. \textbf{(1)}~Llevamos al estilo el método de efectos fijos de dos vías de la economía laboral (Abowd, Kramarz y Margolis), que en futbol sólo se había usado para medir \emph{resultados} de entrenadores. \textbf{(2)}~Le sumamos a los jugadores que están en la cancha en cada tramo, como el \emph{plus-minus} regularizado del básquetbol, para separar en 34 rasgos al DT, la plantilla, el club, el rival y el contexto. \textbf{(3)}~Lo estimamos con estadística bayesiana en dos capas: un \emph{prior} por pieza que no le inventa estilo a un DT con pocos datos, y una \emph{huella latente} empírico-bayesiana que comparte información entre rasgos con dos factores de estilo, y que mejora la separación justo en los DTs más difíciles de separar. Con 1,807 partidos de Liga MX (2021/22 a 2026/27) y 103 DTs, la plantilla explica casi la mitad de las diferencias de estilo entre equipos y el DT alrededor del 14\%; el DT decide sobre todo \emph{cómo} se juega y los jugadores \emph{cuánto} peligro se genera. Validamos el método fuera de muestra: si escondemos un club entero, el modelo reconoce al DT real en la mitad de arriba de 70 candidatos en 50 de 63 casos, y en datos simulados recupera un estilo sembrado mucho mejor que un perfil de equipo. Todo se convierte en decisiones (plan contra un rival, fichajes a la medida y seguimiento) en una app interactiva para los 76 DTs con perfil.
 \end{minipage}
-\vspace{12pt}
+\vspace{8pt}
+\begin{center}
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize,
+  caja/.style={draw=grisosc, rounded corners=3pt, fill=grisclaro!60, align=center, minimum height=1.05cm, text width=2.3cm, inner sep=3pt, execute at begin node={\hyphenpenalty=10000}},
+  clave/.style={caja, draw=azul, fill=azul!10},
+  flecha/.style={-{Stealth[length=4pt]}, grisosc, thick}]
+\node[caja] (a) {\textbf{Datos}\\eventos y 360 de StatsBomb\\1,807 partidos};
+\node[caja, right=0.38cm of a] (b) {\textbf{Tramos}\\de 5 min sin cambios\\de jugadores ni marcador};
+\node[caja, right=0.38cm of b] (c) {\textbf{34 indicadores}\\de estilo, en la misma\\escala para todos};
+\node[clave, right=0.38cm of c] (d) {\textbf{Modelo}\\separa DT, club,\\jugadores, rival y contexto};
+\node[caja, right=0.38cm of d] (e) {\textbf{Huella del DT}\\su estilo con una\\plantilla promedio};
+\node[caja, right=0.38cm of e] (g) {\textbf{Uso}\\cómo jugarle, fichajes,\\seguimiento};
+\draw[flecha] (a) -- (b); \draw[flecha] (b) -- (c); \draw[flecha] (c) -- (d); \draw[flecha] (d) -- (e); \draw[flecha] (e) -- (g);
+\end{tikzpicture}
+\captionof{figure}{Del dato al uso. El paso clave (azul) es el modelo que separa al DT del resto.}
+\label{fig:flujo}
+\end{center}
+\vspace{4pt}
 }]
 
 % ------------------------------------------------------------------
@@ -80,23 +100,7 @@ Nuestra pregunta es otra: ¿qué variación de los datos nos deja ver al DT sin 
 \item \textbf{Del número a la decisión.} Plan contra un rival, fichajes, seguimiento semanal y simulación para explicar resultados, en una app abierta.
 \end{itemize}
 
-\begin{figure*}[t]
-\centering
-\begin{tikzpicture}[font=\sffamily\scriptsize,
-  caja/.style={draw=grisosc, rounded corners=3pt, fill=grisclaro!60, align=center, minimum height=1.05cm, text width=2.3cm, inner sep=3pt, execute at begin node={\hyphenpenalty=10000}},
-  clave/.style={caja, draw=azul, fill=azul!10},
-  flecha/.style={-{Stealth[length=4pt]}, grisosc, thick}]
-\node[caja] (a) {\textbf{Datos}\\eventos y 360 de StatsBomb\\1,807 partidos};
-\node[caja, right=0.38cm of a] (b) {\textbf{Tramos}\\de 5 min sin cambios\\de jugadores ni marcador};
-\node[caja, right=0.38cm of b] (c) {\textbf{34 indicadores}\\de estilo, en la misma\\escala para todos};
-\node[clave, right=0.38cm of c] (d) {\textbf{Modelo}\\separa DT, club,\\jugadores, rival y contexto};
-\node[caja, right=0.38cm of d] (e) {\textbf{Huella del DT}\\su estilo con una\\plantilla promedio};
-\node[caja, right=0.38cm of e] (g) {\textbf{Uso}\\cómo jugarle, fichajes,\\seguimiento};
-\draw[flecha] (a) -- (b); \draw[flecha] (b) -- (c); \draw[flecha] (c) -- (d); \draw[flecha] (d) -- (e); \draw[flecha] (e) -- (g);
-\end{tikzpicture}
-\caption{Del dato al uso. El paso clave (azul) es el modelo que separa al DT del resto.}
-\label{fig:flujo}
-\end{figure*}
+
 
 % ------------------------------------------------------------------
 \section{Datos}
@@ -140,7 +144,7 @@ Con el modelo estimado podemos medir qué parte de las diferencias de estilo ent
 \text{peso}_m = \frac{\operatorname{Cov}(m,\, z)}{\operatorname{Var}(z)}, \qquad \textstyle\sum_m \text{peso}_m = 1 .
 \end{equation}
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}
 \begin{axis}[base, hbar, width=0.52\columnwidth, height=3.3cm,
@@ -156,7 +160,7 @@ Con el modelo estimado podemos medir qué parte de las diferencias de estilo ent
 \label{fig:varianza}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}
 \begin{axis}[base, hbar, width=0.34\columnwidth, height=4.2cm,
@@ -182,7 +186,7 @@ La Figura~\ref{fig:varianza} pone el tono: la plantilla pesa más que el entrena
 \subsection{Prueba 1: un estilo que sabemos que existe}
 Sobre los mismos partidos, DTs y jugadores reales, ``plantamos'' un estilo de DT conocido, le sumamos ruido real y le pedimos al modelo que lo encuentre (30 repeticiones). Lo probamos en un escenario realista y en el peor caso posible: cada DT con jugadores parecidos a él, que es justo la confusión que queremos deshacer.
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}
 \begin{axis}[base, xbar, scale only axis, width=0.62\columnwidth, height=3.2cm,
@@ -207,7 +211,7 @@ El modelo se acerca más a la verdad en los dos casos (Figura~\ref{fig:sintetico
 \subsection{Prueba 2: esconder un club entero}
 Para cada DT que dirigió dos o más clubes (63 etapas), escondemos todos sus partidos en un club, volvemos a estimar sin ellos y preguntamos: de 70 DTs posibles, ¿a quién se parece más ese equipo? Si el DT verdadero sale arriba con una plantilla que el modelo nunca vio con él, su estilo viajó con él. Al azar, quedaría entre los 10 primeros solo el 14\% de las veces.
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}
 \begin{axis}[base, ybar, scale only axis, width=0.78\columnwidth, height=3cm,
@@ -232,53 +236,7 @@ El DT verdadero queda en la mitad de arriba en 50 de las 63 etapas (Figura~\ref{
 En 40 llegadas de un DT a un club nuevo, el estilo del equipo se mueve hacia el que ese DT traía de antes, más de lo que se movería por azar ($p=0.008$). Y si a la vez quitamos piezas del modelo, predecir partidos nuevos empeora más al quitar a los jugadores que al quitar al DT, lo mismo que dice la Figura~\ref{fig:varianza}.
 
 % ------------------------------------------------------------------
-\begin{figure*}[t]
-\centering
-\begin{minipage}[t]{0.47\textwidth}\centering
-\begin{tikzpicture}
-\begin{axis}[base, ybar stacked, scale only axis, width=0.92\linewidth, height=3.6cm,
-  symbolic x coords={DT,Club,Plantilla,Contexto,Rival,Resto,Total},
-  xtick=data, xticklabel pos=upper, x tick label style={font=\sffamily\scriptsize},
-  ymin=-1.62, ymax=0.02, axis y line=none, axis x line*=top, bar width=15pt, enlarge x limits=0.07]
-\addplot[fill=none, draw=none, forget plot] coordinates {(DT,0) (Club,-0.511) (Plantilla,-0.7768) (Contexto,-1.0227) (Rival,-1.1978) (Resto,-1.2671) (Total,0)};
-\addplot[fill=azul, draw=none] coordinates {(DT,-0.511) (Club,0) (Plantilla,0) (Contexto,0) (Rival,0) (Resto,0) (Total,0)};
-\addplot[fill=gris, draw=none] coordinates {(DT,0) (Club,-0.2658) (Plantilla,-0.2459) (Contexto,-0.1751) (Rival,-0.0693) (Resto,-0.0995) (Total,0)};
-\addplot[fill=grisosc, draw=none] coordinates {(DT,0) (Club,0) (Plantilla,0) (Contexto,0) (Rival,0) (Resto,0) (Total,-1.3666)};
-\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:DT,-0.511) {\textminus0.51};
-\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:Club,-0.7768) {\textminus0.27};
-\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:Plantilla,-1.0227) {\textminus0.25};
-\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:Contexto,-1.1978) {\textminus0.18};
-\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:Rival,-1.2671) {\textminus0.07};
-\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:Resto,-1.3666) {\textminus0.10};
-\node[below, font=\sffamily\scriptsize\bfseries, text=tinta] at (axis cs:Total,-1.3666) {\textminus1.37};
-\end{axis}
-\end{tikzpicture}
-\captionof{figure}{Salida corta del portero de Almada frente a la liga, repartida entre las piezas del modelo (en $\sigma$; ``resto'' es lo que el modelo no explica). El 37\% de la diferencia es suya.}
-\label{fig:prisma}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.5\textwidth}\centering
-\begin{tikzpicture}
-\begin{axis}[base, scale only axis, width=0.42\linewidth, height=3.6cm,
-  ytick={1,...,8}, ymin=0.5, ymax=8.6,
-  yticklabels={{Jugada tipo: salida sin progresar},{Duración de la posesión rival},{PPDA, bajo es presionar más},{Salida corta del portero},{Jugada tipo: vertical cortado},{Cambios de orientación},{Progresión por conducción},{Recuperaciones en campo rival}},
-  xmin=-1.45, xmax=1.45, y axis line style={draw=none}, axis x line*=bottom,
-  xtick={-1,0,1}, xticklabels={{\textminus1$\sigma$},liga,{+1$\sigma$}}, clip=false]
-\addplot[grisosc, dashed, forget plot] coordinates {(0,0.6) (0,8.4)};
-\addplot[only marks, mark=*, mark size=1.9pt, color=azul,
-  error bars/.cd, x dir=both, x explicit, error bar style={line width=1.6pt, azulsuave}, error mark=none]
-  table[x=a, y=k, x error=e, row sep=\\] {
-  k a e \\ 8 0.8097 0.3063 \\ 7 0.7225 0.3018 \\ 6 0.6588 0.3879 \\ 5 0.8169 0.458 \\
-  4 -0.511 0.1984 \\ 3 -0.6496 0.2315 \\ 2 -0.8558 0.2717 \\ 1 -1.0017 0.3518 \\ };
-\addplot[only marks, mark=none, nodes near coords, point meta=explicit symbolic,
-  every node near coord/.style={anchor=center, font=\sffamily\scriptsize, text=tinta}]
-  table[x expr=1.78, y=k, meta=p, row sep=\\] {k p \\ 8 99 \\ 7 100 \\ 6 99 \\ 5 100 \\ 4 1 \\ 3 3 \\ 2 3 \\ 1 1 \\ };
-\node[font=\sffamily\scriptsize, text=tinta2, above] at (axis cs:1.78,8.4) {percentil};
-\end{axis}
-\end{tikzpicture}
-\captionof{figure}{Su huella: el efecto propio de Almada en sus ocho rasgos más claros, ya descontada la plantilla, con su margen de error y su percentil entre los DTs.}
-\label{fig:huella}
-\end{minipage}
-\end{figure*}
+
 
 \section{Una vuelta de ML: la huella latente}\label{sec:latente}
 El ridge estima cada uno de los 34 rasgos por separado. Eso tiene un punto débil: cuando un rasgo de un DT está mal separado de su plantilla, su estimación es ruidosa y no hay nada más que la rescate. Pero los rasgos de estilo no son independientes: quien presiona alto también recupera arriba y deja menos tiempo de posesión al rival. Lo que un DT muestra en los rasgos que \emph{sí} están bien identificados dice algo de los que no.
@@ -292,7 +250,7 @@ $\Sigma$ dice cómo se mueven juntos los rasgos entre DTs y se aprende con todos
 
 \textbf{¿Ayuda?} Antes de usarla en la app la probamos: aprendemos todo con una mitad de los partidos y medimos qué tan bien predice la huella de la otra mitad (Figura~\ref{fig:latente}).
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}
 \begin{axis}[base, xbar, scale only axis, width=0.55\columnwidth, height=2.9cm,
@@ -321,6 +279,56 @@ Mejora en las cuatro particiones, de 0.570 a 0.585, y lo mismo entre los DTs má
 Almada es un caso ideal: 170 partidos en tres clubes, y el 89\% de los minutos de sus jugadores es de futbolistas que también jugaron con otros DTs.
 
 \textbf{De dónde sale un número.} Sus porteros sacan corto el 39\% de las veces y la liga, el 51\%: una diferencia de $1.37\sigma$. Un perfil ``del equipo'' se la cargaría toda a Almada. El modelo la reparte entre las piezas (Figura~\ref{fig:prisma}) y le atribuye a él poco más de un tercio; el resto viene del club, de sus porteros y defensas y del contexto.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}[t]{\linewidth}\centering
+\begin{tikzpicture}
+\begin{axis}[base, ybar stacked, scale only axis, width=0.92\linewidth, height=3.6cm,
+  symbolic x coords={DT,Club,Plantilla,Contexto,Rival,Resto,Total},
+  xtick=data, xticklabel pos=upper, x tick label style={font=\sffamily\scriptsize},
+  ymin=-1.62, ymax=0.02, axis y line=none, axis x line*=top, bar width=15pt, enlarge x limits=0.07]
+\addplot[fill=none, draw=none, forget plot] coordinates {(DT,0) (Club,-0.511) (Plantilla,-0.7768) (Contexto,-1.0227) (Rival,-1.1978) (Resto,-1.2671) (Total,0)};
+\addplot[fill=azul, draw=none] coordinates {(DT,-0.511) (Club,0) (Plantilla,0) (Contexto,0) (Rival,0) (Resto,0) (Total,0)};
+\addplot[fill=gris, draw=none] coordinates {(DT,0) (Club,-0.2658) (Plantilla,-0.2459) (Contexto,-0.1751) (Rival,-0.0693) (Resto,-0.0995) (Total,0)};
+\addplot[fill=grisosc, draw=none] coordinates {(DT,0) (Club,0) (Plantilla,0) (Contexto,0) (Rival,0) (Resto,0) (Total,-1.3666)};
+\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:DT,-0.511) {\textminus0.51};
+\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:Club,-0.7768) {\textminus0.27};
+\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:Plantilla,-1.0227) {\textminus0.25};
+\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:Contexto,-1.1978) {\textminus0.18};
+\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:Rival,-1.2671) {\textminus0.07};
+\node[below, font=\sffamily\scriptsize, text=tinta] at (axis cs:Resto,-1.3666) {\textminus0.10};
+\node[below, font=\sffamily\scriptsize\bfseries, text=tinta] at (axis cs:Total,-1.3666) {\textminus1.37};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Salida corta del portero de Almada frente a la liga, repartida entre las piezas del modelo (en $\sigma$; ``resto'' es lo que el modelo no explica). El 37\% de la diferencia es suya.}
+\label{fig:prisma}
+\end{minipage}
+\end{figure}
+\begin{figure}[H]
+\begin{minipage}[t]{\linewidth}\centering
+\begin{tikzpicture}
+\begin{axis}[base, scale only axis, width=0.42\linewidth, height=3.6cm,
+  ytick={1,...,8}, ymin=0.5, ymax=8.6,
+  yticklabels={{Jugada tipo: salida sin progresar},{Duración de la posesión rival},{PPDA, bajo es presionar más},{Salida corta del portero},{Jugada tipo: vertical cortado},{Cambios de orientación},{Progresión por conducción},{Recuperaciones en campo rival}},
+  xmin=-1.45, xmax=1.45, y axis line style={draw=none}, axis x line*=bottom,
+  xtick={-1,0,1}, xticklabels={{\textminus1$\sigma$},liga,{+1$\sigma$}}, clip=false]
+\addplot[grisosc, dashed, forget plot] coordinates {(0,0.6) (0,8.4)};
+\addplot[only marks, mark=*, mark size=1.9pt, color=azul,
+  error bars/.cd, x dir=both, x explicit, error bar style={line width=1.6pt, azulsuave}, error mark=none]
+  table[x=a, y=k, x error=e, row sep=\\] {
+  k a e \\ 8 0.8097 0.3063 \\ 7 0.7225 0.3018 \\ 6 0.6588 0.3879 \\ 5 0.8169 0.458 \\
+  4 -0.511 0.1984 \\ 3 -0.6496 0.2315 \\ 2 -0.8558 0.2717 \\ 1 -1.0017 0.3518 \\ };
+\addplot[only marks, mark=none, nodes near coords, point meta=explicit symbolic,
+  every node near coord/.style={anchor=center, font=\sffamily\scriptsize, text=tinta}]
+  table[x expr=1.78, y=k, meta=p, row sep=\\] {k p \\ 8 99 \\ 7 100 \\ 6 99 \\ 5 100 \\ 4 1 \\ 3 3 \\ 2 3 \\ 1 1 \\ };
+\node[font=\sffamily\scriptsize, text=tinta2, above] at (axis cs:1.78,8.4) {percentil};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Su huella: el efecto propio de Almada en sus ocho rasgos más claros, ya descontada la plantilla, con su margen de error y su percentil entre los DTs.}
+\label{fig:huella}
+\end{minipage}
+\end{figure}
 
 
 
