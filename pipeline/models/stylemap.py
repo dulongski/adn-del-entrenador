@@ -40,6 +40,10 @@ FRASE = {
 }
 
 
+# nombres automáticos que un aficionado no entiende → nombre por lo que de verdad hace la familia
+RENOMBRE = {"Salida corta y paciencia": "Posesión y salida desde atrás",   # sale corto, más pases por posesión, más posesión
+            "Sin balón y presión baja": "Poca presión y balón largo"}      # contrapresiona y presiona poco, cede el balón, juega largo
+
 def phrase(kpi, sign):
     return FRASE.get((kpi, sign))
 
@@ -113,6 +117,7 @@ def main():
         contr = cen - pd.concat([cents[o] for o in range(K) if o != g], axis=1).mean(axis=1)
         ph = [p for p in top_phrases(contr, 6, 0.1) if p not in used][:2] or top_phrases(contr, 2, 0.0)
         name = " y ".join(ph).capitalize() if ph else f"Grupo {g + 1}"
+        name = RENOMBRE.get(name, name)
         used.update(ph)
         grupos.append({"id": g, "nombre": name, "n": int(len(idx)),
                        "rasgos": [{"kpi": k, "efecto": float(contr[k])} for k in contr.abs().sort_values(ascending=False).index[:5]]})

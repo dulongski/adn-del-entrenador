@@ -68,6 +68,10 @@ export const MAP_EN: Record<string, string> = {
   'Presión alta y recuperación rápida': 'High press, quick recovery',
   'Pausa tras recuperar y defensa hundida': 'Calm after regains, deep block',
   'Presión baja y sin balón': 'Low press, cedes the ball',
+  'Posesión y salida desde atrás': 'Possession, building from the back',
+  'Poca presión y balón largo': 'Little pressing, long balls',
+  'Presión alta y defensa adelantada': 'High press, high line',
+  'Verticalidad y juego directo': 'Vertical, direct play',
   // rasgos
   'balón parado': 'set pieces', 'bloque compacto': 'compact block', 'bloque que espera': 'waiting block',
   'cambios de juego': 'switches of play', 'centros': 'crosses', 'conducción': 'ball carrying',

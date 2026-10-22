@@ -73,15 +73,13 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
     <div className="smap-wrap">
       {dim === '2d' ? <Map2D {...common} /> : <Map3D {...common} />}
       <MapSearch mapa={mapa} media={media} onPick={onPick} q={q} setQ={setQ} setPulse={setPulse} hueOf={g => HUES[g % HUES.length]} extra={
-        <div className="smap-hint">
-          <span className="smap-hint-t"><span aria-hidden>👆</span>{L('Haz clic sobre un DT para ver su historia en datos', 'Click a coach to see his story in data')}</span>
-          {setActivos && (
-            <label className="smap-switch" htmlFor="map-activos">
-              <input id="map-activos" type="checkbox" role="switch" checked={activos} onChange={e => setActivos(e.target.checked)} />
-              <i aria-hidden />{L('Solo DTs activos', 'Active coaches only')}
-            </label>
-          )}
-        </div>} />
+        <div className="smap-hint"><span className="smap-hint-t"><span aria-hidden>👆</span>{L('Haz clic sobre un DT para ver su historia en datos', 'Click a coach to see his story in data')}</span></div>}
+        inBox={setActivos && (
+          <label className="smap-switch" htmlFor="map-activos" title={L('Mostrar solo a los DTs que dirigen hoy', 'Show only coaches currently in charge')}>
+            <input id="map-activos" type="checkbox" role="switch" checked={activos} onChange={e => setActivos(e.target.checked)} />
+            <i aria-hidden />{L('Solo activos', 'Active only')}
+          </label>
+        )} />
 
       <div className="smap-ctrl" onPointerDown={e => e.stopPropagation()}>
         <div className="seg sm" role="group" aria-label={L('Dimensiones', 'Dimensions')}>
@@ -107,7 +105,6 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
             <div className="note">{L('Efecto propio del DT frente a la liga, en la unidad de cada estadística (sin plantilla, club ni rival).', 'The coach\'s own effect vs the league, in each stat\'s unit (no squad, club or opponent).')}</div>
           </div>
         )}
-        {mode === 'pca' && <div className="note">{dim === '3d' ? L(`3 componentes · ${Math.round(100 * (mapa.varianza_total_3d ?? 0))}% de la variación`, `3 components · ${Math.round(100 * (mapa.varianza_total_3d ?? 0))}% of the variation`) : L(`2 componentes · ${Math.round(100 * mapa.varianza_total)}% de la variación`, `2 components · ${Math.round(100 * mapa.varianza_total)}% of the variation`)}</div>}
       </div>
 
       <div className={`smap-legend${legendOpen ? '' : ' closed'}`} onPointerDown={e => e.stopPropagation()}>
@@ -115,6 +112,8 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
           {!legendOpen && <span className="dots">{mapa.grupos.map((g: Any) => <i key={g.id} style={{ background: HUES[g.id % HUES.length] }} />)}</span>}
           {L('Familias', 'Families')} {legendOpen ? '▾' : '▸'}
         </button>
+        {mode === 'pca' && <div className="note smap-var">{dim === '3d' ? L(`3 componentes · ${Math.round(100 * (mapa.varianza_total_3d ?? 0))}% de la variación`, `3 components · ${Math.round(100 * (mapa.varianza_total_3d ?? 0))}% of the variation`) : L(`2 componentes · ${Math.round(100 * mapa.varianza_total)}% de la variación`, `2 components · ${Math.round(100 * mapa.varianza_total)}% of the variation`)}</div>}
+
         {legendOpen && mapa.grupos.map((g: Any) => (
           <button key={g.id} className="smap-chip" aria-pressed={focus === g.id} onClick={() => setFocus(f => (f === g.id ? null : g.id))} title={L('Resaltar esta familia', 'Highlight this family')}>
             <i style={{ background: HUES[g.id % HUES.length] }} />{mapLabel(g.nombre)} <span className="note">{g.n}</span>

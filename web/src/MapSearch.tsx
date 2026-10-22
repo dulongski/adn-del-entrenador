@@ -27,8 +27,8 @@ export function searchCoaches(mapa: Any, media: Any, q: string) {
   }).filter(Boolean).sort((a: Any, b: Any) => a.score - b.score) as { p: Any; now?: string; clubHit?: string; score: number }[]
 }
 
-export default function MapSearch({ mapa, media, onPick, q, setQ, setPulse, hueOf, extra }: {
-  extra?: ReactNode
+export default function MapSearch({ mapa, media, onPick, q, setQ, setPulse, hueOf, extra, inBox }: {
+  extra?: ReactNode; inBox?: ReactNode
   mapa: Any; media: Any; onPick: (id: number) => void; q: string; setQ: (s: string) => void; setPulse: (id: number | null) => void; hueOf: (g: number) => string
 }) {
   const [open, setOpen] = useState(false)
@@ -63,6 +63,7 @@ export default function MapSearch({ mapa, media, onPick, q, setQ, setPulse, hueO
             else if (e.key === 'Enter' && shown[sel]) go(shown[sel].p.id)
             else if (e.key === 'Escape') { setQ(''); input.current?.blur() }
           }} />
+        {inBox}
         {q ? <button className="msearch-x" aria-label={L('Limpiar búsqueda', 'Clear search')} onClick={() => { setQ(''); input.current?.focus() }}>×</button>
           : <kbd className="msearch-kbd" aria-hidden>/</kbd>}
       </div>
