@@ -5,6 +5,7 @@ import boot from './boot.json'
 import { ClubLogo, ClubName, CoachPhoto } from './charts'
 import StyleMap from './StyleMap'
 import Logo from './Logo'
+import Marcas from './Marcas'
 import SettingsMenu from './SettingsMenu'
 import Info from './Info'
 import { L, LOCALE, SETTINGS } from './settings'
@@ -158,6 +159,7 @@ export default function App() {
             <section className="landing">
               <header className="landing-head">
                 <h1 className="landing-title"><Logo kind={SETTINGS.logo} size={40} /><span className="landing-info"><Info wide>{L('Cada burbuja es un DT de Liga MX. Cerca = ideas de juego parecidas, ', 'Each bubble is a Liga MX coach. Closer = similar ideas about the game, ')}<b>{L('ya descontada su plantilla', 'squad already factored out')}</b>{L('. Toca una para abrir su perfil.', '. Tap one to open his profile.')}</Info></span></h1>
+                <div className="landing-marcas"><Marcas h={20} /></div>
               </header>
               <StyleMap mapa={mapa} media={media} kpis={glob.kpis} onPick={openCoach} activos={activos} setActivos={setActivos} />
             </section>
@@ -181,6 +183,7 @@ export default function App() {
                         </div>
                       )}
                     </div>
+                    <span className="hero-marcas"><Marcas h={22} /></span>
                   </div>
                   <div className="spells" style={{ marginTop: 14, marginBottom: 0 }}>
                     {art.etapas.map((e: Any) => <span key={e.club} className="spell"><ClubName club={e.club} media={media} size={16} /> · <b>{e.partidos}</b> {L('p.', 'matches')} · {e.desde.slice(0, 4)}–{e.hasta.slice(0, 4)}</span>)}
