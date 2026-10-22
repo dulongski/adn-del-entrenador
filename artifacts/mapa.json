@@ -3991,7 +3991,7 @@
  "grupos": [
   {
    "id": 0,
-   "nombre": "Salida corta y paciencia",
+   "nombre": "Posesión y salida desde atrás",
    "n": 23,
    "rasgos": [
     {
@@ -4018,7 +4018,7 @@
   },
   {
    "id": 1,
-   "nombre": "Sin balón y presión baja",
+   "nombre": "Poca presión y balón largo",
    "n": 21,
    "rasgos": [
     {
