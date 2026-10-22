@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Ico } from './icons'
-import { asset, initials, shortName, sig, type Any } from './lib'
+import { asset, initials, real, shortName, type Any } from './lib'
 import MapSearch, { searchCoaches } from './MapSearch'
 import { L } from './settings'
 import { famLabel, kpiLabel, mapLabel } from './i18n/data'
@@ -95,7 +95,7 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
                 </select>
               </label>
             ))}
-            <div className="note">{L('Efecto propio del DT en σ (sin plantilla, club ni rival).', 'The coach\'s own effect in σ (no squad, club or opponent).')}</div>
+            <div className="note">{L('Efecto propio del DT frente a la liga, en la unidad de cada estadística (sin plantilla, club ni rival).', 'The coach\'s own effect vs the league, in each stat\'s unit (no squad, club or opponent).')}</div>
           </div>
         )}
         {setActivos && (
@@ -122,7 +122,7 @@ export default function StyleMap({ mapa, media, kpis, onPick, activos = false, s
           {hover.d.clubes.join(' → ')} · {hover.d.partidos} {L('partidos', 'matches')}<br />
           <span style={{ opacity: 0.8 }}>{mapLabel(mapa.grupos[hover.d.grupo]?.nombre ?? '')}</span>
           {mode === 'vars'
-            ? varAxes.map(a => <div key={a}>{a.toUpperCase()} · {label(vars[a])}: <b>{sig(hover.d.alpha[vars[a]])}</b></div>)
+            ? varAxes.map(a => <div key={a}>{a.toUpperCase()} · {label(vars[a])}: <b>{real(vars[a], hover.d.alpha[vars[a]])}</b></div>)
             : hover.d.rasgos?.length ? <div style={{ opacity: 0.8 }}>{hover.d.rasgos.map(mapLabel).join(', ')}</div> : null}
         </div>
       )}

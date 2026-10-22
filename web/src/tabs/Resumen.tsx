@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import { fmt, sig, type Any } from '../lib'
+import { fmt, real, type Any } from '../lib'
 import { ClubLogo, PrismDetail, prismSentence } from '../charts'
 import { useDistData } from '../Dist'
 import { MODES, type TabKey } from '../modes'
@@ -138,7 +138,7 @@ function Chapter({ sec, art, glob, media, dd, open }: { sec: Any; art: Any; glob
                   <span className={`rs-val${isNum ? '' : ' txt'}`}>{val}</span>
                   <span className="rs-ref">{p.liga ?? ''}</span>
                   <span className="rs-end">
-                    {pos ? <RankStrip pos={pos} color={S.color} /> : typeof p.efecto === 'number' && !k ? <span className="rs-tech" title={L('En desviaciones estándar respecto a la liga', 'In standard deviations relative to the league')}>{sig(p.efecto)}</span> : null}
+                    {pos ? <RankStrip pos={pos} color={S.color} /> : typeof p.efecto === 'number' && !k ? <span className="rs-tech" title={L('Su efecto propio frente a la liga', 'His own effect vs the league')}>{real(p.kpi, p.efecto)}</span> : null}
                     {k && <span className="rs-caret" aria-hidden>▾</span>}
                   </span>
                 </div>

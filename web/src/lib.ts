@@ -37,8 +37,34 @@ export function fmt(x: number | null | undefined, d = 1): string {
   if (d === 1 && Math.abs(x) < 1 && x !== 0) d = 2
   return x.toLocaleString(LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d })
 }
+/** Diferencia relativa sin unidad (para cuando no se sabe de qué indicador es): 1 = lo que separa a un equipo típico de otro. */
 export const sig = (x: number | null | undefined) =>
-  x === null || x === undefined ? '—' : `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(2)}σ`
+  x === null || x === undefined ? '—' : `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(2)}`
+
+/* Unidad real de cada indicador: los efectos del modelo vienen en desviaciones típicas entre equipos (sd en boot.json);
+   multiplicados por esa sd quedan en la unidad de la estadística (robos por 90, segundos, puntos de %…). */
+const UNIT: Record<string, string> = {
+  pases_por_posesion: ' pases', tempo: ' pases/min', progresivos: ' por 100', cambios_orientacion: ' por 100 pases',
+  entradas_ultimo_tercio: ' por 100 pos.', xg_90: ' xG/90', xg_por_tiro: ' xG/tiro', tiros_90: ' tiros/90', centros: ' por 100',
+  obv_90: ' OBV/90', ppda: ' pases/robo', altura_presion: ' yd', intensidad_presion: ' pres./min', recuperaciones_altas_90: ' robos/90',
+  altura_defensiva: ' yd', linea_360: ' yd', compacidad_360: ' yd', posesion_rival_dur: ' s', xg_contra_90: ' xG/90', xg_balon_parado_90: ' xG/90',
+}
+const KP = (boot as { global: { kpis: Record<string, { sd: number }> } }).global.kpis
+export const unitOf = (k: string) => UNIT[k] ?? '%'     // el resto son porcentajes: la diferencia va en puntos de %
+/** Efecto en la unidad real del indicador k, p. ej. «+1.8 robos/90» o «−5 pts». */
+export const real = (k: string | undefined | null, z: number | null | undefined) => {
+  if (z === null || z === undefined) return '—'
+  const sd = k ? KP[k]?.sd : undefined
+  if (!sd) return sig(z)
+  const v = z * sd, a = Math.abs(v)
+  const d = sd >= 1.5 ? 1 : sd >= 0.15 ? 2 : 3   // decimales según la escala del indicador
+  return `${v >= 0 ? '+' : '−'}${a.toLocaleString(LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d })}${unitOf(k!)}`
+}
+/** Igual que real() pero sin la unidad, para celdas chicas. */
+export const realN = (k: string | undefined | null, z: number | null | undefined) => {
+  const s = real(k, z), u = k ? unitOf(k) : ''
+  return u && s.endsWith(u) ? s.slice(0, -u.length) : s
+}
 export const pct = (x: number | null | undefined, d = 0) => (x === null || x === undefined ? '—' : `${fmt(x, d)}%`)
 
 const PARTICULAS = new Set(['de', 'del', 'la', 'las', 'los', 'da', 'das', 'do', 'dos', 'di', 'san', 'van', 'von'])

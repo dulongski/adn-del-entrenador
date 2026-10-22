@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { asset, COMP, divColor, fmt, initials, posTag, sig, type Any } from './lib'
+import { asset, COMP, divColor, fmt, initials, posTag, real, sig, type Any } from './lib'
 import { L } from './settings'
 import { posLabel } from './i18n/data'
 
@@ -102,7 +102,7 @@ export function PrismDetail({ row }: { row: Any }) {
   const scale = Math.max(1, ...rows.map(r => Math.abs(r.v))) * 1.05
   const pctX = (v: number) => 50 + (v / scale) * 50
   return (
-    <div className="pd" title={L('Valores en desviaciones estándar entre equipos (σ). 0 = promedio de la liga.', 'Values in standard deviations across teams (σ). 0 = league average.')}>
+    <div className="pd" title={L('Cuánto aporta cada parte, en la unidad de la estadística. 0 = promedio de la liga.', 'How much each part adds, in the stat\'s own unit. 0 = league average.')}>
       <div className="pd-axis"><span>{L('← lo baja', '← pushes it down')}</span><span>{L('liga', 'league')}</span><span>{L('lo sube →', 'pushes it up →')}</span></div>
       {rows.map((r, i) => (
         <div key={r.key} className={`pd-row${i === 0 ? ' pd-obs' : ''}`}>
@@ -111,7 +111,7 @@ export function PrismDetail({ row }: { row: Any }) {
             <span className="pd-mid" />
             <span className="pd-bar" style={{ background: r.color, left: `${Math.min(50, pctX(r.v))}%`, width: `${Math.abs(pctX(r.v) - 50)}%` }} />
           </span>
-          <span className="pd-val">{sig(r.v)}</span>
+          <span className="pd-val">{real(row.kpi, r.v)}</span>
         </div>
       ))}
     </div>
@@ -162,14 +162,14 @@ function prismSentenceEn(row: Any, etiqueta: string): string {
 }
 
 /* ------------------------------------------------------------ huella con IC */
-export function DotCI({ v, se, pctl, scale = 2.5, h = 20 }: { v: number; se?: number | null; pctl?: number | null; scale?: number; h?: number }) {
+export function DotCI({ v, se, pctl, k, scale = 2.5, h = 20 }: { v: number; se?: number | null; pctl?: number | null; k?: string; scale?: number; h?: number }) {
   const W = 300, mid = W / 2, u = mid / scale
   const c = (x: number) => mid + Math.max(-scale, Math.min(scale, x)) * u
   const tip = useTip()
   const strong = se ? Math.abs(v) / se >= 2 : Math.abs(v) >= 0.5
   return (
     <svg viewBox={`0 0 ${W} ${h}`} style={{ width: '100%', height: h, display: 'block' }}
-      onMouseMove={e => tip.show(e, <>{L('Efecto DT', 'Coach effect')} {sig(v)}{se ? <> ± {fmt(1.96 * se, 2)} ({L('IC 95%', '95% CI')})</> : null}{pctl != null ? <><br />{L(`percentil ${fmt(pctl, 0)} entre DTs`, `${fmt(pctl, 0)}th percentile among coaches`)}</> : null}</>)} onMouseLeave={tip.hide}>
+      onMouseMove={e => tip.show(e, <>{L('Efecto DT frente a la liga', 'Coach effect vs the league')} {real(k, v)}{se ? <> ± {real(k, 1.96 * se).slice(1)} ({L('IC 95%', '95% CI')})</> : null}{pctl != null ? <><br />{L(`percentil ${fmt(pctl, 0)} entre DTs`, `${fmt(pctl, 0)}th percentile among coaches`)}</> : null}</>)} onMouseLeave={tip.hide}>
       {[-2, -1, 1, 2].map(t => <line key={t} x1={c(t)} x2={c(t)} y1={4} y2={h - 4} stroke="var(--rule)" />)}
       <line x1={mid} x2={mid} y1={1} y2={h - 1} stroke="var(--ink-3)" />
       {se ? <line x1={c(v - 1.96 * se)} x2={c(v + 1.96 * se)} y1={h / 2} y2={h / 2} stroke="var(--c-dt)" strokeWidth={2} strokeLinecap="round" opacity={0.55} /> : null}

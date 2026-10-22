@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { chatBus } from '../chatBus'
 import { HBar, PosTag } from '../charts'
-import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, sig, type Any } from '../lib'
+import { clubColor, dataUrl, fmt, getJSON, jugadorCorto, real, type Any } from '../lib'
 import { type P } from './common'
 import { CARRERA, ClubSwitch, dibujo, FormList, OncePitch, OnceList } from './JugOnce'
 import { CambiosBells } from './JugCambios'
@@ -55,7 +55,7 @@ function huellaChip(kpi: string, efecto: number, glob: Any) {
   const inv = INV.has(kpi) ? -1 : 1
   const full = glob.kpis[kpi]?.etiqueta ? kpiLabel(kpi, glob.kpis[kpi].etiqueta) : kpi
   const lbl = (LANG === 'en' ? CORTO_EN[kpi] : CORTO[kpi]) ?? full.replace(/\s*\(.*\)$/, '')
-  return { up: inv * efecto > 0, lbl, title: L(`${full}: ${sig(efecto)} cuando juega (ya descontado el DT)`, `${full}: ${sig(efecto)} when he plays (coach effect already removed)`) }
+  return { up: inv * efecto > 0, lbl, title: L(`${full}: ${real(kpi, efecto)} cuando juega (ya descontado el DT)`, `${full}: ${real(kpi, efecto)} when he plays (coach effect already removed)`) }
 }
 
 export function Jugadores({ art, glob, media }: P) {

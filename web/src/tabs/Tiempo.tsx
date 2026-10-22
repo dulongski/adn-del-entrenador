@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ClubLogo } from '../charts'
 import Info from '../Info'
-import { dataUrl, divColor, fmt, getJSON, type Any } from '../lib'
+import { dataUrl, divColor, fmt, real, realN, unitOf, getJSON, type Any } from '../lib'
 import { L } from '../settings'
 import { KEY, Seg } from './common'
 import { Evolution } from './Contexto'
@@ -55,7 +55,7 @@ export function Tiempo({ art, glob, media }: { art: Any; glob: Any; media: Any }
 
       <div className="card">
         <div className="tl-h"><b>{L('Su estilo propio, torneo a torneo', 'His own style, tournament by tournament')}</b>
-          <Info wide>{L('Cada celda: su valor en ese torneo, en desviaciones típicas frente a la liga (verde = más que la liga, rojo = menos). La primera columna es su carrera. Celdas tenues: torneos con menos de 10 partidos.', 'Each cell: his value in that tournament, in standard deviations versus the league (green = more than the league, red = less). The first column is his career. Faint cells: tournaments with fewer than 10 matches.')}</Info>
+          <Info wide>{L('Cada celda: cuánto se separa de la liga en ese torneo, en la unidad de cada estadística (entre paréntesis), ya sin plantilla ni rival (verde = más que la liga, rojo = menos). La primera columna es su carrera. Celdas tenues: torneos con menos de 10 partidos.', 'Each cell: his value in that tournament, in standard deviations versus the league (green = more than the league, red = less). The first column is his career. Faint cells: tournaments with fewer than 10 matches.')}</Info>
           <span style={{ marginLeft: 'auto' }}><Seg opts={[['10', L('Sus 10 rasgos más marcados', 'His 10 most distinctive'), ''], ['todos', L('Los 34', 'All 34'), '']]} v={todos ? 'todos' : '10'} set={v => setTodos(v === 'todos')} /></span></div>
         <div className="ti-heat">
           <table className="ti-tbl">
@@ -63,9 +63,9 @@ export function Tiempo({ art, glob, media }: { art: Any; glob: Any; media: Any }
             <tbody>
               {rows.map(r => (
                 <tr key={r.kk}>
-                  <td className="l">{kName(r.kk, glob)}</td>
-                  <td className="car" style={{ background: divColor(r.c, 1.5) }}>{r.c >= 0 ? '+' : '−'}{fmt(Math.abs(r.c), 1)}</td>
-                  {T.map((t, j) => { const v = d.m[j][r.i]; return <td key={t.id} className={t.n < 10 ? 'weak' : ''} style={{ background: divColor(v ?? 0, 1.5) }} title={`${tname(t.id)} · ±${fmt(d.se[j][r.i], 2)}`}>{v == null ? '' : `${v >= 0 ? '+' : '−'}${fmt(Math.abs(v), 1)}`}</td> })}
+                  <td className="l">{kName(r.kk, glob)} <small className="note">({unitOf(r.kk).trim()})</small></td>
+                  <td className="car" style={{ background: divColor(r.c, 1.5) }}>{realN(r.kk, r.c)}</td>
+                  {T.map((t, j) => { const v = d.m[j][r.i]; return <td key={t.id} className={t.n < 10 ? 'weak' : ''} style={{ background: divColor(v ?? 0, 1.5) }} title={`${tname(t.id)} · ${real(r.kk, v)} ± ${real(r.kk, d.se[j][r.i]).slice(1)}`}>{v == null ? '' : realN(r.kk, v)}</td> })}
                 </tr>
               ))}
             </tbody>
@@ -92,14 +92,14 @@ export function Tiempo({ art, glob, media }: { art: Any; glob: Any; media: Any }
           {d.cambios.length === 0 ? <p className="note">{L(`Ningún cambio supera al azar: ${nombre} jugó igual torneo a torneo. Las diferencias que se ven en la tabla son del tamaño del ruido de un torneo.`, `No change beats chance: ${nombre} played the same way tournament after tournament. The differences in the table are the size of one tournament's noise.`)}</p> : (
             <div className="ti-list">{d.cambios.map((c: Any, i: number) => (
               <div key={i} className="ti-ch"><span><b>{kName(c.kpi, glob)}</b><br /><small>{tname(c.de)} → {tname(c.a)}{c.club_de !== c.club_a ? ` · ${c.club_de} → ${c.club_a}` : ''}</small></span>
-                <em className={c.dif >= 0 ? 'up' : 'dn'}>{c.dif >= 0 ? '+' : '−'}{fmt(Math.abs(c.dif), 1)}σ</em><small>z {fmt(c.z, 1)}</small></div>))}</div>
+                <em className={c.dif >= 0 ? 'up' : 'dn'}>{real(c.kpi, c.dif)}</em></div>))}</div>
           )}
           {d.clubes.length > 0 && <>
             <div className="tl-h" style={{ marginTop: 16 }}><b>{L('De un club a otro', 'From one club to the next')}</b></div>
             <div className="ti-clubs">{d.clubes.map((c: Any, i: number) => (
               <div key={i}>
                 <div className="ti-club"><ClubLogo club={c.de} media={media} size={18} />{c.de} → <ClubLogo club={c.a} media={media} size={18} />{c.a}<b className="r">{fmt(c.r, 2)}</b><span className="note">{L('de parecido entre los dos perfiles', 'similarity between both profiles')}</span></div>
-                {c.cambios.length > 0 ? <p className="note">{L('Lo que más cambió: ', 'What changed most: ')}{c.cambios.map((x: Any) => `${kName(x.kpi, glob)} (${x.dif >= 0 ? '+' : '−'}${fmt(Math.abs(x.dif), 1)}σ)`).join(' · ')}</p> : <p className="note">{L('Ningún rasgo cambió de forma clara al cambiar de club.', 'No trait changed clearly when he changed clubs.')}</p>}
+                {c.cambios.length > 0 ? <p className="note">{L('Lo que más cambió: ', 'What changed most: ')}{c.cambios.map((x: Any) => `${kName(x.kpi, glob)} (${real(x.kpi, x.dif)})`).join(' · ')}</p> : <p className="note">{L('Ningún rasgo cambió de forma clara al cambiar de club.', 'No trait changed clearly when he changed clubs.')}</p>}
               </div>))}</div>
           </>}
         </div>
@@ -109,7 +109,7 @@ export function Tiempo({ art, glob, media }: { art: Any; glob: Any; media: Any }
         <div className="tl-h"><b>{L('Sus rasgos más marcados: ¿en cuántos torneos aparecen?', 'His most distinctive traits: in how many tournaments do they show up?')}</b></div>
         <div className="ti-list">{d.estables.map((e: Any) => (
           <div key={e.kpi} className="ti-ch"><span><b>{kName(e.kpi, glob)}</b> <small>{e.carrera >= 0 ? L('más que la liga', 'more than the league') : L('menos que la liga', 'less than the league')}</small></span>
-            <em className={e.carrera >= 0 ? 'up' : 'dn'}>{e.carrera >= 0 ? '+' : '−'}{fmt(Math.abs(e.carrera), 1)}σ</em><small>{L(`mismo lado en el ${fmt(e.mismo_lado, 0)}% de ${e.torneos} torneos`, `same side in ${fmt(e.mismo_lado, 0)}% of ${e.torneos} tournaments`)}</small></div>))}</div>
+            <em className={e.carrera >= 0 ? 'up' : 'dn'}>{real(e.kpi, e.carrera)}</em><small>{L(`mismo lado en el ${fmt(e.mismo_lado, 0)}% de ${e.torneos} torneos`, `same side in ${fmt(e.mismo_lado, 0)}% of ${e.torneos} tournaments`)}</small></div>))}</div>
       </div>}
 
       <h3 className="h2">{L('Partido a partido', 'Match by match')}</h3>

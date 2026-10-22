@@ -6,7 +6,7 @@ import CoachPicker from '../compare/CoachPicker'
 import '../styles/compare.css'
 import { Ico } from '../icons'
 import Info from '../Info'
-import { dataUrl, fmt, getJSON, shortName, type Any } from '../lib'
+import { dataUrl, fmt, real, getJSON, shortName, type Any } from '../lib'
 import { L, LANG } from '../settings'
 import { kFmt, kName } from './resumenKit'
 import '../styles/tl.css'
@@ -303,7 +303,7 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
             const up = o.d >= 0
             const r = REC[o.k]?.[up ? 0 : 1]
             const txt = r ? f(L(r[0], r[1]), qX, qY) : kName(o.k, glob)
-            return <div key={i} className="du-mo"><span className="du-mi">{i + 1}</span><span><b>{f(L(s[2], s[3]), qX, qY)}</b>{`, ${qX} `}{txt} <em className={up ? 'up' : 'dn'}>{kName(o.k, glob)} {sg(o.d)}σ</em></span></div>
+            return <div key={i} className="du-mo"><span className="du-mi">{i + 1}</span><span><b>{f(L(s[2], s[3]), qX, qY)}</b>{`, ${qX} `}{txt} <em className={up ? 'up' : 'dn'}>{kName(o.k, glob)} {real(o.k, o.d)}</em></span></div>
           })}
           {R.top.length === 0 && <p className="note">{L('No cambia de forma clara según el marcador ni el minuto.', 'He does not change clearly with score or minute.')}</p>}
         </div>

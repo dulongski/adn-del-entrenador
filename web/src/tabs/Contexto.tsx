@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { sig, type Any } from '../lib'
+import { real, realN, type Any } from '../lib'
 import { useTip } from '../charts'
 import { KEY, Seg, type P } from './common'
 import { L } from '../settings'
@@ -39,13 +39,13 @@ export function Contexto({ art, glob }: P) {
   return (
     <div className="ctx">
       <h3 className="h2">{L('Cómo se adapta', 'How he adapts')}</h3>
-<div className="tab-sub">{L('Cómo cambia su juego cuando va perdiendo, empatando o ganando, según el minuto, si juega en casa o la fuerza del rival. Ya quitamos lo que ponen sus jugadores. 0σ es la media de la liga en general; el número pequeño es lo que hace la liga en esa misma situación: si el suyo se separa de ese, la reacción es suya.', 'How his game changes when he is losing, drawing or winning, by minute, home or away, and by the strength of the opponent. What his players bring is already taken out. 0σ is the league average overall; the small number is what the league does in that same situation: where his pulls away from it, the reaction is his.')}</div>
+<div className="tab-sub">{L('Cómo cambia su juego cuando va perdiendo, empatando o ganando, según el minuto, si juega en casa o la fuerza del rival. Ya quitamos lo que ponen sus jugadores. 0 es la media de la liga en general y todo está en la unidad de cada estadística; el número pequeño es lo que hace la liga en esa misma situación: si el suyo se separa de ese, la reacción es suya.', 'How his game changes when he is losing, drawing or winning, by minute, home or away, and by the strength of the opponent. What his players bring is already taken out. 0σ is the league average overall; the small number is what the league does in that same situation: where his pulls away from it, the reaction is his.')}</div>
 
       <div className="ctx-hero">
         {top.map((o, i) => (
           <button key={o.kpi} className="ctx-hero-c" style={{ ['--i' as string]: i }} onClick={() => { setDim(o.dim); setMode('dif') }}>
             <span className="ctx-hero-k">{label(o.kpi)}</span>
-            <b className={`ctx-hero-n ${o.d >= 0 ? 'up' : 'dn'}`}>{o.d >= 0 ? '+' : '−'}{Math.abs(o.d).toFixed(1)}<small>σ</small></b>
+            <b className={`ctx-hero-n ${o.d >= 0 ? 'up' : 'dn'}`}>{real(o.kpi, o.d)}</b>
             <span className="ctx-hero-t">{o.d >= 0 ? L('más que la liga', 'more than the league') : L('menos que la liga', 'less than the league')} · {o.nivel}</span>
             <span className="ctx-hero-s">{L(DIMS.find(d => d[0] === o.dim)![1], DIMS.find(d => d[0] === o.dim)![2])}</span>
           </button>
@@ -67,15 +67,15 @@ export function Contexto({ art, glob }: P) {
               const weak = r.n_dt < MIN_N
               return (
                 <span key={i} className={`ctx-cell${weak ? ' weak' : ''}`} style={{ background: cellBg(v, mode === 'dif' ? maxD : 2) }}
-                  onMouseMove={e => tip.show(e, <><b>{label(x)}</b> · {td(r.nivel)}<br />{L('Él', 'Him')} {sig(r.dt)} · {L('liga', 'league')} {sig(r.liga)}<br />{r.n_dt} {L('segmentos', 'segments')}{weak ? ` · ${L('muestra chica', 'small sample')}` : ''}</>)} onMouseLeave={tip.hide}>
-                  <b>{v == null ? '—' : mode === 'dif' ? `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)}` : sig(v)}</b>
-                  <small>{mode === 'dif' ? `${sig(r.dt)} / ${sig(r.liga)}` : `${L('liga', 'league')} ${sig(r.liga)}`}</small>
+                  onMouseMove={e => tip.show(e, <><b>{label(x)}</b> · {td(r.nivel)}<br />{L('Él', 'Him')} {real(x, r.dt)} · {L('liga', 'league')} {real(x, r.liga)}<br />{r.n_dt} {L('segmentos', 'segments')}{weak ? ` · ${L('muestra chica', 'small sample')}` : ''}</>)} onMouseLeave={tip.hide}>
+                  <b>{real(x, v)}</b>
+                  <small>{mode === 'dif' ? `${L('él', 'him')} ${realN(x, r.dt)} · ${L('liga', 'league')} ${realN(x, r.liga)}` : `${L('liga', 'league')} ${realN(x, r.liga)}`}</small>
                 </span>
               )
             })}
           </div>
         ))}
-        <div className="ctx-leg note"><i className="neg" />{L('menos', 'less')}<span className="ctx-leg-bar" /><i className="pos" />{L('más', 'more')} · {mode === 'dif' ? L('diferencia con lo que hace la liga en esa situación (σ)', 'difference from what the league does in that situation (σ)') : L('estilo propio en σ, 0 = media de la liga', 'own style in σ, 0 = league average')}</div>
+        <div className="ctx-leg note"><i className="neg" />{L('menos', 'less')}<span className="ctx-leg-bar" /><i className="pos" />{L('más', 'more')} · {mode === 'dif' ? L('diferencia con lo que hace la liga en esa situación, en la unidad de cada estadística', 'difference from what the league does in that situation, in each stat\'s unit') : L('estilo propio frente a la media de la liga (0), en la unidad de cada estadística', 'own style vs the league average (0), in each stat\'s unit')}</div>
       </div>
       {tip.el}
 
@@ -145,7 +145,7 @@ export function Evolution({ rows, k, etapas }: { rows: Any[]; k: string; etapas:
         <line x1={P.l} x2={W - P.r} y1={y(0)} y2={y(0)} stroke="var(--ink-3)" strokeDasharray="2 3" />
         <text x={P.l - 6} y={y(0) + 4} fontSize={11} textAnchor="end" fill="var(--ink-3)">{L('liga', 'league')}</text>
         <polygon points={`${x(0)},${y(0)} ${line} ${x(rows.length - 1)},${y(0)}`} fill={`url(#${gid})`} />
-        {rows.map((r, i) => <circle key={i} cx={x(i)} cy={y(r[k])} r={3} fill={hueOf(String(r.club_id))} opacity={0.5} onMouseMove={e => tip.show(e, <>{r.date} · {clubOf(r.date)}<br />{L('ajustado', 'adjusted')} {sig(r[k])} · {L('crudo', 'raw')} {sig(r[`${k}_crudo`])}</>)} onMouseLeave={tip.hide} />)}
+        {rows.map((r, i) => <circle key={i} cx={x(i)} cy={y(r[k])} r={3} fill={hueOf(String(r.club_id))} opacity={0.5} onMouseMove={e => tip.show(e, <>{r.date} · {clubOf(r.date)}<br />{L('ajustado', 'adjusted')} {real(k, r[k])} · {L('crudo', 'raw')} {real(k, r[`${k}_crudo`])}</>)} onMouseLeave={tip.hide} />)}
         <polyline points={line} fill="none" stroke="var(--c-dt)" strokeWidth={2.8} strokeLinejoin="round" strokeLinecap="round" />
         <text x={P.l} y={H - 6} fontSize={11} fill="var(--ink-3)">{rows[0].date}</text>
         <text x={W - P.r} y={H - 6} fontSize={11} textAnchor="end" fill="var(--ink-3)">{rows.at(-1).date}</text>

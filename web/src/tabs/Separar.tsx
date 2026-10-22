@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react'
 import { Ico, iconFor } from '../icons'
-import { COMP, fmt, pct, shortName, sig, type Any } from '../lib'
+import { COMP, fmt, pct, real, realN, shortName, unitOf, type Any } from '../lib'
 import { ClubName, HBar, How, Legend, PrismDetail, prismSentence, useTip } from '../charts'
 import { FAM_ORDER, type P } from './common'
 import { useDistData } from '../Dist'
@@ -59,14 +59,14 @@ export function DtVsPlantilla({ art, glob }: P) {
         <How>
           AKM model (Abowd, Kramarz and Margolis, 1999), the one Muehlheusser et al. (2018) use to separate the coach from the club in results, applied here to <i>style</i> and extended with the players on the pitch (RAPM-style ridge).
           Unit: a segment of ≥5 min with no substitutions and no change in the score. z = α<sub>coach</sub> + φ<sub>club</sub> + Σβ<sub>player</sub>·exposure + γ<sub>opponent·season</sub> + δ·context + ε,
-          with a ridge penalty per block (coach {glob.lambda.coach}, club {glob.lambda.club}, players {glob.lambda.player}). Bars are in standard deviations across teams (σ).
+          with a ridge penalty per block (coach {glob.lambda.coach}, club {glob.lambda.club}, players {glob.lambda.player}). Values are in each stat's own unit (the model works in standard deviations across teams and converts back).
           What separates a coach from his squad: the same players playing under other coaches, the coach moving clubs, and rotation within his spell.
         </How>
       ) : (
         <How>
           Modelo AKM (Abowd, Kramarz y Margolis, 1999), el que Muehlheusser et al. (2018) usan para separar al DT del club en resultados, aplicado aquí a <i>estilo</i> y ampliado con jugadores en cancha (ridge tipo RAPM).
           Unidad: segmento de ≥5 min sin cambios de jugadores ni de marcador. z = α<sub>DT</sub> + φ<sub>club</sub> + Σβ<sub>jugador</sub>·exposición + γ<sub>rival·temporada</sub> + δ·contexto + ε,
-          con penalización ridge por bloque (DT {glob.lambda.coach}, club {glob.lambda.club}, jugadores {glob.lambda.player}). Las barras están en desviaciones estándar entre equipos (σ).
+          con penalización ridge por bloque (DT {glob.lambda.coach}, club {glob.lambda.club}, jugadores {glob.lambda.player}). Los valores están en la unidad de cada estadística (el modelo trabaja en desviaciones estándar entre equipos y luego regresa a la unidad real).
           Lo que separa al DT de su plantilla es que los mismos jugadores jueguen con otros DTs, que el DT cambie de club y las rotaciones dentro de su etapa.
         </How>
       )}
@@ -109,14 +109,14 @@ function AttribTable({ rows, glob, hu, art, dd }: { rows: Any[]; glob: Any; hu: 
           <Fragment key={r.kpi}>
             <tr className={`att-row${isOpen ? ' open' : ''}`} onClick={() => setOpen(isOpen ? null : r.kpi)} aria-expanded={isOpen}
                 tabIndex={0} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpen(isOpen ? null : r.kpi))}>
-              <td className="att-name">{kName(r.kpi, glob)}<div className="note">{L('sus partidos', 'his matches')} <b>{kFmt(r.kpi, h?.crudo, true)}</b> · {L('liga', 'league')} {kFmt(r.kpi, h?.liga, true)}</div></td>
+              <td className="att-name">{kName(r.kpi, glob)}<div className="note">{L('sus partidos', 'his matches')} <b>{kFmt(r.kpi, h?.crudo, true)}</b> · {L('liga', 'league')} {kFmt(r.kpi, h?.liga, true)}{unitOf(r.kpi).length > 3 ? ` · ${L('en', 'in')} ${unitOf(r.kpi).trim()}` : ''}</div></td>
               {ATT_COLS.map(c => {
                 const v = r[c.key] ?? 0
                 const w = Math.min(50, Math.abs(v) / max * 50)
                 return (
                   <td key={c.key} className={`cell${c.key === 'observado' ? ' obs' : ''}`}>
                     <span className="mini"><span className="mid" /><span className="bar" style={{ background: c.color, left: v >= 0 ? '50%' : `${50 - w}%`, width: `${w}%` }} /></span>
-                    <span className="num">{sig(v)}</span>
+                    <span className="num">{realN(r.kpi, v)}</span>
                   </td>
                 )
               })}

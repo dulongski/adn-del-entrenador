@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Dist, { rankOf } from '../Dist'
-import { fmt, sig, type Any } from '../lib'
+import { fmt, real, sig, type Any } from '../lib'
 import { LANG, L } from '../settings'
 import { kpiLabel } from '../i18n/data'
 
@@ -151,7 +151,7 @@ export function KpiBell({ k, art, glob, dd, color, mode: mode0 = 'a', showStats 
       {mine !== undefined && cmp && (
         <p className="rs-bell-say">
           <b>{mode === 'v' ? L('En sus partidos', 'In his matches') : L('Su sello', 'His imprint')}: {cmp.txt}.</b> {rankText(vals, mine)}
-          {mode === 'a' && a !== undefined && <span className="rs-tech" title={L('Efecto propio del DT en desviaciones estándar entre equipos, con su error', "The coach's own effect in standard deviations across teams, with its error")}> {sig(a)}{K.se?.[id] ? ` ± ${fmt(K.se[id], 2)}` : ''}</span>}
+          {mode === 'a' && a !== undefined && <span className="rs-tech" title={L('Efecto propio del DT frente a la liga, con su margen de error', "The coach's own effect vs the league, with its margin of error")}> {real(k, a)}{K.se?.[id] ? ` ± ${real(k, K.se[id]).slice(1)}` : ''}</span>}
         </p>
       )}
     </div>

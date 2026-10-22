@@ -87,7 +87,7 @@ export function Fases({ art, glob, media }: P) {
               {rs.map((h: Any) => (
                 <div key={h.kpi} style={{ display: 'grid', gridTemplateColumns: 'minmax(120px,1fr) 1.3fr 90px', gap: 10, alignItems: 'center', padding: '3px 0' }}>
                   <span style={{ fontSize: 13, lineHeight: 1.2 }} title={kpiDesc(h.kpi, glob.kpis[h.kpi].descripcion)}>{kpiLabel(h.kpi, h.etiqueta)}</span>
-                  <DotCI v={h.alpha} se={h.se} pctl={h.pct} />
+                  <DotCI v={h.alpha} se={h.se} pctl={h.pct} k={h.kpi} />
                   <span className="mono" style={{ fontSize: 12, textAlign: 'right' }}>{fmt(h.crudo)} <span style={{ color: 'var(--ink-3)' }}>/ {fmt(h.liga)}</span></span>
                 </div>
               ))}

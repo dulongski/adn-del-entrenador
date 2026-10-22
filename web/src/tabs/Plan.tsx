@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ClubLogo } from '../charts'
 import { Ico, type IconName } from '../icons'
 import Info from '../Info'
-import { dataUrl, fmt, getJSON, jugadorCorto, shortName, type Any } from '../lib'
+import { dataUrl, fmt, real, getJSON, jugadorCorto, shortName, type Any } from '../lib'
 import { L, LANG } from '../settings'
 import { kName } from './resumenKit'
 import '../styles/tl.css'
@@ -32,7 +32,7 @@ function Evidence({ a, glob }: { a: Any; glob: Any }) {
   const ev: Any[] = a.evidencia ?? []
   if (a.id === 'contexto') {
     const e = ev[0]
-    return <div className="pl-ev"><span><b>{kName(e.kpi, glob)}</b> · {e.nivel}</span><em className={e.dif >= 0 ? 'up' : 'dn'}>{e.dif >= 0 ? '+' : '−'}{fmt(Math.abs(e.dif), 1)}σ {L('frente a la liga', 'vs the league')}</em></div>
+    return <div className="pl-ev"><span><b>{kName(e.kpi, glob)}</b> · {e.nivel}</span><em className={e.dif >= 0 ? 'up' : 'dn'}>{real(e.kpi, e.dif)} {L('frente a la liga', 'vs the league')}</em></div>
   }
   if (a.id === 'bp_vulnerable') { const e = ev[0]; return <div className="pl-ev"><span><b>{zona(e.zona)}</b> · {e.n} {L('córners en contra', 'corners against')}</span><em>xG {fmt(e.xg, 3)} · {L('liga', 'league')} {fmt(e.xg_liga, 3)}</em></div> }
   if (a.id === 'bp_marcaje') { const e = ev[0]; return <div className="pl-ev"><span><b>{fmt(e.pegados_pct, 0)}%</b> {L('de sus defensores pegados a un rival', 'of his defenders tight to an opponent')}</span><em>{e.n} {L('córners con 360', 'corners with 360')}</em></div> }
@@ -148,12 +148,12 @@ export function Tablero({ art, glob }: { art: Any; glob: Any }) {
       <div className="pl-lead">
         <h3 className="h2">{L(`¿${surname(art.nombre)} sigue jugando igual? Tablero de seguimiento`, `Is ${surname(art.nombre)} still playing the same way? Tracking dashboard`)}</h3>
 <div className="tab-sub"><p>{L('Sus seis rasgos más marcados y confiables (la confiabilidad sale de la prueba mitad/mitad del Método). La franja es lo esperable para el promedio de 10 partidos si sigue jugando como siempre (su media de carrera ± 1.64 veces el error de un promedio de 10). El punto es lo que hizo en los últimos 10.', 'His six most distinctive and reliable traits (reliability comes from the split-half test in Method). The band is what to expect from a 10-match average if he keeps playing as always (career mean ± 1.64 times the error of a 10-match average). The dot is what he did in the last 10.')}</p>
-            <p>{L('Valores en desviaciones típicas frente a la liga, ya sin el efecto de jugadores, club, rival ni contexto.', 'Values in standard deviations versus the league, net of players, club, opponent and context.')}</p></div>
+            <p>{L('Valores frente a la liga, en la unidad de cada estadística, ya sin el efecto de jugadores, club, rival ni contexto.', 'Values versus the league, in each stat\'s unit, net of players, club, opponent and context.')}</p></div>
         <p className="note">{L(`Últimos ${t.n} partidos: del ${t.desde} al ${t.hasta}.`, `Last ${t.n} matches: ${t.desde} to ${t.hasta}.`)}</p>
       </div>
       {R && <div className="tl-kpis">{tile(L('Puntos por partido', 'Points per match'), R.pts[0], R.pts[1])}{tile(L('Puntos merecidos (xG)', 'Deserved points (xG)'), R.xpts[0], R.xpts[1])}{tile(L('Diferencia de xG por partido', 'xG difference per match'), R.xgd[0], R.xgd[1])}</div>}
       <div className="card pl-board">
-        <div className="pl-axis"><span /><div>{[-1, 0, 1].map(v => <em key={v} style={{ left: `${X(v)}%` }}>{v > 0 ? '+1σ' : v < 0 ? '−1σ' : L('liga', 'league')}</em>)}</div><span /></div>
+        <div className="pl-axis"><span /><div>{[-1, 0, 1].map(v => <em key={v} style={{ left: `${X(v)}%` }}>{v > 0 ? L('más', 'more') : v < 0 ? L('menos', 'less') : L('liga', 'league')}</em>)}</div><span /></div>
         {t.rasgos.map((r: Any) => {
           const e = EST[r.estado] ?? EST.en_linea
           return (

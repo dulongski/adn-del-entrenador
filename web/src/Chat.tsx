@@ -5,7 +5,7 @@
    búsqueda simple sobre nombres de DTs, clubes e indicadores. */
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import boot from './boot.json'
-import { asset, dataUrl, fmt, getJSON, jugadorCorto, nombreDT, shortName, type Any } from './lib'
+import { asset, dataUrl, fmt, getJSON, jugadorCorto, nombreDT, real, shortName, type Any } from './lib'
 const jugadorShort = (id: number, nm: string) => jugadorCorto(id, nm)
 import { ClubLogo } from './charts'
 import { L, LANG } from './settings'
@@ -26,12 +26,12 @@ const dtName = (id: number) => nombreDT(id)?.corto ?? shortName(DT_BY_ID.get(id)
 const dtClub = (id: number) => media.dts?.[id]?.club ?? DT_BY_ID.get(id)?.clubes.at(-1)?.club ?? ''
 const dtFoto = (id: number) => asset(media.dts?.[id]?.foto)
 const kl = (k: string) => kpiLabel(k, glob.kpis[k]?.etiqueta ?? k)
-const VIEW_NAMES: Record<string, string> = Object.fromEntries(MODES.flatMap(m => m.subs.map(([k, n]) => [k, m.subs.length > 1 ? `${m.name} · ${n}` : m.name])))
+const VIEW_NAMES: Record<string, string> = Object.fromEntries(MODES.flatMap(m => m.subs.map(([k, n]) => [k, m.subs.length > 1 && n !== m.name ? `${m.name} · ${n}` : m.name])))
 VIEW_NAMES.hub = L('Menú del DT', 'Coach menu'); VIEW_NAMES.mapa = L('Mapa de estilos', 'Style map')
 
 /* ------------------------------------------------------------ tipos */
 type Card =
-  | { t: 'rank'; title: string; unit: string; rows: { id: number; v: number; a: number }[]; measure: 'propio' | 'observado'; liga: number }
+  | { t: 'rank'; title: string; k?: string; unit: string; rows: { id: number; v: number; a: number }[]; measure: 'propio' | 'observado'; liga: number }
   | { t: 'coach'; id: number; stats: [string, string][]; traits: string[] }
   | { t: 'matches'; title: string; summary?: string; rows: Any[] }
   | { t: 'compare'; a: number; b: number; sim: number; same: CmpRow[]; diffs: CmpRow[] }
@@ -134,7 +134,7 @@ function makeTools(push: (c: Card) => void, status: (s: string) => void) {
         ids.sort((x, y) => (order === 'asc' ? 1 : -1) * (e[key][x] - e[key][y]))
         const top = ids.slice(0, Math.max(3, Math.min(10, Number(n) || 5)))
         const rows = top.map(id => ({ id, v: e.v[id], a: e.a[id] }))
-        if (show) push({ t: 'rank', title: kl(k), unit: '', rows, measure: measure === 'observado' ? 'observado' : 'propio', liga: e.liga })
+        if (show) push({ t: 'rank', title: kl(k), k, unit: '', rows, measure: measure === 'observado' ? 'observado' : 'propio', liga: e.liga })
         return { indicador: kl(k), media_liga: e.liga, orden: order, medida: measure, top: rows.map((r, i) => ({ puesto: i + 1, id: r.id, nombre: dtName(r.id), observado: r.v, estilo_propio_sigma: r.a })) }
       },
     },
@@ -445,26 +445,89 @@ ${kp}`
 }
 
 /* ------------------------------------------------------------ respaldo sin IA */
+/* Respaldo sin IA (por ejemplo, quien abre la app sin sesión de Claude): entiende las preguntas más comunes
+   con reglas simples y responde con los mismos datos de la app. */
+const SYN: [RegExp, string][] = [
+  [/bal[oó]n parado|c[oó]rner|tiro libre/, 'xg_balon_parado_90'], [/m[aá]s (tiene|tienen) (el )?bal[oó]n|posesi|pelota|tener el bal/, 'posesion'],
+  [/xg en contra|concede/, 'xg_contra_90'], [/\bxg\b|ocasion|peligro/, 'xg_90'], [/contragol|contraataq|transici/, 'contraataque'],
+  [/presi[oó]n alta|presiona arriba/, 'altura_presion'], [/presi/, 'intensidad_presion'], [/roba|recupera/, 'recuperaciones_altas_90'],
+  [/vertical|directo/, 'verticalidad'], [/largo|pelotazo/, 'pase_largo'], [/conduc/, 'conduccion_prog'], [/field tilt|domin/, 'field_tilt'],
+]
 function localAnswer(q: string): Msg {
   const t = norm(q)
   const cards: Card[] = []
-  const STOP = new Set(['quien', 'quién', 'tiene', 'cual', 'cuanto', 'como', 'contra', 'mejor', 'which', 'what', 'coach', 'entrenador', 'partido', 'partidos', 'match', 'matches', 'with', 'para', 'about'])
+  const m: Msg = { role: 'assistant', text: '', cards, local: true }
+  const refresh = () => window.dispatchEvent(new Event('coachdna:chat-refresh'))
+  const STOP = new Set(['quien', 'tiene', 'cual', 'cuanto', 'como', 'contra', 'mejor', 'which', 'what', 'coach', 'entrenador', 'partido', 'partidos', 'match', 'matches', 'with', 'para', 'about', 'genera', 'parecen', 'america'])
   const nameWords = t.split(/[^a-z0-9ñ]+/).filter(w => w.length >= 4 && !STOP.has(w))
-  const coaches = DTS.filter(d => nameWords.some(w => norm(`${d.nombre} ${dtName(d.id)}`).split(/\s+/).includes(w))).slice(0, 3)
-  const kp = Object.keys(glob.kpis).map(k => [k, norm(kl(k))] as const)
+  const coaches = DTS.filter(d => nameWords.some(w => norm(`${d.nombre} ${dtName(d.id)}`).split(/\s+/).includes(w))).slice(0, 2)
+  const clubs = Object.keys(media.clubes ?? {}).filter(c => t.includes(norm(c)) || norm(c).split(/\s+/).some(w => w.length >= 5 && t.split(/[^a-z0-9ñ]+/).includes(w)))
+  const syn = SYN.find(([re]) => re.test(t))
   const words = t.split(/\W+/).filter(w => w.length > 3)
-  const kHit = kp.map(([k, l]) => [k, words.filter(w => l.includes(w)).length] as const).filter(([, s]) => s > 0).sort((a, b) => b[1] - a[1])[0]
-  coaches.slice(0, 2).forEach(d => cards.push({ t: 'go', coach: d.id, view: 'resumen' }))
-  const text = kHit
-    ? L(`No pude usar la IA en esta vista. Con búsqueda simple encontré «${kl(kHit[0])}»: arriba va el ranking por estilo propio.`, `I couldn't use the AI here. Simple search found "${kl(kHit[0])}": the ranking by own style is above.`)
-    : coaches.length ? L('No pude usar la IA en esta vista. Esto es lo que encontré por nombre:', "I couldn't use the AI here. This is what I found by name:")
-      : L('No pude usar la IA en esta vista y no encontré un DT ni un indicador con esas palabras.', "I couldn't use the AI here and found no coach or indicator with those words.")
-  const m: Msg = { role: 'assistant', text, cards, local: true }
-  if (kHit) distP().then(D => {
-    const e = D.kpis[kHit[0]]; const ids = Object.keys(e.a).map(Number).sort((x, y) => e.a[y] - e.a[x]).slice(0, 5)
-    cards.unshift({ t: 'rank', title: kl(kHit[0]), unit: '', rows: ids.map(id => ({ id, v: e.v[id], a: e.a[id] })), measure: 'propio', liga: e.liga })
-    window.dispatchEvent(new Event('coachdna:chat-refresh'))
-  })
+  const kHit = syn ? syn[1] : Object.keys(glob.kpis).map(k => [k, words.filter(w => norm(kl(k)).includes(w)).length] as const).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])[0]?.[0]
+  const pre = L('Respuesta rápida sin IA (para la IA, abre la app con tu sesión de Claude). ', 'Quick answer without AI (open the app signed in to Claude for the AI). ')
+
+  // 1) alineación / once / formación de un DT → su pestaña de jugadores, en su club actual
+  if (coaches.length && /alineaci|once|formaci|dibujo|titular/.test(t)) {
+    const id = coaches[0].id
+    chatBus.jug = { club: dtClub(id) }
+    go(id, 'jugadores'); cards.push({ t: 'go', coach: id, view: 'jugadores' })
+    m.text = pre + L(`Te llevo a la alineación de ${dtName(id)} en ${dtClub(id)}: su dibujo más usado y su once por línea.`, `Taking you to ${dtName(id)}'s line-up at ${dtClub(id)}.`)
+    return m
+  }
+  // 2) parecidos / comparar dos DTs → cara a cara
+  if (coaches.length >= 2 && /parec|compar|diferenc|vs|versus/.test(t)) {
+    const [a, b] = coaches
+    chatBus.vsRival = b.id
+    go(a.id, 'vs'); cards.push({ t: 'go', coach: a.id, view: 'vs' })
+    m.text = pre + L(`Te llevo al cara a cara de ${dtName(a.id)} y ${dtName(b.id)}: ahí están sus rasgos en común y en qué difieren.`, `Taking you to ${dtName(a.id)} vs ${dtName(b.id)}.`)
+    return m
+  }
+  // 3) cómo le fue a un club contra otro → sus partidos
+  if (clubs.length >= 2 && !coaches.length) {
+    // en el orden en que se nombran («¿cómo le fue a Tigres contra Monterrey?» → desde Tigres)
+    const at = (c: string) => { const n = norm(c), i = t.indexOf(n); return i >= 0 ? i : Math.min(...n.split(/\s+/).filter(w => w.length >= 5).map(w => { const j = t.indexOf(w); return j < 0 ? 1e9 : j })) }
+    const [a, b] = [...clubs].sort((x, y) => at(x) - at(y))
+    m.text = pre + L(`Buscando ${a} contra ${b}…`, `Looking up ${a} vs ${b}…`)
+    partidosP().then(P => {
+      const rows = matchRows(P).filter((r: Any) => (r.local === a && r.visita === b) || (r.local === b && r.visita === a)).sort((x: Any, y: Any) => (x.fecha < y.fecha ? 1 : -1))
+      let w = 0, d = 0, l = 0
+      for (const r of rows) { const f = r.local === a ? r.gl : r.gv, c = r.local === a ? r.gv : r.gl; if (f > c) w++; else if (f === c) d++; else l++ }
+      const sum = `${rows.length} ${L('partidos', 'matches')} · ${a}: ${w}${L('G', 'W')} ${d}${L('E', 'D')} ${l}${L('P', 'L')}`
+      cards.unshift({ t: 'matches', title: `${a} vs ${b}`, summary: sum, rows: rows.slice(0, 6) })
+      m.text = pre + L(`${a} contra ${b} desde 2021: ${w} victorias, ${d} empates y ${l} derrotas de ${a} en ${rows.length} partidos. Arriba, los más recientes.`, `${a} vs ${b} since 2021: ${w}W ${d}D ${l}L in ${rows.length} matches.`)
+      refresh()
+    })
+    return m
+  }
+  // 4) un indicador: ranking, o el dato de un DT si lo nombran
+  if (kHit) {
+    m.text = pre + L(`Buscando «${kl(kHit)}»…`, `Looking up "${kl(kHit)}"…`)
+    distP().then(D => {
+      const e = D.kpis[kHit]
+      if (!e) return
+      const ids = Object.keys(e.a).map(Number).sort((x, y) => e.a[y] - e.a[x])
+      if (coaches.length) {
+        const id = coaches[0].id, v = e.v[id], rk = ids.indexOf(id) + 1
+        m.text = pre + L(`${dtName(id)}: ${fmt(v, 2)} en «${kl(kHit)}» (liga ${fmt(e.liga, 2)}). Por su estilo propio, ya sin su plantilla, es ${rk}º de ${ids.length} DTs.`,
+          `${dtName(id)}: ${fmt(v, 2)} in "${kl(kHit)}" (league ${fmt(e.liga, 2)}); ${rk} of ${ids.length} by own style.`)
+        cards.push({ t: 'go', coach: id, view: 'resumen' })
+      } else {
+        m.text = pre + L(`Por estilo propio (ya sin su plantilla), el que más destaca en «${kl(kHit)}» es ${dtName(ids[0])}, seguido de ${dtName(ids[1])} y ${dtName(ids[2])}.`,
+          `By own style, the top coach in "${kl(kHit)}" is ${dtName(ids[0])}, then ${dtName(ids[1])} and ${dtName(ids[2])}.`)
+      }
+      cards.unshift({ t: 'rank', title: kl(kHit), k: kHit, unit: '', rows: ids.slice(0, 5).map(id => ({ id, v: e.v[id], a: e.a[id] })), measure: 'propio', liga: e.liga })
+      refresh()
+    })
+    return m
+  }
+  // 5) sólo un nombre → su resumen
+  if (coaches.length) {
+    coaches.forEach(d => cards.push({ t: 'go', coach: d.id, view: 'resumen' }))
+    m.text = pre + L('Encontré a este DT; ábrelo para ver su ADN:', 'Found this coach; open him to see his DNA:')
+    return m
+  }
+  m.text = pre + L('No encontré un DT, un club o un indicador con esas palabras. Prueba con «¿quién presiona más?» o «alineación de Almada».', 'I found no coach, club or indicator with those words.')
   return m
 }
 
@@ -561,7 +624,7 @@ function CardView({ c }: { c: Card }) {
             <Face id={r.id} size={28} />
             <span className="cc-name">{dtName(r.id)}<small><ClubLogo club={dtClub(r.id)} media={media} size={12} />{dtClub(r.id)}</small></span>
             <span className="cc-bar"><i style={{ width: `${(Math.abs(vals[i]) / max) * 100}%` }} /></span>
-            <b className="mono">{c.measure === 'propio' ? `${r.a > 0 ? '+' : ''}${fmt(r.a, 2)}σ` : fmt(r.v, 1)}</b>
+            <b className="mono">{c.measure === 'propio' ? real(c.k, r.a) : fmt(r.v, 1)}</b>
           </button>
         ))}
         <div className="cc-foot">{L('Liga', 'League')}: {fmt(c.liga, 1)}</div>
@@ -611,10 +674,9 @@ function CardView({ c }: { c: Card }) {
   )
   if (c.t === 'compare') {
     const pos = (v: number) => `${Math.max(3, Math.min(97, ((v + 1.5) / 3) * 100))}%`
-    const sg = (v: number) => `${v > 0.004 ? '+' : v < -0.004 ? '−' : ''}${fmt(Math.abs(v), 2)}σ`
-    const row = (d: CmpRow, i: number) => (
+        const row = (d: CmpRow, i: number) => (
       <div key={d.k} className="cc-cmp" style={{ ['--i' as string]: i }}>
-        <b className="cc-n a">{sg(d.a)}<small>{d.va != null ? fmt(d.va, 1) : ''}</small></b>
+        <b className="cc-n a">{real(d.k, d.a)}<small>{d.va != null ? fmt(d.va, 1) : ''}</small></b>
         <div className="cc-cmp-mid">
           <span className="cc-cmp-l">{kl(d.k)}</span>
           <span className="cc-cmp-track">
@@ -623,7 +685,7 @@ function CardView({ c }: { c: Card }) {
             <i className="dot a" style={{ left: pos(d.a) }} /><i className="dot b" style={{ left: pos(d.b) }} />
           </span>
         </div>
-        <b className="cc-n b">{sg(d.b)}<small>{d.vb != null ? fmt(d.vb, 1) : ''}</small></b>
+        <b className="cc-n b">{real(d.k, d.b)}<small>{d.vb != null ? fmt(d.vb, 1) : ''}</small></b>
       </div>
     )
     return (
@@ -633,7 +695,7 @@ function CardView({ c }: { c: Card }) {
           <div className="cc-sim"><b>{c.sim}</b><span>{L('de 100 parecido', 'of 100 alike')}</span></div>
           <button onClick={() => go(c.b, 'resumen')}><Face id={c.b} size={44} ring="var(--c-plantilla)" /><span className="b">{dtName(c.b)}</span></button>
         </div>
-        <div className="cc-note">{L('Estilo propio en σ (0 = media de la liga) y, debajo, el valor que se vio en sus partidos.', 'Own style in σ (0 = league average) and, below, the value seen in his matches.')}</div>
+        <div className="cc-note">{L('Estilo propio frente a la media de la liga, en la unidad de cada estadística, y debajo el valor que se vio en sus partidos.', 'Own style vs the league average, in each stat\'s unit, and below the value seen in his matches.')}</div>
         {c.same.length > 0 && <div className="cc-sec">{L('Se parecen en', 'Alike in')}</div>}
         {c.same.map(row)}
         <div className="cc-sec">{L('Más distintos', 'Most different')}</div>

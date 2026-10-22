@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { L } from './settings'
 import { kpiLabel } from './i18n/data'
-import { asset, nombreDT, shortName, type Any } from './lib'
+import { asset, nombreDT, real, shortName, type Any } from './lib'
 import { ClubLogo } from './charts'
 import Info from './Info'
 import { loadStyle, SLIDERS, fxOf, type Fx, type StyleX } from './sim/styleModel'
@@ -79,7 +79,7 @@ export default function StyleLab({ art, media, onChange }: { art: Any; glob?: An
             return (
               <div key={k} className={`slab-row${Math.abs(dz[k] ?? 0) > 0.01 ? ' on' : ''}`}>
                 <span className="slab-l">{kpiLabel(k, wi.kpis[idx[k]].etiqueta)}</span>
-                <span className="slab-v mono">{v >= 0 ? '+' : '−'}{Math.abs(v).toFixed(2)}σ</span>
+                <span className="slab-v mono">{real(k, v)}</span>
                 <span className="slab-t">
                   <i className="slab-zero" /><i className="slab-orig" style={{ left: `${((base + 3) / 6) * 100}%` }} title={L('su estilo real', 'his real style')} />
                   <input type="range" min={-3} max={3} step={0.05} value={v} aria-label={kpiLabel(k, wi.kpis[idx[k]].etiqueta)} onChange={e => { setFrom(''); setDz(d => ({ ...d, [k]: +e.target.value - base })) }} />
