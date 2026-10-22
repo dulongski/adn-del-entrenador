@@ -94,6 +94,26 @@ const NOTE_KIND: Record<string, string> = {
 /** Ordinal en inglés (1st, 2nd, 3rd, 22nd…). */
 const ordEn = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`
 
+/** Su huella según el partido: las 2 reacciones que más lo separan de la liga en la misma situación (≥ 40 tramos). */
+const SIT: Record<string, [string, string]> = {
+  Perdiendo: ['cuando va perdiendo', 'when losing'], Empatando: ['cuando va empatando', 'when drawing'], Ganando: ['cuando va ganando', 'when winning'],
+  Local: ['de local', 'at home'], Visitante: ['de visita', 'away'],
+  'Rival débil': ['contra rivales débiles', 'vs weak opponents'], 'Rival medio': ['contra rivales medios', 'vs mid opponents'], 'Rival fuerte': ['contra rivales fuertes', 'vs strong opponents'],
+}
+function reacciones(art: Any, glob: Any) {
+  const C = art.contexto?.curvas ?? {}
+  const out: Any[] = []
+  for (const dim of Object.keys(C)) for (const k of Object.keys(C[dim])) for (const r of C[dim][k] as Any[])
+    if (r.dt != null && r.liga != null && r.n_dt >= 40 && glob.kpis[k]?.sd) out.push({ k, nivel: r.nivel, d: r.dt - r.liga })
+  out.sort((a, b) => Math.abs(b.d) - Math.abs(a.d))
+  const seen = new Set<string>()
+  return out.filter(o => !seen.has(o.k) && seen.add(o.k)).slice(0, 2).map(o => ({
+    dato: real(o.k, o.d),
+    texto: `${kName(o.k, glob)} ${SIT[o.nivel] ? L(SIT[o.nivel][0], SIT[o.nivel][1]) : L(`en el ${o.nivel}`, `at ${o.nivel}`)}`,
+    liga: L('frente a la liga en esa situación', 'vs the league in that spot'),
+  }))
+}
+
 /** Las claves de la historia como tarjetas de color: idea + dos datos grandes; al tocar una se abre su detalle debajo. */
 function StoryGrid({ secs, art, glob, media, dd, open }: { secs: Any[]; art: Any; glob: Any; media: Any; dd: Any; open: (t: TabKey) => void }) {
   const [sel, setSel] = useState<string | null>(null)
@@ -104,13 +124,18 @@ function StoryGrid({ secs, art, glob, media, dd, open }: { secs: Any[]; art: Any
         {secs.map((sec, i) => {
           const S = SEC[sec.id] ?? { color: DT_BLUE, tab: 'resumen' as TabKey }
           const pts: Any[] = (sec.puntos ?? []).filter((p: Any) => !/^Club(es|s)?$/.test(p.texto) && p.dato)
-          const hero = pts.slice(0, 2)
+          const ideas: Any[] = ((LANG === 'en' && art.narrativa_en) || art.narrativa)?.principios ?? []
+          const hero = sec.id === 'contexto' ? reacciones(art, glob)
+            : sec.id === 'identidad' ? [pts[0], { dato: String(art.etapas?.length ?? ''), texto: L('Clubes dirigidos', 'Clubs coached') }].filter(p => p?.dato)
+            : pts.slice(0, 2)
           const on = sel === sec.id
           return (
             <button key={sec.id} className={`rs-st${on ? ' on' : ''}`} style={{ ['--acc' as string]: S.color }} aria-expanded={on}
               onClick={() => setSel(on ? null : sec.id)}>
               <span className="rs-st-top"><i>{i + 1}</i>{sec.titulo}</span>
-              <span className="rs-st-idea">{sec.idea}</span>
+              {sec.id === 'identidad' && ideas.length > 0
+                ? <span className="rs-st-ideas">{ideas.slice(0, 4).map((p: Any) => <span key={p.titulo}>{p.titulo}</span>)}</span>
+                : <span className="rs-st-idea">{sec.idea}</span>}
               {sec.id === 'identidad' && art.etapas?.length > 0 && (
                 <span className="rs-st-clubs">{art.etapas.map((e: Any, j: number) => <ClubLogo key={j} club={e.club} media={media} size={22} />)}</span>
               )}
@@ -119,7 +144,7 @@ function StoryGrid({ secs, art, glob, media, dd, open }: { secs: Any[]; art: Any
                   const m = String(p.dato).match(/^([\d.,−+-]+×?%?)(.*)$/)
                   return (
                     <span key={j} className="rs-st-num">
-                      <b>{m ? m[1] : p.dato}{m && m[2].trim().length <= 3 ? m[2] : ''}</b>
+                      <b>{m ? m[1] : p.dato}{m && m[2].trim() ? (m[2].trim().length <= 1 ? m[2].trim() : <i className="rs-st-u">{m[2].trim()}</i>) : null}</b>
                       <small>{p.texto}{p.liga ? ` · ${p.liga}` : ''}</small>
                     </span>
                   )
@@ -138,7 +163,7 @@ function StoryGrid({ secs, art, glob, media, dd, open }: { secs: Any[]; art: Any
 
 function Chapter({ sec, art, glob, media, dd, open }: { sec: Any; art: Any; glob: Any; media: Any; dd: Any; open: (t: TabKey) => void }) {
   const [openK, setOpenK] = useState<number | null>(null)
-  const puntos: Any[] = sec.puntos || []
+  const puntos: Any[] = (sec.puntos || []).filter((p: Any) => !/^Adivinan|^Guess/.test(p.texto ?? ''))
   const S = SEC[sec.id] ?? { color: DT_BLUE, tab: 'resumen' as TabKey }
   const hasKpi = puntos.some(p => p.kpi)
   return (

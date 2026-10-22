@@ -7,7 +7,7 @@
   --ink: #eef3ef; --ink-2: #b8c4bd; --ink-3: #85928b; --rule: #2e3b34;
   --pitch: #1d2922; --pitch-line: #3b4b42;
   --c-dt: #3987e5; --c-plantilla: #d95926; --c-club: #199e70; --c-rival: #c98500; --c-ctx: #d55181; --c-resid: #4a5650;
-  --div-neg: #e66767; --div-mid: #383835; --div-pos: #3987e5;
+  --div-neg: #e66767; --div-mid: #383835; --div-pos: #3fbf7f; --div-cen: #e8b10c;
   --focus: #3987e5; --logo-acc: #3ddc97;
   --display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
   --body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -20,7 +20,7 @@
   --ink: #10201A; --ink-2: #3E4C45; --ink-3: #6E7A73; --rule: #DDD5C4;
   --pitch: #E4F2EA; --pitch-line: #9FC9B4;
   --c-dt: #1FA97A; --c-plantilla: #EF4B5F; --c-club: #3D7BD9; --c-rival: #D99A00; --c-ctx: #9B6BD6; --c-resid: #C9C2B2;
-  --div-neg: #EF4B5F; --div-mid: #F1EDE4; --div-pos: #1FA97A;
+  --div-neg: #EF4B5F; --div-mid: #F1EDE4; --div-pos: #1FA97A; --div-cen: #E0A100;
   --focus: #1FA97A; --logo-acc: #EF4B5F;
 }
 /* Estadio: noche de partido bajo reflectores (azul marino y amarillo de luz). */
@@ -30,7 +30,7 @@
   --ink: #EEF2FF; --ink-2: #B7C0DB; --ink-3: #7F8AAD; --rule: #263257;
   --pitch: #12301F; --pitch-line: #2E5A40;
   --c-dt: #FFD23F; --c-plantilla: #FF6B6B; --c-club: #4CC9F0; --c-rival: #B388FF; --c-ctx: #FF8FAB; --c-resid: #3A4570;
-  --div-neg: #FF6B6B; --div-mid: #2A3352; --div-pos: #4CC9F0;
+  --div-neg: #FF6B6B; --div-mid: #2A3352; --div-pos: #3DDC97; --div-cen: #FFD166;
   --focus: #FFD23F; --logo-acc: #FFD23F;
 }
 /* Pizarra: pizarrón del vestidor, gis blanco y gises de colores. */
@@ -40,7 +40,7 @@
   --ink: #F2EFE6; --ink-2: #C9C6BC; --ink-3: #959A90; --rule: #3B4A45;
   --pitch: #22312D; --pitch-line: #5B6B65;
   --c-dt: #8EC5FF; --c-plantilla: #FFB38A; --c-club: #9EE6B8; --c-rival: #FFE38A; --c-ctx: #F7A8D8; --c-resid: #4F5D58;
-  --div-neg: #FF9C9C; --div-mid: #34413D; --div-pos: #8EC5FF;
+  --div-neg: #FF9C9C; --div-mid: #34413D; --div-pos: #7FD8A6; --div-cen: #F3D27A;
   --focus: #FFE38A; --logo-acc: #FFE38A;
 }
 /* Atardecer: partido de las 5 de la tarde, cielo morado y luz naranja. */
@@ -50,7 +50,7 @@
   --ink: #F6EDF2; --ink-2: #CDBFCA; --ink-3: #998A97; --rule: #3B2D45;
   --pitch: #22262A; --pitch-line: #4A4450;
   --c-dt: #FF7A59; --c-plantilla: #2EC4B6; --c-club: #FFC857; --c-rival: #B497FF; --c-ctx: #FF5D8F; --c-resid: #4A3D52;
-  --div-neg: #FF5D8F; --div-mid: #3A2E42; --div-pos: #2EC4B6;
+  --div-neg: #FF5D8F; --div-mid: #3A2E42; --div-pos: #46D39A; --div-cen: #FFC857;
   --focus: #FF7A59; --logo-acc: #FF7A59;
 }
 

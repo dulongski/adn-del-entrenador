@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { real, realN, type Any } from '../lib'
+import { div3, real, realN, type Any } from '../lib'
 import { useTip } from '../charts'
 import { KEY, Seg, type P } from './common'
 import { L } from '../settings'
@@ -11,11 +11,7 @@ const DIMS: [string, string, string][] = [['marcador', 'Marcador', 'Scoreline'],
 const MIN_N = 40
 
 /** fondo divergente: azul/verde (arriba) o rojo (abajo) según el signo, con intensidad ∝ |v| / escala */
-const cellBg = (v: number | null, scale: number) => {
-  if (v == null) return 'transparent'
-  const k = Math.min(1, Math.abs(v) / scale)
-  return `color-mix(in oklab, var(${v >= 0 ? '--div-pos' : '--div-neg'}) ${Math.round(8 + k * 52)}%, var(--surface))`
-}
+const cellBg = (v: number | null, scale: number) => (v == null ? 'transparent' : div3(v, scale))
 
 export function Contexto({ art, glob }: P) {
   const C = art.contexto

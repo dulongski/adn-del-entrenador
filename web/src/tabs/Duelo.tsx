@@ -6,7 +6,7 @@ import CoachPicker from '../compare/CoachPicker'
 import '../styles/compare.css'
 import { Ico } from '../icons'
 import Info from '../Info'
-import { dataUrl, fmt, real, getJSON, shortName, type Any } from '../lib'
+import { dataUrl, div3, fmt, real, getJSON, shortName, type Any } from '../lib'
 import { L, LANG } from '../settings'
 import { kFmt, kName } from './resumenKit'
 import '../styles/tl.css'
@@ -291,7 +291,7 @@ export function Duelo({ art, glob, media, mapa }: { art: Any; glob: Any; media: 
                   const best = xs[0]
                   const v = best ? (best.k === 'ppda' ? -best.d : best.d) : null
                   const good = best ? (best.k === 'xg_contra_90' ? -1 : 1) * (v ?? 0) : 0
-                  return <td key={dim + lvl} className={lvl === "0-15'" ? 'sep' : ''} style={{ background: v == null ? 'transparent' : `color-mix(in oklab, ${good >= 0 ? 'var(--div-pos)' : 'var(--div-neg)'} ${Math.round(8 + Math.min(1, Math.abs(v) / 1.2) * 52)}%, var(--surface))` }} title={best ? `${kName(best.k, glob)} ${sg(best.d)}σ` : ''}>{best ? <><small>{best.k === 'ppda' ? L('Presión', 'Pressing') : kName(best.k, glob)}</small>{v! >= 0 ? '▲' : '▼'}{fmt(Math.abs(v!), 1)}</> : '—'}</td>
+                  return <td key={dim + lvl} className={lvl === "0-15'" ? 'sep' : ''} style={{ background: v == null ? 'transparent' : div3(good >= 0 ? Math.abs(v) : -Math.abs(v), 1.2) }} title={best ? `${kName(best.k, glob)} ${real(best.k, best.d)}` : ''}>{best ? <><small>{best.k === 'ppda' ? L('Presión', 'Pressing') : kName(best.k, glob)}</small>{v! >= 0 ? '▲' : '▼'}{fmt(Math.abs(v!), 1)}</> : '—'}</td>
                 })}
               </tr>))}</tbody>
           </table>

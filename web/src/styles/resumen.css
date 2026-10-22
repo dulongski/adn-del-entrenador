@@ -205,3 +205,9 @@
 .rs-st-open .rs-ch { border-width: 1px 1px 1px 1px; }
 @keyframes rsOpen { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .rs-st, .rs-st-open { transition: none; animation: none; } }
+.rs-st-u { font-style: normal; font-family: var(--body, inherit); font-weight: 700; font-size: 13px; margin-left: 4px; letter-spacing: 0; }
+.rs-st-u { white-space: nowrap; display: inline-block; }
+.rs-st-num b { white-space: nowrap; }
+.rs-st-ideas { display: flex; flex-wrap: wrap; gap: 6px; }
+.rs-st-ideas span { font-family: var(--display); font-weight: 700; font-size: 17px; line-height: 1.1; padding: 5px 10px; border-radius: 8px;
+  background: color-mix(in oklab, var(--acc) 26%, var(--surface)); border: 1px solid color-mix(in oklab, var(--acc) 50%, transparent); }

@@ -102,7 +102,7 @@
 .ctx-cell.weak { opacity: .5; }
 .ctx-leg { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .ctx-leg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; } .ctx-leg i.neg { background: var(--div-neg); } .ctx-leg i.pos { background: var(--div-pos); }
-.ctx-leg-bar { width: 60px; height: 6px; border-radius: 4px; background: linear-gradient(90deg, var(--div-neg), var(--surface-2), var(--div-pos)); }
+.ctx-leg-bar { width: 60px; height: 6px; border-radius: 4px; background: linear-gradient(90deg, var(--div-neg), var(--div-cen), var(--div-pos)); }
 .ctx-drivers { display: flex; flex-direction: column; gap: 4px; }
 .ctx-drv2 { display: grid; grid-template-columns: 24px minmax(120px, 1.3fr) 120px minmax(120px, 170px); gap: 14px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--rule); animation: ctx-in .45s both; animation-delay: calc(var(--i, 0) * 50ms); }
 .ctx-drv2:last-child { border-bottom: 0; }

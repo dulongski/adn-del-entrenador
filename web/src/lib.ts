@@ -95,11 +95,14 @@ export function shortName(n: string) {
 
 /** Divergente azul↔gris↔rojo para diferencias (DT − liga). */
 export function divColor(v: number, max: number) {
-  const t = Math.max(-1, Math.min(1, v / (max || 1)))
-  const a = Math.abs(t)
-  const pole = t >= 0 ? 'var(--div-pos)' : 'var(--div-neg)'
-  // raíz: los valores intermedios se ven con color claro en vez de un gris turbio
-  return `color-mix(in oklab, ${pole} ${Math.round(Math.sqrt(a) * 100)}%, var(--div-mid))`
+  return div3(v, max, 'var(--div-mid)', 26, 78)
+}
+/** Escala de tres colores: rojo (menos) → amarillo (igual) → verde (más). El tono pasa por el amarillo y la
+ *  intensidad crece con la diferencia, así las celdas «igual que la liga» quedan tenues y no gritan. */
+export function div3(v: number, max: number, base = 'var(--surface)', lo = 14, hi = 62) {
+  const t = Math.max(-1, Math.min(1, v / (max || 1))), a = Math.sqrt(Math.abs(t))
+  const hue = `color-mix(in oklab, var(${t >= 0 ? '--div-pos' : '--div-neg'}) ${Math.round(a * 100)}%, var(--div-cen))`
+  return `color-mix(in oklab, ${hue} ${Math.round(lo + (hi - lo) * a)}%, ${base})`
 }
 /** Secuencial de un solo tono. */
 export function seqColor(v: number, max: number) {
