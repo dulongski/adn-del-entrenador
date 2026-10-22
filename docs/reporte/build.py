@@ -7,6 +7,7 @@ y escribe un HTML autocontenido con gráficas SVG en línea.
 """
 from __future__ import annotations
 
+import base64
 import html
 import json
 from pathlib import Path
@@ -471,9 +472,12 @@ INTRO = {
 }
 
 
+LOGOS = '<div class="logos"><i class="logo logo-isac" role="img" aria-label="ISAC"></i><i class="logo logo-am" role="img" aria-label="Club América"></i></div>'
+
+
 def section(id_, num, eyebrow, title, body):
     intro = f'<p class="intro">{esc(INTRO[id_])}</p>' if id_ in INTRO else ""
-    return f'<section id="{id_}" class="sec"><div class="sec-h"><p class="eyebrow"><span>{num}</span>{esc(eyebrow)}</p><h2>{esc(title)}</h2>{intro}</div>{body}</section>'
+    return f'<section id="{id_}" class="sec"><div class="sec-h"><p class="eyebrow"><span>{num}</span>{esc(eyebrow)}</p><h2>{esc(title)}</h2>{intro}</div>{body}{LOGOS}</section>'
 
 
 def build():
@@ -510,6 +514,7 @@ def build():
       {kpi_tile(f"{S['puntos']} vs {S['xpts']:.0f}", "puntos reales vs merecidos", "por el xG de cada ocasión")}
     </div>
     <p class="byline">Sebastian Dulong Salazar · octubre 2026 · <a href="{APP_URL}">Abrir la app</a></p>
+    {LOGOS}
   </div>
 </header>'''
 
@@ -789,7 +794,11 @@ def build():
     return body
 
 
-CSS = (OUT / "reporte.css").read_text()
+def _uri(p, mime):
+    return f"url(data:{mime};base64,{base64.b64encode(p.read_bytes()).decode()})"
+
+
+CSS = (OUT / "reporte.css").read_text() + ":root{--logo-isac:" + _uri(OUT / "logos/isac.svg", "image/svg+xml") + ";--logo-am:" + _uri(OUT / "logos/america.png", "image/png") + "}"
 HEAD = '<title>Coach DNA: Almada</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n' \
        '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' \
        '<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">\n' \
