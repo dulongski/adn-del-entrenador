@@ -24,6 +24,24 @@ APP_URL = "https://claude.ai/artifact/CrS1hEPKJXf3m21vWvRZzC"
 
 boot = json.loads((ROOT / "web/src/boot.json").read_text())
 G = boot["global"]
+# Unidad real de cada indicador (igual que web/src/lib.ts): los efectos del modelo vienen en desviaciones
+# típicas entre equipos y se regresan a la unidad de la estadística con su sd.
+UNIT = {"pases_por_posesion": " pases", "tempo": " pases/min", "progresivos": " por 100", "cambios_orientacion": " por 100 pases",
+        "entradas_ultimo_tercio": " por 100 pos.", "xg_90": " xG/90", "xg_por_tiro": " xG/tiro", "tiros_90": " tiros/90", "centros": " por 100",
+        "obv_90": " OBV/90", "ppda": " pases/robo", "altura_presion": " yd", "intensidad_presion": " pres./min", "recuperaciones_altas_90": " robos/90",
+        "altura_defensiva": " yd", "linea_360": " yd", "compacidad_360": " yd", "posesion_rival_dur": " s", "xg_contra_90": " xG/90", "xg_balon_parado_90": " xG/90"}
+
+
+def realN(k, z):
+    sd = G["kpis"].get(k, {}).get("sd")
+    if not sd:
+        return f"{z:+.2f}".replace("-", "−")
+    d = 1 if sd >= 1.5 else 2 if sd >= 0.15 else 3
+    return f"{z * sd:+.{d}f}".replace("-", "−")
+
+
+def real(k, z):
+    return realN(k, z) + UNIT.get(k, "%")
 D = json.loads((DATA / f"dt_{DT_ID}.json").read_text())
 JX = json.loads((DATA / f"jugadores_{DT_ID}.json").read_text())
 PLANF = json.loads((DATA / "plan.json").read_text())
@@ -134,7 +152,7 @@ def ch_problema():
     x = 0
     for nm, v, c in parts:
         w = v / tot * W
-        b.append(R(x + 1, y0 + 18, w - 2, 56, f"f-{c}", f"{nm}: {v:.2f} σ de {-a['observado']:.2f} σ, el {v / tot * 100:.0f}% de la diferencia", 4))
+        b.append(R(x + 1, y0 + 18, w - 2, 56, f"f-{c}", f"{nm}: {real('salida_corta', -v)} de {h['crudo'] - h['liga']:+.1f}%, el {v / tot * 100:.0f}% de la diferencia", 4))
         if w > 56:
             b.append(T(x + 10, y0 + 54, f"{v / tot * 100:.0f}%", "t b22" + ("" if c == "rs" else " inv")))
         if w > 80:
@@ -226,8 +244,8 @@ def fam_card():
         v = -r["efecto"] if r["kpi"] in ("posesion_rival_dur", "ppda", "transicion_def") else r["efecto"]
         b.append(T(0, y + 25, KPI_TXT.get(r["kpi"], r["kpi"]), "t"))
         w = abs(v) / mx * 190
-        b.append(R(250, y + 9, w, 22, "f-dt" if v > 0 else "f-neg", f"La familia, en promedio: {v:+.2f} σ en {KPI_TXT.get(r['kpi'], r['kpi']).lower()} frente al DT típico", 3))
-        b.append(T(250 + w + 10, y + 26, f"{v:+.2f} σ", "t s16"))
+        b.append(R(250, y + 9, w, 22, "f-dt" if v > 0 else "f-neg", f"La familia, en promedio: {real(r['kpi'], r['efecto'])} en {KPI_TXT.get(r['kpi'], r['kpi']).lower()} frente al DT típico", 3))
+        b.append(T(250 + w + 10, y + 26, real(r["kpi"], r["efecto"]), "t s16"))
     chart = svg(W, 4 * rh, "".join(b), "Rasgos que definen la familia")
     nombres = ", ".join(corto(p["id"], p["nombre"]) for p in miembros[:8])
     return (f'<div class="card fam"><p class="ey">Su familia de estilo · {g["n"]} DTs</p><h4>{esc(g["nombre"])}</h4>{chart}'
@@ -274,9 +292,9 @@ def ch_adn():
             k_ = seen.get(col, 0)
             seen[col] = k_ + 1
             off = ((k_ + 1) // 2) * 9 * (1 if k_ % 2 else -1)
-            b.append(C(X(v), mid + off, 4.6, "d-dist", f"{corto(dt, dt)}: {v:+.2f} σ"))
+            b.append(C(X(v), mid + off, 4.6, "d-dist", f"{corto(dt, dt)}: {real(k, v * s_)}"))
         a_ = h["alpha"] * s_
-        b.append(C(X(a_), mid, 11, "d-almada", f"{N}: {h['alpha']:+.2f} σ (±{1.96 * h['se']:.2f}); {r}º de {n} DTs en esa dirección"))
+        b.append(C(X(a_), mid, 11, "d-almada", f"{N}: {real(k, h['alpha'])} (±{real(k, 1.96 * h['se'])[1:]}); {r}º de {n} DTs en esa dirección"))
         b.append(T(c3 + cw + 24, y + 34, f"{r}º", "t big"))
         b.append(T(c3 + cw + 24, y + 58, f"de {n}", "t s15 m"))
     b.append(T(c3, top + len(spec) * rh + 14, "← menos que el DT típico", "t s15 m"))
@@ -296,7 +314,7 @@ def ch_suyo():
     b = []
     for g in (-0.5, 0, 0.5, 1, 1.5):
         b.append(Ln(X(g), 0, X(g), n * rh, "ax" if g == 0 else "gr"))
-        b.append(T(X(g), n * rh + 24, f"{g:+.1f} σ" if g else "0", "t s16 m", "middle"))
+        b.append(T(X(g), n * rh + 24, "" if g else "liga", "t s16 m", "middle"))
     for i, (k, s, nm) in enumerate(spec):
         a = A[k]
         y = i * rh
@@ -308,14 +326,14 @@ def ch_suyo():
             v = a[key] * s
             if abs(v) < 0.005:
                 continue
-            tip = f"{nm} · {cn}: {v:+.2f} σ"
+            tip = f"{nm} · {cn}: {real(k, a[key])}"
             if v > 0:
                 b.append(R(X(pos) + 1, y + 10, v * sc - 2, 36, f"f-{c}", tip, 3)); pos += v
             else:
                 b.append(R(X(neg + v) + 1, y + 10, -v * sc - 2, 36, f"f-{c}", tip, 3)); neg += v
-        ob = a["observado"] * s
-        b.append(Ln(X(ob), y + 2, X(ob), y + 54, "tot", f"{nm}: lo que se ve en sus partidos, {ob:+.2f} σ frente a la liga"))
-        b.append(T(X(max(ob, pos)) + 14, y + 35, f"{ob:+.2f} σ", "t b20"))
+        ob = (H[k]["crudo"] - H[k]["liga"]) / G["kpis"][k]["sd"] * s  # lo que se ve = sus partidos − liga, como en la app
+        b.append(Ln(X(ob), y + 2, X(ob), y + 54, "tot", f"{nm}: lo que se ve en sus partidos, {real(k, ob * s)} frente a la liga"))
+        b.append(T(X(max(ob, pos)) + 14, y + 35, real(k, ob * s), "t b20"))
     return svg(W, n * rh + 32, "".join(b), "Qué pieza empuja cada rasgo de Almada")
 
 
@@ -351,13 +369,13 @@ def ch_dumb(kpi, dim, flip, W, Hh=330, title=""):
     for g in (-1.5, -1, -0.5, 0.5, 1, 1.5):
         if lo < g < hi:
             b.append(Ln(L, Y(g), W - 6, Y(g), "gr"))
-            b.append(T(L - 10, Y(g) + 5, f"{g:+.1f}", "t s16 m", "end"))
+            b.append(T(L - 10, Y(g) + 5, realN(kpi, g * flip), "t s16 m", "end"))
     for i, r in enumerate(rows):
         cx = L + step * (i + 0.5)
         a, l = r["dt"] * flip, r["liga"] * flip
         b.append(Ln(cx, Y(a), cx, Y(l), "lk"))
-        b.append(C(cx, Y(l), 9, "d-liga", f"Liga, {r['nivel']}: {l:+.2f}"))
-        b.append(C(cx, Y(a), 11, "d-me", f"{N}, {r['nivel']}: {a:+.2f} ({r['n_dt']} tramos) · frente a la liga {a - l:+.2f}"))
+        b.append(C(cx, Y(l), 9, "d-liga", f"Liga, {r['nivel']}: {real(kpi, r['liga'])}"))
+        b.append(C(cx, Y(a), 11, "d-me", f"{N}, {r['nivel']}: {real(kpi, r['dt'])} ({r['n_dt']} tramos) · frente a la liga {real(kpi, r['dt'] - r['liga'])}"))
         b.append(T(cx, Hh - 12, r["nivel"].replace("Empatando", "Empate"), "t s17", "middle"))
     return svg(W, Hh, "".join(b), title)
 
@@ -482,15 +500,16 @@ def ch_tablero(W=760):
     b = [Ln(X(0), 0, X(0), len(rs) * rh, "ax")]
     for g in (-2, -1, 1, 2):
         b.append(Ln(X(g), 0, X(g), len(rs) * rh, "gr"))
-        b.append(T(X(g), len(rs) * rh + 24, f"{g:+d}", "t s16 m", "middle"))
     b.append(T(X(0), len(rs) * rh + 24, "liga", "t s16 m", "middle"))
+    b.append(T(X(-2), len(rs) * rh + 24, "← menos", "t s16 m", "middle"))
+    b.append(T(X(2), len(rs) * rh + 24, "más →", "t s16 m", "middle"))
     for i, r in enumerate(rs):
         y = i * rh
         nm = LBL.get(r["kpi"], r["etiqueta"])
         b.append(T(L - 16, y + 37, nm, "t", "end"))
-        b.append(R(X(r["banda"][0]), y + 19, X(r["banda"][1]) - X(r["banda"][0]), 24, "f-band", f"{nm}: rango normal de su carrera, {r['banda'][0]:+.1f} a {r['banda'][1]:+.1f} σ", 12))
-        b.append(Ln(X(r["carrera"]), y + 12, X(r["carrera"]), y + 50, "tot", f"{nm}: su nivel de carrera, {r['carrera']:+.2f} σ"))
-        b.append(C(X(r["ultimos"]), y + 31, 12, "d-me", f"{nm}: últimos 10 partidos {r['ultimos']:+.2f} σ (valor {r['sello']})"))
+        b.append(R(X(r["banda"][0]), y + 19, X(r["banda"][1]) - X(r["banda"][0]), 24, "f-band", f"{nm}: rango normal de su carrera, {real(r['kpi'], r['banda'][0])} a {real(r['kpi'], r['banda'][1])}", 12))
+        b.append(Ln(X(r["carrera"]), y + 12, X(r["carrera"]), y + 50, "tot", f"{nm}: su nivel de carrera, {real(r['kpi'], r['carrera'])}"))
+        b.append(C(X(r["ultimos"]), y + 31, 12, "d-me", f"{nm}: últimos 10 partidos {real(r['kpi'], r['ultimos'])} (valor {r['sello']})"))
         est = {"en_linea": "en línea", "arriba": "por encima", "abajo": "por debajo"}.get(r["estado"], r["estado"])
         b.append(T(W - 108, y + 38, est, "t s17 ok" if r["estado"] == "en_linea" else "t s17 up"))
     return svg(W, len(rs) * rh + 32, "".join(b), "Seguimiento de seis rasgos")
@@ -526,7 +545,7 @@ def fich_rows(ps):
         bars = ""
         for a in p["aporta"]:
             z = a["z"]
-            bars += (f'<span class="ap" data-tip="{esc(aps.get(a["kpi"], a["kpi"]))}: {z:+.1f} σ frente a la liga">'
+            bars += (f'<span class="ap" data-tip="{esc(aps.get(a["kpi"], a["kpi"]))}: {real(a["kpi"], z)} frente a la liga">'
                      f'<i class="{"pos" if z > 0 else "neg"}" style="width:{min(abs(z) / 5, 1) * 34 + 4:.0f}px"></i></span>')
         out += (f'<tr><th>{esc(short_player(p["nombre"]))}</th><td>{esc(POS.get(p["pos"], p["pos"]))}</td>'
                 f'<td class="cl">{logo(p["club"], 24)}<span>{esc(p["club"])}</span></td><td class="num">{p["min"]:,}</td>'
@@ -646,12 +665,12 @@ def build():
     best = max((r for r in mn if r["dt"] is not None and r["liga"] is not None), key=lambda r: r["dt"] - r["liga"])
     slide("contexto", "Almada", "Según el partido", "Cómo cambia según el marcador, el minuto y la localía", f'''
 <div class="grid3" style="grid-template-columns:420px 1fr 330px">
-  {fig("Intensidad de presión según el marcador", ch_dumb("ppda", "marcador", -1, 392, title="Presión según el marcador"), cls="mini")}
-  {fig("Contragolpes en cada tramo de 15 minutos", ch_dumb("contraataque", "minuto", 1, 640, title="Contragolpes por minuto"), cls="mini")}
-  {fig("Presión en casa y fuera", ch_dumb("ppda", "localia", -1, 302, title="Presión por localía"), cls="mini")}
+  {fig("Presión según el marcador · pases rivales por robo (arriba = más presión)", ch_dumb("ppda", "marcador", -1, 392, title="Presión según el marcador"), cls="mini")}
+  {fig("Contragolpes en cada tramo de 15 minutos · % frente a la liga", ch_dumb("contraataque", "minuto", 1, 640, title="Contragolpes por minuto"), cls="mini")}
+  {fig("Presión en casa y fuera · pases por robo", ch_dumb("ppda", "localia", -1, 302, title="Presión por localía"), cls="mini")}
 </div>
 {legend([(N, "d-me"), ("Liga en la misma situación", "d-liga")])}
-<div class="tiles three-row">{tile(best["nivel"], "el tramo en que más contragolpea", f'{best["dt"] - best["liga"]:+.1f} σ frente a la liga')}{tile(f'{ident["r"]:.2f}', "estabilidad de su estilo entre torneos", f'más estable que el {ident["pct"]:.0f}% de los DTs')}{tile(f'{D["identidad"]["dispersion_pct"]:.0f}%', "de los DTs varían menos que Almada entre partidos", "variabilidad normal")}</div>''',
+<div class="tiles three-row">{tile(best["nivel"], "el tramo en que más contragolpea", real("contraataque", best["dt"] - best["liga"]) + " frente a la liga")}{tile(f'{ident["r"]:.2f}', "estabilidad de su estilo entre torneos", f'más estable que el {ident["pct"]:.0f}% de los DTs')}{tile(f'{D["identidad"]["dispersion_pct"]:.0f}%', "de los DTs varían menos que Almada entre partidos", "variabilidad normal")}</div>''',
           "En esta lámina comparamos su equipo con su propio nivel habitual (cero) según el marcador, el minuto y la localía, contra un equipo promedio en la misma situación.")
 
     top = []
@@ -666,7 +685,7 @@ def build():
     {fig("Para qué usa sus cambios según el marcador", ch_cambios(), legend([("Más ofensivo", "f-dt"), ("Misma línea", "f-rs"), ("Más defensivo", "f-neg")]))}
   </div>
   <div class="stack">
-    <div class="tiles three-row">{tile(f'{jug["estabilidad_xi"]:.1f}', "titulares que cambia por partido", f'mediana DTs {JX["mediana_dts"]["rotacion"]:.1f}')}{tile(f"min {jug['minuto_cambios']['1']:.0f}", "su primer cambio", f"liga, min {jug['minuto_cambios_liga']['1']:.0f}")}{tile(f'{D["impacto_cambios"][7]["neto"]:+.1f} σ', "xG en contra tras sus cambios", "baja más que en la liga")}</div>
+    <div class="tiles three-row">{tile(f'{jug["estabilidad_xi"]:.1f}', "titulares que cambia por partido", f'mediana DTs {JX["mediana_dts"]["rotacion"]:.1f}')}{tile(f"min {jug['minuto_cambios']['1']:.0f}", "su primer cambio", f"liga, min {jug['minuto_cambios_liga']['1']:.0f}")}{tile(real(D["impacto_cambios"][7]["kpi"], D["impacto_cambios"][7]["neto"]), "xG en contra tras sus cambios", "baja más que en la liga")}</div>
     <div class="card"><h4>Los que más juegan con Almada</h4><table class="list"><thead><tr><th>Jugador</th><th>Posición</th><th class="num">Minutos</th><th class="num">Titular</th></tr></thead><tbody>{th}</tbody></table></div>
   </div>
 </div>''', "En esta lámina vemos con qué dibujo arranca, cuánto rota y para qué hace sus cambios.")
@@ -718,7 +737,7 @@ def build():
                 dato = f'{ev["pegados_pct"]:.0f}% de sus defensores marcan al hombre en córners'
             elif f == "partido" and re.search(r"\(([−-]?[\d.]+) desviaciones típicas, (\d+) tramos\)", a["texto"]):
                 m_ = re.search(r"\(([−-]?[\d.]+) desviaciones típicas, (\d+) tramos\)", a["texto"])
-                dato = f"{abs(float(m_.group(1).replace('−', '-'))):.1f} σ por encima de lo que hace la liga en ese tramo ({m_.group(2)} tramos)"
+                dato = f"claramente por encima de lo que hace la liga en ese tramo ({m_.group(2)} tramos)"
             else:
                 txt = a["texto"].replace("{N}", N)
                 partes = [x.strip() for x in txt.split(":")]
