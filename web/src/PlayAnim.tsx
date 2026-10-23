@@ -50,6 +50,14 @@ const clamp01 = (k: number) => Math.max(0, Math.min(1, k))
 /** Animación de una posesión: el balón recorre pase a pase / conducción a conducción y sólo aparecen los
  *  jugadores que intervienen. Cancha horizontal, ataque hacia la derecha. */
 /** Búsqueda en YouTube del resumen de ese partido: «Local vs Visita 3-0 resumen goles 2026». (No se puede incrustar video en la app.) */
+/** Clips exactos ya ubicados a mano (fecha|rival|minuto de la jugada → video y segundo donde arranca la jugada). */
+const CLIPS: Record<string, [string, number]> = {
+  '2026-10-18|León|32': ['6Tmkh5pDHvk', 205],
+  '2026-10-18|León|57': ['6Tmkh5pDHvk', 318],
+  '2026-10-18|León|83': ['6Tmkh5pDHvk', 492],
+}
+const clipOf = (p: Any[], min?: number | null) => (min == null ? null : CLIPS[`${p[0]}|${p[1]}|${min}`] ?? null)
+
 function ytSearch(club: string, p: Any[]) {
   const [date, rival, home, gf, gc] = p as [string, string, number, number, number]
   const q = home ? `${club} vs ${rival} ${gf}-${gc}` : `${rival} vs ${club} ${gc}-${gf}`
@@ -225,11 +233,12 @@ export function PlayAnim({ seq, meta, jugadores, partido, club, color, media }: 
           <ClubLogo club={partido[1]} media={media} size={18} />
           <b>{partido[1]}</b>
           <span className="note">{partido[2] ? L('local', 'home') : L('visita', 'away')} · {fecha(partido[0])}{meta?.min != null ? ` · min ${meta.min + 1}'` : ''} · {L('terminó', 'final')} {partido[3]}-{partido[4]}</span>
-          {club && <a className="pa-yt" href={ytSearch(club, partido)} target="_blank" rel="noopener noreferrer"
-            title={L('Abre en YouTube la búsqueda del resumen de este partido', 'Opens a YouTube search for this match\'s highlights')}>
+          {club && (() => { const c = clipOf(partido, meta?.min); return (
+          <a className={`pa-yt${c ? ' exact' : ''}`} href={c ? `https://www.youtube.com/watch?v=${c[0]}&t=${c[1]}s` : ytSearch(club, partido)} target="_blank" rel="noopener noreferrer"
+            title={c ? L('Abre el resumen oficial justo donde empieza esta jugada', 'Opens the official highlights right where this play starts') : L('Abre en YouTube la búsqueda del resumen de este partido', 'Opens a YouTube search for this match\'s highlights')}>
             <svg viewBox="0 0 24 24" aria-hidden><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12a31 31 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8ZM9.8 15.1V8.9l5.4 3.1-5.4 3.1Z" /></svg>
-            {meta?.res === 0 ? L('Ver el gol', 'Watch the goal') : L('Ver el partido', 'Watch the match')}{meta?.min != null ? ` · ${meta.min + 1}'` : ''}
-          </a>}
+            {meta?.res === 0 ? L('Ver el gol', 'Watch the goal') : L('Ver el partido', 'Watch the match')}{c ? '' : meta?.min != null ? ` · ${meta.min + 1}'` : ''}
+          </a>) })()}
         </div>
       )}
       <Pitch labels={<>
