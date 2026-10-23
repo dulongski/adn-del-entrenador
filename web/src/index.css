@@ -609,3 +609,9 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 @media (min-width: 1500px) { .site-pie { max-width: min(2000px, 90vw); } }
 .site-pie p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-3); max-width: 90ch; }
 @media (max-width: 700px) { .site-pie { flex-direction: column; align-items: flex-start; gap: 12px; padding: 18px 16px 90px; } }
+
+/* enlace al video de la jugada */
+.pa-yt { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; text-decoration: none; white-space: nowrap;
+  color: #fff; background: #d62a24; box-shadow: 0 2px 8px rgba(214,42,36,.35); }
+.pa-yt:hover { background: #ee3a33; }
+.pa-yt svg { width: 15px; height: 15px; fill: currentColor; }
