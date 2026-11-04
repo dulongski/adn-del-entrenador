@@ -88,6 +88,8 @@ def all_matches(seasons=SEASONS, refresh: bool = False):
 
 
 def download_all(with_360: bool = True, workers: int = 8):
+    # la lista de partidos de la temporada en curso cambia cada jornada: se vuelve a pedir siempre
+    (DATA / "matches" / f"{LIGA_MX}_{SEASONS[-1]}.json.gz").unlink(missing_ok=True)
     ms = all_matches()
     jobs = []
     have = lambda kind, mid: (DATA / kind / f"{mid}.json.gz").exists()  # no releer el caché
