@@ -190,6 +190,7 @@ h2 em{font-style:normal;background:linear-gradient(transparent 60%,var(--y) 60%,
 #nav button:hover{border-color:var(--blue);color:var(--blue)}
 #notes{position:fixed;left:16px;right:16px;bottom:64px;max-width:900px;margin:auto;background:#fff;border:2px solid var(--y);border-radius:14px;padding:16px 20px;font:15px/1.5 Inter,Arial,sans-serif;color:var(--fg);z-index:6;box-shadow:0 10px 30px rgba(14,27,61,.2)}
 aside.nt{display:none}
+.pdfm #nav,.pdfm #notes{display:none!important}
 .bpd{display:flex;flex-direction:column;gap:14px;margin-top:12px;flex:1;justify-content:center}
 .bpd .r{display:grid;grid-template-columns:150px 1fr 70px;gap:14px;align-items:center;font-size:20px}
 .bpd .r .tr{position:relative;height:30px;background:#EFECE3;border-radius:8px}
@@ -880,12 +881,13 @@ function playCard(e,k){
   let i=0;const stepA=()=>{if(i>=seq.length){gol.setAttribute('opacity',1);later(run,2200);return}const s=seq[i];labs[i].setAttribute('opacity',1);segs[i].setAttribute('opacity',.95);
    const t0=performance.now(),dur=s[0]==='Shot'?450:650;const mv=()=>{const k2=Math.min(1,(performance.now()-t0)/dur);ball.setAttribute('cx',s[1]+(s[3]-s[1])*k2);ball.setAttribute('cy',s[2]+(s[4]-s[2])*k2);if(k2<1&&S[cur].id==='s4')requestAnimationFrame(mv);else{i++;later(stepA,120)}};requestAnimationFrame(mv)};stepA()};
  later(run,900+k*500);return c}
+const PDF=location.search.includes('pdf');if(PDF)document.documentElement.classList.add('pdfm');
 function animAtk(){const C=D.cats,A=['salida','medio','recup_alta','contra','largo'],T=['pase_area','lejos','conduccion','centro_diag'];
  const rows=ks=>{const mx=Math.max(...ks.map(k=>C[k].share))*1.08;return ks.slice().sort((a,b)=>C[b].share-C[a].share).map(k=>[CAT[k],C[k].share,mx,Math.round(C[k].share)+'%',3])};
  mini(document.getElementById('atkA'),rows(A),600);mini(document.getElementById('atkT'),rows(T),900);
  const svg=document.getElementById('exS'),X=D.exs,dots=document.getElementById('exD');dots.innerHTML=X.map(()=>'<i></i>').join('');let idx=0;
  const hl=k=>document.querySelectorAll('#atkA .bar').forEach(b=>{const on=b.querySelector('.lb').textContent===CAT[k];b.querySelector('.fl').classList.toggle('y',on);b.classList.toggle('hl',on)});
- const show=()=>{if(S[cur].id!=='s4')return;const e=X[idx];svg.innerHTML='';pitchLines(svg);hl(e.k);
+ const show=()=>{if(S[cur].id!=='s4')return;if(PDF)idx=Math.max(0,X.findIndex(x=>x.k==='recup_alta'));const e=X[idx];svg.innerHTML='';pitchLines(svg);hl(e.k);
   [...dots.children].forEach((d,j)=>d.classList.toggle('a',j===idx));
   document.getElementById('exT').textContent=CAT[e.k];document.getElementById('exM').textContent=`vs ${e.rival} · ${e.min}'`;
   document.getElementById('exG').textContent='Gol de '+e.who[e.who.length-1];document.getElementById('exW').textContent=[...new Set(e.who)].join(' → ');
@@ -893,6 +895,7 @@ function animAtk(){const C=D.cats,A=['salida','medio','recup_alta','contra','lar
   const labs=seq.map((s,i)=>{const tx=el('text',{x:s[1],y:s[2]-3.2,'text-anchor':'middle',class:'exl',opacity:0},svg);tx.textContent=i&&e.who[i-1]===e.who[i]?'':e.who[i];return tx});
   const ball=el('circle',{r:1.5,fill:'#fff',stroke:'#0E1B3D','stroke-width':.4,cx:seq[0][1],cy:seq[0][2]},svg);
   const gol=el('text',{x:113,y:40,'text-anchor':'middle','font-size':8,'font-weight':900,fill:'#FFC72C','font-family':'Oswald,Arial',opacity:0},svg);gol.textContent='GOL';
+  if(PDF){segs.forEach(s=>s.setAttribute('opacity',.95));labs.forEach(s=>s.setAttribute('opacity',1));const z=seq[seq.length-1];ball.setAttribute('cx',z[3]);ball.setAttribute('cy',z[4]);return}
   const dur0=Math.min(600,4200/seq.length);let i=0;
   const step=()=>{if(S[cur].id!=='s4')return;if(i>=seq.length){gol.setAttribute('opacity',1);idx=(idx+1)%X.length;later(show,1800);return}
    const s=seq[i];labs[i].setAttribute('opacity',1);segs[i].setAttribute('opacity',.95);const t0=performance.now(),dur=s[0]==='Shot'?Math.min(450,dur0):dur0;
