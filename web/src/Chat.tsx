@@ -468,7 +468,7 @@ function localAnswer(q: string): Msg {
   const syn = SYN.find(([re]) => re.test(t))
   const words = t.split(/\W+/).filter(w => w.length > 3)
   const kHit = syn ? syn[1] : Object.keys(glob.kpis).map(k => [k, words.filter(w => norm(kl(k)).includes(w)).length] as const).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])[0]?.[0]
-  const pre = L('Respuesta rápida sin IA (para la IA, abre la app con tu sesión de Claude). ', 'Quick answer without AI (open the app signed in to Claude for the AI). ')
+  const pre = ''
 
   // 1) alineación / once / formación de un DT → su pestaña de jugadores, en su club actual
   if (coaches.length && /alineaci|once|formaci|dibujo|titular/.test(t)) {
@@ -988,7 +988,7 @@ export default function Chat({ coach, view }: { coach: number | null; view: stri
               </div>
             ))}
         </div>
-        {aiOff && <div className="ai-off">{L('La IA no está disponible aquí (ábrelo en claude.ai y permite el uso de Claude). Mientras, uso búsqueda simple.', 'The AI is not available here (open it on claude.ai and allow Claude). For now I use simple search.')}</div>}
+        {aiOff && <div className="ai-off">{L('Conecta tu cuenta de Claude para mejores resultados.', 'Connect your Claude account for better results.')}</div>}
         <form className="ai-form" onSubmit={e => { e.preventDefault(); ask(input) }}>
           <textarea ref={inputRef} rows={1} value={input} placeholder={ctxName ? L(`Pregunta sobre ${ctxName}…`, `Ask about ${ctxName}…`) : L("Pregunta lo que quieras…", "Ask anything…")}
             onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input) } }} />

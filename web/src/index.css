@@ -590,10 +590,10 @@ li[aria-selected='true'] > .msearch-row { background: var(--surface-2); }
 .marcas { display: inline-flex; align-items: center; gap: 10px; pointer-events: auto; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--rule);
   background: color-mix(in oklab, var(--surface) 85%, transparent); backdrop-filter: blur(6px); color: var(--ink); white-space: nowrap; }
 .marcas-l { font-family: var(--sans, inherit); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-.marcas-isac { display: inline-flex; height: var(--mh); }
+.marcas-isac { display: inline-flex; height: var(--mh); flex: none; }
 .marcas-isac svg { height: 100%; width: auto; display: block; }
 .marcas-x { font-size: 14px; color: var(--ink-3); }
-.marcas-ame { height: calc(var(--mh) * 1.25); width: auto; display: block; }
+.marcas-ame { height: calc(var(--mh) * 1.25); width: calc(var(--mh) * 1.25); object-fit: contain; flex: none; display: block; }  /* ancho fijo: la pastilla no se calcula antes de que cargue el escudo */
 .landing-marcas { margin-top: 4px; }
 .landing-marcas .marcas { padding: 4px 10px; gap: 8px; }
 .hero-marcas { margin-left: auto; align-self: flex-start; }

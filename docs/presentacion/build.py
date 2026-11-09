@@ -17,5 +17,11 @@ open(f'{D}/coach-dna-notas.html','w').write(t)  # versión local con notas del s
 t=re.sub(r'<aside class="nt">.*?</aside>','',t,flags=re.S)  # la versión publicada va sin notas
 t=t.replace('</style>','#nb,#notes{display:none!important}</style>',1)
 open(f'{D}/coach-dna-final.html','w').write(t)
+# versión de un solo archivo con los videos adentro (más pesada; no cabe en el artifact)
+EMB=os.environ.get('EMBED_DIR')
+if EMB:
+    te=t
+    for k in vid: te=te.replace(json.dumps(vid[k])[1:-1], 'data:video/mp4;base64,'+base64.b64encode(open(f'{EMB}/{k}.mp4','rb').read()).decode())
+    open(f'{D}/coach-dna-videos-incluidos.html','w').write(te); print('incluidos', len(te))
 open('/private/tmp/cdna-dist/deck.html','w').write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>'+t+'</body></html>')
 print('ok',len(t))
