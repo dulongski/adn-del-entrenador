@@ -190,6 +190,13 @@ h2 em{font-style:normal;background:linear-gradient(transparent 60%,var(--y) 60%,
 #nav button:hover{border-color:var(--blue);color:var(--blue)}
 #notes{position:fixed;left:16px;right:16px;bottom:64px;max-width:900px;margin:auto;background:#fff;border:2px solid var(--y);border-radius:14px;padding:16px 20px;font:15px/1.5 Inter,Arial,sans-serif;color:var(--fg);z-index:6;box-shadow:0 10px 30px rgba(14,27,61,.2)}
 aside.nt{display:none}
+.enl{font-size:21px;background:var(--soft);border-radius:12px;padding:10px 16px;margin-top:10px;line-height:1.35}
+.demo{position:absolute;inset:22px 64px 62px 64px;border-radius:20px;overflow:hidden;background:#0E1612;z-index:6;opacity:0;pointer-events:none;transition:opacity .45s;border:2px solid var(--fg)}
+.demo.show{opacity:1;pointer-events:auto}
+.demo video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#0E1612}
+.demo .dtag{position:absolute;left:22px;top:18px;z-index:2;background:var(--y);color:#0E1B3D;font-weight:800;font-size:22px;padding:8px 16px;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.demo .dhint{position:absolute;right:22px;bottom:16px;z-index:2;background:rgba(14,27,61,.85);color:#fff;font-weight:700;font-size:18px;padding:8px 14px;border-radius:10px}
+
 .pdfm #nav,.pdfm #notes{display:none!important}
 .bpd{display:flex;flex-direction:column;gap:14px;margin-top:12px;flex:1;justify-content:center}
 .bpd .r{display:grid;grid-template-columns:150px 1fr 70px;gap:14px;align-items:center;font-size:20px}
@@ -292,7 +299,7 @@ aside.nt{display:none}
 .mover .tr img{width:100%;height:100%;object-fit:cover}
 .paper{background:var(--card);border:3px solid var(--y);border-radius:26px;padding:30px 34px;display:flex;flex-direction:column;gap:14px;justify-content:center}
 .paper small{font-size:18px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--blue)}
-.paper .pt{font-size:40px;font-weight:800;line-height:1.1}
+.paper .pt{font-size:34px;font-weight:800;line-height:1.1}
 .paper .pj{font-size:20px;color:var(--mut)}
 .paper .pq{font-size:23px;line-height:1.45}
 .paper .pn{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:var(--soft);border-radius:16px;padding:14px 8px;text-align:center}
@@ -446,15 +453,15 @@ aside.nt{display:none}
    </div>
   </div>
   <div class="paper bi d3">
-   <small>La idea viene de la economía corporativa</small>
-   <p class="pt">Bertrand y Schoar (2003)</p>
-   <p class="pj"><i>Managing with Style</i> · The Quarterly Journal of Economics</p>
-   <p class="pq">¿Las decisiones de una empresa son del director o de la empresa? Siguieron a directores que cambiaron de empresa y encontraron que <b>su estilo se iba con ellos</b>.</p>
+   <small>La idea viene del mercado laboral</small>
+   <p class="pt">Abowd, Kramarz y Margolis (1999)</p>
+   <p class="pj">Econometrica · luego Bertrand y Schoar (2003)</p>
+   <p class="pq">Separaron qué parte del sueldo es <b>del trabajador</b> y qué parte <b>de la empresa</b>, siguiendo a la gente que cambia de empleo. Bertrand y Schoar lo llevaron a los directores: <b>su estilo se iba con ellos</b>.</p>
    <p class="pq" style="font-size:21px">Nosotros hacemos lo mismo con los DTs de la Liga MX, con el <b>estilo de juego</b> en lugar de las decisiones de empresa.</p>
    <div class="bay"><b>Nuestro cambio: una capa bayesiana.</b> Cuando un DT tiene pocos partidos, su efecto se acerca al promedio de la liga hasta que los datos lo respaldan. Así un buen o mal mes no se confunde con su estilo.</div>
   </div>
  </div>
- <aside class="nt">40 s. Todos hemos visto que cuando a un equipo le va bien, el crédito se lo lleva el entrenador, aunque buena parte sea de los jugadores. Ese problema lo resolvieron Bertrand y Schoar en economía corporativa: para saber qué es del director y qué de la empresa, siguieron a los directores que cambian de empresa. Nosotros hacemos lo mismo con los entrenadores de la Liga MX. Lo que vemos en la cancha es una suma: la plantilla, el club, los rivales, el partido, el entrenador y algo de ruido. Si seguimos al DT de club en club, podemos separar su parte. Y nuestro cambio es una capa bayesiana: si un DT tiene pocos partidos, no le creemos de más; su efecto se acerca al promedio hasta que los datos lo respaldan.</aside>
+ <aside class="nt">35 s. Todos hemos visto que cuando a un equipo le va bien, el crédito se lo lleva el entrenador, aunque buena parte sea de los jugadores. Ese problema ya se resolvió en el mercado laboral: Abowd, Kramarz y Margolis separaron qué parte del sueldo es del trabajador y qué parte de la empresa, siguiendo a la gente que cambia de empleo; Bertrand y Schoar hicieron lo mismo con directores de empresa. Nosotros lo hacemos con los entrenadores de la Liga MX: lo que vemos en la cancha es la suma de la plantilla, el club, los rivales, el partido y el entrenador. Y le agregamos una capa bayesiana: con pocos partidos no le creemos de más a un DT.</aside>
 </section>
 
 <section class="slide inapp" id="sW" data-mode="separar" data-sub="DT vs plantilla">
@@ -464,7 +471,7 @@ aside.nt{display:none}
  </div>
  <div class="wfdims bi d2" id="wfdims"></div>
  <div class="wfgrid" id="wfgrid"></div>
- <aside class="nt">40 s. El caso: Guillermo Almada dirigió a Santos, a Pachuca y hoy al América. El portero de su Santos salía en corto el 33% de las veces; el del América, el 55%. Cada barra muestra de dónde sale eso: arrancamos en el promedio de la liga y vamos sumando plantilla, club, rivales y partido. La barra azul es Almada y es la misma en los tres clubes. Lo que hace que el América salga en corto es su plantilla, su club y sus rivales, no él. [Clic] Igual con el juego directo, el territorio y los robos en campo rival: lo que se ve cambia, lo de Almada no. Esto es la pestaña ¿DT o plantilla?, y existe para cada DT de la liga.</aside>
+ <aside class="nt">45 s. [Video: así se entra a la plataforma] Buscas a cualquier DT, en este caso Guillermo Almada, y abres ¿DT o plantilla? [Clic] Esto es lo que esa pestaña separa. El portero de su Santos salía en corto el 33% de las veces; el del América, el 55%. Arrancamos en el promedio de la liga y sumamos plantilla, club, rivales y partido; la barra azul es Almada, y es la misma en los tres clubes. Lo que hace que el América salga en corto no es él. [Clic] Igual con el juego directo, el territorio y los robos en campo rival.</aside>
 </section>
 
 <!-- 2 MAPA -->
@@ -491,7 +498,7 @@ aside.nt{display:none}
   </div>
   <div class="bells bells-c bells-2" id="bells"></div>
  </div>
- <aside class="nt">30 s. Ese estilo propio, frente al resto de la liga. Este mapa es lo primero que ves al abrir la plataforma: los 76 entrenadores según cómo juegan, ya sin el efecto de sus jugadores. Almada está en un grupo chico, presión alta y defensa adelantada: solo 12 de 76 juegan así. Y miren a Vucetich, de Tigres, su próximo rival: juega casi al revés. A la derecha, dos cosas en las que casi nadie se le parece: presiona más que casi todos y roba en campo rival como casi nadie.</aside>
+ <aside class="nt">30 s. [Video: pestaña Resumen, unos segundos y clic] Ese estilo propio, frente al resto de la liga. Este mapa es lo primero que ves al abrir la plataforma: los 76 entrenadores según cómo juegan, ya sin el efecto de sus jugadores. Almada está en un grupo chico, presión alta y defensa adelantada: solo 12 de 76 juegan así. Y miren a Vucetich, de Tigres, su próximo rival: juega casi al revés. A la derecha, dos cosas en las que casi nadie se le parece: presiona más que casi todos y roba en campo rival como casi nadie.</aside>
 </section>
 
 <!-- 3 CAMPANAS -->
@@ -512,7 +519,7 @@ aside.nt{display:none}
    <div class="exf"><p id="exW"></p><div class="dots" id="exD"></div></div>
   </div>
  </div>
- <aside class="nt">30 s. En Cómo juega se ve cómo ataca el América de Almada. A la izquierda, cómo empiezan sus jugadas: sobre todo saliendo desde atrás y por el medio, y una de cada cinco robando en campo rival. Abajo, cómo terminan: con un pase dentro del área o con tiros de lejos. A la derecha, la plataforma pasa por un gol real de cada tipo de jugada, y se ilumina su barra.</aside>
+ <aside class="nt">30 s. [Video: pestaña Cómo juega, unos segundos y clic] En Cómo juega se ve cómo ataca el América de Almada. A la izquierda, cómo empiezan sus jugadas: sobre todo saliendo desde atrás y por el medio, y una de cada cinco robando en campo rival. Abajo, cómo terminan: con un pase dentro del área o con tiros de lejos. A la derecha, la plataforma pasa por un gol real de cada tipo de jugada, y se ilumina su barra.</aside>
 </section>
 
 <!-- 5 CLUB A CLUB -->
@@ -537,7 +544,7 @@ aside.nt{display:none}
    <div class="card bi d4" style="padding:20px 24px"><p class="ttl" style="margin-bottom:10px">Quién encaja con su idea</p><div class="bars mini" id="fit"></div><p style="font-size:19px;color:var(--mut);margin-top:10px"><i style="display:inline-block;width:14px;height:14px;background:var(--y);border-radius:3px"></i> del América · <i style="display:inline-block;width:14px;height:14px;background:var(--blue);border-radius:3px"></i> de otros clubes de la liga</p></div>
   </div>
  </div>
- <aside class="nt">25 s. En Jugadores se ve con quién lo hace. Su once en un 4-2-3-1, que usó en 14 de 15 partidos: sin balón aprieta sobre todo por las bandas y con balón sube todo el bloque. A la derecha, a quién le da más minutos, como Erick Sánchez y Henry Martín, y qué jugadores encajan con su idea, del plantel y de otros clubes. Sirve para decidir fichajes.</aside>
+ <aside class="nt">25 s. [Video: pestaña Jugadores, unos segundos y clic] En Jugadores se ve con quién lo hace. Su once en un 4-2-3-1, que usó en 14 de 15 partidos: sin balón aprieta sobre todo por las bandas y con balón sube todo el bloque. A la derecha, a quién le da más minutos, como Erick Sánchez y Henry Martín, y qué jugadores encajan con su idea, del plantel y de otros clubes. Sirve para decidir fichajes.</aside>
 </section>
 
 <section class="slide inapp" id="sB" data-mode="bp" data-sub="Córners · Cómo defiende">
@@ -562,7 +569,7 @@ aside.nt{display:none}
   <div class="bi d6"><b id="bpc"></b><p><b>córners</b> por partido<span id="bpcl"></span></p></div>
   <div class="bi d7"><b id="bpm"></b><p>defiende <b>al hombre</b>: defensores pegados<span id="bpml"></span></p></div>
  </div>
- <aside class="nt">30 s. Balón parado. Atacando, Almada manda 4 de cada 10 córners al segundo palo, cuando la liga manda uno de cada cuatro, y gana el primer balón en el 56% de sus córners. Defendiendo marca al hombre y cierra muy bien el primer palo: ahí el rival gana solo el 10% de los balones, contra 23% de la liga. Su punto débil es su propio segundo palo. Todo esto sale de sus 174 partidos, y es lo que usamos en el plan contra Tigres.</aside>
+ <aside class="nt">30 s. [Video: pestaña Balón parado, unos segundos y clic] Balón parado. Atacando, Almada manda 4 de cada 10 córners al segundo palo, cuando la liga manda uno de cada cuatro, y gana el primer balón en el 56% de sus córners. Defendiendo marca al hombre y cierra muy bien el primer palo: ahí el rival gana solo el 10% de los balones, contra 23% de la liga. Su punto débil es su propio segundo palo. Todo esto sale de sus 174 partidos, y es lo que usamos en el plan contra Tigres.</aside>
 </section>
 
 <!-- 8 VUCETICH -->
@@ -589,7 +596,7 @@ aside.nt{display:none}
    <div id="tprom" style="display:flex;flex-direction:column"></div>
   </div>
  </div>
- <aside class="nt">30 s. La app también simula. En el Laboratorio puedes volver a jugar cualquier partido. El 1-1 con Monterrey: el América generó 1.32 xG contra 0.36, y si lo jugamos miles de veces gana el 65%; merecía más. También jugamos el resto del torneo 3,000 veces, y cada bolita es un torneo. El América termina primero en la tabla esperada y es campeón el 18%. No es más porque va empatado en puntos con Chivas y Cruz Azul, recibe muchos goles y tiene que ganar tres series. Chivas, con la mejor defensa, es el favorito con 29%.</aside>
+ <aside class="nt">30 s. [Video: pestaña Laboratorio, unos segundos y clic] La app también simula. En el Laboratorio puedes volver a jugar cualquier partido. El 1-1 con Monterrey: el América generó 1.32 xG contra 0.36, y si lo jugamos miles de veces gana el 65%; merecía más. También jugamos el resto del torneo 3,000 veces, y cada bolita es un torneo. El América termina primero en la tabla esperada y es campeón el 18%. No es más porque va empatado en puntos con Chivas y Cruz Azul, recibe muchos goles y tiene que ganar tres series. Chivas, con la mejor defensa, es el favorito con 29%.</aside>
 </section>
 
 <!-- 9 SIMULACION -->
@@ -614,7 +621,7 @@ aside.nt{display:none}
    <div class="card warn bi d6"><div class="hh"><span class="bdg">!</span><h3>Ojo del 0' al 15'</h3></div><div class="bars mini" data-mini='[["Contras 0′ a 15′",21,30,"+6%",2],["Su promedio",15,30,"",0]]'></div><p>Es cuando Vucetich <b>más contragolpea</b>: cuidar la pérdida.</p></div>
   </div>
  </div>
- <aside class="nt">35 s. En Cara a cara, la plataforma cruza el estilo de dos entrenadores y arma el plan para el próximo partido: el 22 de noviembre, primer partido de liga después de ISAC, el América visita a Tigres de Vucetich. Uno: Tigres defiende con un bloque más largo que el del 97% de los entrenadores, así que hay espacio entre líneas para Veiga y los extremos. Dos: en sus córners, Vucetich manda la mitad al punto penal; ahí va el mejor defensor aéreo del América. Tres: Tigres sufre con los córners al segundo palo, y Almada ya manda ahí el 40%. Y ojo con los primeros 15 minutos, cuando Tigres más contragolpea.</aside>
+ <aside class="nt">35 s. [Video: pestaña Cara a cara, unos segundos y clic] En Cara a cara, la plataforma cruza el estilo de dos entrenadores y arma el plan para el próximo partido: el 22 de noviembre, primer partido de liga después de ISAC, el América visita a Tigres de Vucetich. Uno: Tigres defiende con un bloque más largo que el del 97% de los entrenadores, así que hay espacio entre líneas para Veiga y los extremos. Dos: en sus córners, Vucetich manda la mitad al punto penal; ahí va el mejor defensor aéreo del América. Tres: Tigres sufre con los córners al segundo palo, y Almada ya manda ahí el 40%. Y ojo con los primeros 15 minutos, cuando Tigres más contragolpea.</aside>
 </section>
 
 <!-- 10 GOLITO + QR -->
@@ -652,9 +659,10 @@ aside.nt{display:none}
  <div class="qr bi d4">
   <div class="box">__QR__</div>
   <p style="font-size:30px;font-weight:800;line-height:1.25">Escanea y pruébalo:<br>la historia de los <span style="background:linear-gradient(transparent 60%,var(--y) 60%)">76 DTs</span> de la Liga MX</p>
+  <p class="enl"><b>Also in English.</b> Ajustes → English, y Golito también platica en inglés.</p>
   <p class="oz blu" style="font-size:80px;line-height:1;margin-top:6px">Gracias</p>
  </div>
- <aside class="nt">20 s. Y para no buscar pestaña por pestaña está Golito, nuestro agente de IA. Le preguntas, por ejemplo, cómo jugarle a Tigres; te contesta y te lleva solo a la pestaña correcta. Todo lo que vieron hoy son pantallas de la plataforma, y existen para los 76 entrenadores de la liga. Escaneen el QR y pruébenla. Gracias.</aside>
+ <aside class="nt">25 s. [Video: la plataforma cambia a inglés] For our English-speaking judges: everything you saw is also in English, from Settings, and Golito speaks English too. [Clic] Y para no buscar pestaña por pestaña está Golito, nuestro agente de IA: le preguntas cómo jugarle a Tigres y te lleva solo a la pestaña correcta. Todo lo que vieron hoy existe para los 76 entrenadores de la liga. Escaneen el QR y pruébenla. Gracias.</aside>
 </section>
 
 </div>
@@ -665,6 +673,8 @@ aside.nt{display:none}
 if(location.search.includes('static')){const st=document.createElement('style');st.textContent='*{transition:none!important}';document.head.appendChild(st)}
 const D=__DATA__;
 const IMG=__IMGJS__;
+const VID=__VIDJS__;
+const NODEMO=/static|pdf/.test(location.search);let demoOn=false;
 const deck=document.getElementById('deck');
 const S=[...document.querySelectorAll('.slide')];
 const NS='http://www.w3.org/2000/svg';
@@ -732,6 +742,11 @@ function animComp(){const box=document.getElementById('cmp');box.innerHTML='';co
   box.appendChild(card);go.push(g1,g2,()=>{bk2.style.transform=`translateX(${X(bk)}px)`;zone.setAttribute('width',X(bk)-X(18))},()=>{const e=card.querySelector('.tilt i');e.style.width=e.dataset.w+'%'})});
  later(()=>go.forEach(f=>f()),700);
 }
+
+/* ---------- demo: la plataforma en vivo antes de explicar cada pestaña ---------- */
+const DEMO={sW:['c_dt','Así se entra: buscas al DT y abres ¿DT o plantilla?'],s2:['c_res','En la plataforma: Resumen'],s4:['c_juego','En la plataforma: Cómo juega'],s7:['c_jug','En la plataforma: Jugadores'],sB:['c_bp','En la plataforma: Balón parado'],s9:['c_lab','En la plataforma: Laboratorio'],s8:['c_vs','En la plataforma: Cara a cara · Plan contra un rival'],s10:['c_lang','Also in English: Ajustes → English']};
+if(!NODEMO)Object.entries(DEMO).forEach(([id,[k,lab]])=>{const s=document.getElementById(id);if(!s||!VID[k])return;const d=document.createElement('div');d.className='demo';d.innerHTML=`<video muted playsinline preload="auto" src="${VID[k]}"></video><span class="dtag">${lab}</span><span class="dhint">clic → lo explicamos</span>`;s.appendChild(d)});
+function dismissDemo(){const s=S[cur],dm=s.querySelector('.demo');demoOn=false;if(!dm)return;dm.classList.remove('show');dm.querySelector('video').pause();s.classList.remove('on');void s.offsetWidth;ANIM[s.id]?.();later(()=>s.classList.add('on'),30)}
 
 /* ---------- marco de la app en las láminas que son pestañas ---------- */
 const MODES=[['resumen','Resumen','#3987e5'],['separar','¿DT o plantilla?','#e0662f'],['juego','Cómo juega','#1fae7a'],['jugadores','Jugadores','#e8b10c'],['bp','Balón parado','#de4f87'],['lab','Laboratorio','#8f6cf0'],['vs','Cara a cara','#e5484d']];
@@ -1071,8 +1086,8 @@ const q=document.getElementById('q1'),ty=document.getElementById('ty'),a=documen
 
 const ANIM={s1:animCover,sP:animConcept,sW:animWF,sB:animBP,s2:()=>{animMap();animBells()},s4:animAtk,s5:animClubs,s6:animCtx,s7:animPitch,s8:animTig,s9:animSim,s10:animChat};
 const notes=document.getElementById('notes');
-function go(i){i=Math.max(0,Math.min(S.length-1,i));timers.forEach(clearTimeout);timers=[];S.forEach(s=>s.classList.remove('on'));cur=i;const s=S[i];void s.offsetWidth;ANIM[s.id]?.();later(()=>s.classList.add('on'),30);document.getElementById('ct').textContent=`${i+1} / ${S.length}`;notes.textContent=s.querySelector('aside.nt')?.textContent||'';try{history.replaceState(null,'','#'+s.id)}catch(e){}}
-const next=()=>{if(S[cur].id==='sW'&&wfI<D.wf.length-1){setWF(wfI+1);return}go(cur+1)};
+function go(i){i=Math.max(0,Math.min(S.length-1,i));timers.forEach(clearTimeout);timers=[];S.forEach(s=>s.classList.remove('on'));cur=i;const s=S[i];void s.offsetWidth;document.querySelectorAll('.demo').forEach(d=>{d.classList.remove('show');d.querySelector('video').pause()});demoOn=false;const dm=s.querySelector('.demo');if(dm){demoOn=true;dm.classList.add('show');const v=dm.querySelector('video');try{v.currentTime=0}catch(e){}v.play().catch(()=>{});later(()=>s.classList.add('on'),30)}else{ANIM[s.id]?.();later(()=>s.classList.add('on'),30)}document.getElementById('ct').textContent=`${i+1} / ${S.length}`;notes.textContent=s.querySelector('aside.nt')?.textContent||'';try{history.replaceState(null,'','#'+s.id)}catch(e){}}
+const next=()=>{if(demoOn){dismissDemo();return}if(cur===S.length-1)return;if(S[cur].id==='sW'&&wfI<D.wf.length-1){setWF(wfI+1);return}go(cur+1)};
 addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();next()}else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();go(cur-1)}else if(e.key==='n'||e.key==='N'){notes.hidden=!notes.hidden}else if(e.key==='Home')go(0);else if(e.key==='End')go(S.length-1)});
 document.getElementById('nx').onclick=()=>next();document.getElementById('pv').onclick=()=>go(cur-1);document.getElementById('nb').onclick=()=>notes.hidden=!notes.hidden;
 deck.addEventListener('click',e=>{if(e.target.closest('button'))return;e.clientX>innerWidth/3?next():go(cur-1)});

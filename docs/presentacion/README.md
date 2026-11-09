@@ -12,3 +12,5 @@ Fuente del deck animado de la final (10 láminas, 1920×1080).
 | `Guion_speaker.md` | El guion de 5 minutos. |
 
 Los escudos y las fotos (`img.json`) son medios de terceros y **no** se versionan. Para armar el deck hace falta tener `img.json` en esta carpeta.
+
+`grabar_demos.mjs` graba con Playwright los clips de la plataforma (`demo/*.mp4`) que abren cada pestaña del deck. Los clips no se versionan: muestran escudos y fotos de terceros.
