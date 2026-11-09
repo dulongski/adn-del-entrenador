@@ -596,7 +596,7 @@ aside.nt{display:none}
    <div id="tprom" style="display:flex;flex-direction:column"></div>
   </div>
  </div>
- <aside class="nt">30 s. [Video: pestaña Laboratorio, unos segundos y clic] La app también simula. En el Laboratorio puedes volver a jugar cualquier partido. El 1-1 con Monterrey: el América generó 1.32 xG contra 0.36, y si lo jugamos miles de veces gana el 65%; merecía más. También jugamos el resto del torneo 3,000 veces, y cada bolita es un torneo. El América termina primero en la tabla esperada y es campeón el 18%. No es más porque va empatado en puntos con Chivas y Cruz Azul, recibe muchos goles y tiene que ganar tres series. Chivas, con la mejor defensa, es el favorito con 29%.</aside>
+ <aside class="nt">30 s. [Video: rejugar partidos y simular el torneo en vivo; clic] La app también simula. En el Laboratorio puedes volver a jugar cualquier partido. El 1-1 con Monterrey: el América generó 1.32 xG contra 0.36, y si lo jugamos miles de veces gana el 65%; merecía más. También jugamos el resto del torneo 3,000 veces, y cada bolita es un torneo. El América termina primero en la tabla esperada y es campeón el 18%. No es más porque va empatado en puntos con Chivas y Cruz Azul, recibe muchos goles y tiene que ganar tres series. Chivas, con la mejor defensa, es el favorito con 29%.</aside>
 </section>
 
 <!-- 9 SIMULACION -->
@@ -744,8 +744,8 @@ function animComp(){const box=document.getElementById('cmp');box.innerHTML='';co
 }
 
 /* ---------- demo: la plataforma en vivo antes de explicar cada pestaña ---------- */
-const DEMO={sW:['c_dt','Así se entra: buscas al DT y abres ¿DT o plantilla?'],s2:['c_map','En la plataforma: el mapa de estilos, su familia y los ejes que tú eliges'],s4:['c_juego','En la plataforma: Cómo juega'],s7:['c_jug','En la plataforma: Jugadores'],sB:['c_bp','En la plataforma: Balón parado'],s9:['c_lab','En la plataforma: Laboratorio'],s8:['c_vs','En la plataforma: Cara a cara · Plan contra un rival'],s10:['c_lang','Also in English · y pregúntale a Golito']};
-if(!NODEMO)Object.entries(DEMO).forEach(([id,[k,lab]])=>{const s=document.getElementById(id);if(!s||!VID[k])return;const d=document.createElement('div');d.className='demo';d.innerHTML=`<video muted playsinline preload="auto" src="${VID[k]}"></video><span class="dtag">${lab}</span><span class="dhint">clic → lo explicamos</span>`;s.appendChild(d)});
+const DEMO={sW:['c_dt','Así se entra: buscas al DT y abres ¿DT o plantilla?'],s2:['c_map','En la plataforma: el mapa de estilos, su familia y los ejes que tú eliges'],s4:['c_juego','En la plataforma: Cómo juega'],s7:['c_jug','En la plataforma: Jugadores'],sB:['c_bp','En la plataforma: Balón parado'],s9:['c_lab','En la plataforma: Laboratorio · rejugar partidos y simular el torneo'],s8:['c_vs','En la plataforma: Cara a cara · Plan contra un rival'],s10:['c_lang','Also in English · y pregúntale a Golito']};
+if(!NODEMO)Object.entries(DEMO).forEach(([id,[k,lab]])=>{const s=document.getElementById(id);if(!s||!VID[k])return;const d=document.createElement('div');d.className='demo';d.innerHTML=`<video muted playsinline preload="auto" src="${VID[k]}"></video><span class="dtag">${lab}</span><span class="dhint">clic → lo explicamos</span>`;d.querySelector('video').addEventListener('error',()=>{const sl=d.parentElement;d.remove();if(demoOn&&S[cur]===sl)dismissDemo()});s.appendChild(d)});  // si el video no está (HTML suelto, sin la carpeta demo/), se salta el demo
 function dismissDemo(){const s=S[cur],dm=s.querySelector('.demo');demoOn=false;if(!dm)return;dm.classList.remove('show');dm.querySelector('video').pause();s.classList.remove('on');void s.offsetWidth;ANIM[s.id]?.();later(()=>s.classList.add('on'),30)}
 
 /* ---------- marco de la app en las láminas que son pestañas ---------- */

@@ -45,7 +45,13 @@ await clip('c_map','',async p=>{ await p.waitForTimeout(800);
 await clip('c_juego','#2947/hub',async p=>{ await moveClick(p,mode(p,'Cómo juega')); await p.waitForTimeout(1500); await toEnd(p) })
 await clip('c_jug','#2947/hub',async p=>{ await moveClick(p,mode(p,'Jugadores')); await p.waitForTimeout(1500); await toEnd(p) })
 await clip('c_bp','#2947/hub',async p=>{ await moveClick(p,mode(p,'Balón parado')); await p.waitForTimeout(1800); await toEnd(p) })
-await clip('c_lab','#2947/hub',async p=>{ await moveClick(p,mode(p,'Laboratorio')); await p.waitForTimeout(1300); await moveClick(p,sub(p,'Simulador de liga')); await p.waitForTimeout(2200); await toEnd(p) })
+await clip('c_lab','#2947/hub',async p=>{ await moveClick(p,mode(p,'Laboratorio')); await p.waitForTimeout(1500); await toEnd(p);
+  await p.evaluate(()=>scrollTo({top:0,behavior:'smooth'})); await p.waitForTimeout(1200);
+  await moveClick(p,sub(p,'Simulador de liga')); await p.waitForTimeout(1800);
+  await moveClick(p,p.locator('button',{hasText:'Empezar torneo'})); await p.waitForTimeout(2200);
+  const play=p.locator('button',{hasText:'Jugar el partido de'}); await play.scrollIntoViewIfNeeded(); await p.waitForTimeout(500); await moveClick(p,play); await p.waitForTimeout(6000);
+  const fin=p.locator('button',{hasText:'Hasta la final'}); await fin.scrollIntoViewIfNeeded().catch(()=>{}); await moveClick(p,fin); await p.waitForTimeout(4000);
+  await toEnd(p) })
 await clip('c_vs','#2947/hub',async p=>{ await moveClick(p,mode(p,'Cara a cara')); await p.waitForTimeout(1100); await moveClick(p,sub(p,'Plan contra un rival')); await p.waitForTimeout(1500); const s=p.locator('input.vs-cp-search'); await moveClick(p,s); await p.keyboard.type('Vucetich',{delay:100}); await p.waitForTimeout(900); {const row=p.locator('.vs-cp-row',{hasText:'Vucetich'}).first();const bb=await row.boundingBox();await p.mouse.move(bb.x+bb.width/3,bb.y+bb.height/2,{steps:25});await p.waitForTimeout(250);await row.click();} await p.waitForTimeout(2200); await toEnd(p) })
 await clip('c_lang','#2947/hub',async p=>{ await moveClick(p,p.locator('.cfg-btn').first()); await p.waitForTimeout(900); await moveClick(p,p.locator('.cfg-lang button',{hasText:'English'}).first()); await p.waitForTimeout(1400); await p.keyboard.press('Escape'); await p.mouse.click(1300,700); await p.waitForTimeout(700);
   await moveClick(p,p.locator('.ai-fab')); await p.waitForTimeout(1000); const ta=p.locator('.ai-form textarea'); await moveClick(p,ta); await p.keyboard.type('How should Almada play against Tigres?',{delay:55}); await p.waitForTimeout(500);

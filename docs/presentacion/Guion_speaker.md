@@ -34,7 +34,7 @@ Todos hemos visto que cuando a un equipo le va bien, el crédito se lo lleva el 
 
 ## 8. ¿Y si se jugara otra vez? Lo simulamos (30 s)
 
-[Video: pestaña Laboratorio, unos segundos y clic] La app también simula. En el Laboratorio puedes volver a jugar cualquier partido. El 1-1 con Monterrey: el América generó 1.32 xG contra 0.36, y si lo jugamos miles de veces gana el 65%; merecía más. También jugamos el resto del torneo 3,000 veces, y cada bolita es un torneo. El América termina primero en la tabla esperada y es campeón el 18%. No es más porque va empatado en puntos con Chivas y Cruz Azul, recibe muchos goles y tiene que ganar tres series. Chivas, con la mejor defensa, es el favorito con 29%.
+[Video: rejugar partidos y simular el torneo en vivo; clic] La app también simula. En el Laboratorio puedes volver a jugar cualquier partido. El 1-1 con Monterrey: el América generó 1.32 xG contra 0.36, y si lo jugamos miles de veces gana el 65%; merecía más. También jugamos el resto del torneo 3,000 veces, y cada bolita es un torneo. El América termina primero en la tabla esperada y es campeón el 18%. No es más porque va empatado en puntos con Chivas y Cruz Azul, recibe muchos goles y tiene que ganar tres series. Chivas, con la mejor defensa, es el favorito con 29%.
 
 ## 9. Tigres y Vucetich: dónde puede ganar Almada (35 s)
 

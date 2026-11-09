@@ -561,23 +561,37 @@ function localAnswer(q: string): Msg {
       coaches.push(cur)
     }
   }
+  // cómo le juega un DT a un rival (club o DT) → plan contra ese rival, ya elegido
+  const vsQ = /jueg|jugar|contra|enfrent|ganar|vencer|vs\b|versus|against|play|beat|face/.test(t)
+  if (vsQ && coaches.length >= 1 && !(coaches.length >= 2 && /parec|compar|similar|alike/.test(t))) {
+    const a = coaches[0].id
+    const rivalClub = clubs.find(c => c !== dtClub(a))
+    const b = coaches.length >= 2 ? coaches[1].id : rivalClub ? DTS.find(d => media.dts?.[d.id]?.club === rivalClub && media.dts?.[d.id]?.vigente)?.id : undefined
+    if (b && b !== a) {
+      chatBus.vsRival = b
+      go(a, 'duelo'); cards.push({ t: 'go', coach: a, view: 'duelo' })
+      const rc = rivalClub ?? dtClub(b)
+      m.text = pre + L(`Te llevo al plan de ${dtName(a)} contra ${dtName(b)}${rc ? ` (${rc})` : ''}: dónde puede ganar, qué tiene que cubrir y qué vigilar en el partido.`, `Taking you to ${dtName(a)}'s game plan against ${dtName(b)}${rc ? ` (${rc})` : ''}: where he can win, what he must cover and what to watch.`)
+      return m
+    }
+  }
   // un DT + un tema → su vista
   if (coaches.length === 1) {
     const id = coaches[0].id
     const V: [RegExp, string, string][] = [
-      [/fich|refuerz|contrat|a su medida|le encaj|deberia traer/, 'fichajes', L('los jugadores de la liga que mejor encajan con su estilo', 'players who fit his style')],
-      [/balon parado|corner|tiro libre|tiros libres|saque|pelota parada|abp/, /tiro libre|tiros libres/.test(t) ? 'tl' : 'bp', L('su balón parado', 'his set pieces')],
+      [/fich|refuerz|contrat|a su medida|le encaj|deberia traer|sign|transfer|fit/, 'fichajes', L('los jugadores de la liga que mejor encajan con su estilo', 'players who fit his style')],
+      [/balon parado|corner|tiro libre|tiros libres|saque|pelota parada|abp|set piece|free kick|throw/, /tiro libre|tiros libres/.test(t) ? 'tl' : 'bp', L('su balón parado', 'his set pieces')],
       [/jugarle|ganarle|le gano|vencer|enfrentar|plan|debilidad|punto debil|explotar/, 'plan', L('cómo jugarle: sus claves y debilidades', 'how to play him')],
-      [/simul|liguilla|campeon|rejug|merec|suerte|xpts/, /liguilla|campeon/.test(t) ? 'liga' : 'sim', L('el laboratorio de simulación', 'the simulation lab')],
+      [/simul|liguilla|campeon|rejug|merec|suerte|xpts|replay|deserve|playoff|title/, /liguilla|campeon/.test(t) ? 'liga' : 'sim', L('el laboratorio de simulación', 'the simulation lab')],
       [/ganando|perdiendo|empat|marcador|minuto|local|visita|rival fuerte|reaccion|contexto/, 'contexto', L('cómo cambia según el marcador, el minuto, la localía y el rival', 'how he changes with the game state')],
-      [/cambio|sustitu|banca|rota|rotacion|jugadores|plantilla actual|usa/, 'jugadores', L('cómo usa a sus jugadores', 'how he uses his players')],
-      [/de quien|suyo|plantilla|separ|merito/, 'dt', L('cuánto del estilo es suyo y cuánto de su plantilla', 'how much is his vs his squad')],
-      [/parec|similar|igual a/, 'vs', L('a quién se parece', 'who he resembles')],
+      [/cambio|sustitu|banca|rota|rotacion|jugadores|plantilla actual|usa|player|lineup|line-up|bench/, 'jugadores', L('cómo usa a sus jugadores', 'how he uses his players')],
+      [/de quien|suyo|plantilla|separ|merito|squad|his own|credit/, 'dt', L('cuánto del estilo es suyo y cuánto de su plantilla', 'how much is his vs his squad')],
+      [/parec|similar|igual a|alike|resembl/, 'vs', L('a quién se parece', 'who he resembles')],
       [/otro club|si dirigiera|si llegara|whatif/, 'whatif', L('qué pasaría en otro club', 'what if he coached elsewhere')],
       [/tiempo|evoluci|cambiado|torneo a torneo|consisten/, 'tiempo', L('cómo ha evolucionado torneo a torneo', 'how he evolved')],
     ]
     const hit = V.find(([re]) => re.test(t))
-    if (hit && !kHit) {
+    if (hit && (!kHit || ['bp', 'tl', 'fichajes', 'plan', 'liga', 'sim'].includes(hit[1]))) {
       if (hit[1] === 'jugadores') chatBus.jug = { club: dtClub(id) }
       go(id, hit[1]); cards.push({ t: 'go', coach: id, view: hit[1] })
       m.text = pre + L(`Te llevo a ${hit[2]} de ${dtName(id)}.`, `Taking you to ${hit[2]} for ${dtName(id)}.`)
