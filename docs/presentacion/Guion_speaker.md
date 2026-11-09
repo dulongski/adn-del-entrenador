@@ -1,8 +1,8 @@
 # Coach DNA · Guion del pitch final (5 min)
 
-Versión con notas para presentar: `CoachDNA_Final_con_notas.html` (tecla N). La publicada va sin notas.
+Versión con notas para presentar: `CoachDNA_Final_con_notas.html` (tecla N), junto a la carpeta `demo/`. La publicada va sin notas.
 
-Cada pestaña abre con un video corto de la plataforma real; un clic lo cierra y aparece la explicación.
+Cada pestaña abre con un video de la plataforma real; un clic lo cierra y aparece la explicación. Da clic sin esperar a que termine el video.
 
 ## 1. La historia de un entrenador a través de los datos (15 s)
 
@@ -18,7 +18,7 @@ Todos hemos visto que cuando a un equipo le va bien, el crédito se lo lleva el 
 
 ## 4. Almada llega al América con una idea poco común en la liga (30 s)
 
-[Video: pestaña Resumen, unos segundos y clic] Ese estilo propio, frente al resto de la liga. Este mapa es lo primero que ves al abrir la plataforma: los 76 entrenadores según cómo juegan, ya sin el efecto de sus jugadores. Almada está en un grupo chico, presión alta y defensa adelantada: solo 12 de 76 juegan así. Y miren a Vucetich, de Tigres, su próximo rival: juega casi al revés. A la derecha, dos cosas en las que casi nadie se le parece: presiona más que casi todos y roba en campo rival como casi nadie.
+[Video: en el mapa resaltamos su familia y cambiamos los ejes; clic] Ese estilo propio, frente al resto de la liga. Este mapa es lo primero que ves al abrir la plataforma: los 76 entrenadores según cómo juegan, ya sin el efecto de sus jugadores. Almada está en un grupo chico, presión alta y defensa adelantada: solo 12 de 76 juegan así. Y miren a Vucetich, de Tigres, su próximo rival: juega casi al revés. A la derecha, dos cosas en las que casi nadie se le parece: presiona más que casi todos y roba en campo rival como casi nadie.
 
 ## 5. Así ataca el América de Almada (30 s)
 
@@ -42,4 +42,4 @@ Todos hemos visto que cuando a un equipo le va bien, el crédito se lo lleva el 
 
 ## 10. Pregúntale a nuestro agente de IA (25 s)
 
-[Video: la plataforma cambia a inglés] For our English-speaking judges: everything you saw is also in English, from Settings, and Golito speaks English too. [Clic] Y para no buscar pestaña por pestaña está Golito, nuestro agente de IA: le preguntas cómo jugarle a Tigres y te lleva solo a la pestaña correcta. Todo lo que vieron hoy existe para los 76 entrenadores de la liga. Escaneen el QR y pruébenla. Gracias.
+[Video] For our English-speaking judges: the whole platform is also in English, from Settings, and Golito speaks English too. Here we ask him how Almada should play against Tigres, and he answers and takes us straight to the match plan. [Clic] Todo lo que vieron hoy existe para los 76 entrenadores de la liga. Escaneen el QR y pruébenla; con gusto les hacemos un demo. Gracias.

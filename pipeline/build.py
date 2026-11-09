@@ -36,6 +36,9 @@ ART = ROOT / "artifacts"
 MIN_MATCHES = 10
 
 
+NAME_FIX = {'Jorge Guillermo Almada Álves': 'Jorge Guillermo Almada Alves'}  # Alves va sin acento
+
+
 def log(*a):
     print(time.strftime("%H:%M:%S"), *a, flush=True)
 
@@ -171,6 +174,7 @@ def main(coach_filter=None, fast=False, n_boot=30, solo_extra=False):
 
     coach_names = pd.concat([M[["home_coach_id", "home_coach"]].set_axis(["id", "n"], axis=1),
                              M[["away_coach_id", "away_coach"]].set_axis(["id", "n"], axis=1)]).dropna().drop_duplicates("id").set_index("id").n
+    coach_names = coach_names.replace(NAME_FIX)  # nombres mal escritos en la fuente
     club_names = pd.concat([M[["home_id", "home"]].set_axis(["id", "n"], axis=1), M[["away_id", "away"]].set_axis(["id", "n"], axis=1)]).drop_duplicates("id").set_index("id").n
     n_matches = seg.groupby("coach_id").match_id.nunique()
     eligible = n_matches[n_matches >= MIN_MATCHES].index

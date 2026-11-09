@@ -498,7 +498,7 @@ aside.nt{display:none}
   </div>
   <div class="bells bells-c bells-2" id="bells"></div>
  </div>
- <aside class="nt">30 s. [Video: pestaña Resumen, unos segundos y clic] Ese estilo propio, frente al resto de la liga. Este mapa es lo primero que ves al abrir la plataforma: los 76 entrenadores según cómo juegan, ya sin el efecto de sus jugadores. Almada está en un grupo chico, presión alta y defensa adelantada: solo 12 de 76 juegan así. Y miren a Vucetich, de Tigres, su próximo rival: juega casi al revés. A la derecha, dos cosas en las que casi nadie se le parece: presiona más que casi todos y roba en campo rival como casi nadie.</aside>
+ <aside class="nt">30 s. [Video: en el mapa resaltamos su familia y cambiamos los ejes; clic] Ese estilo propio, frente al resto de la liga. Este mapa es lo primero que ves al abrir la plataforma: los 76 entrenadores según cómo juegan, ya sin el efecto de sus jugadores. Almada está en un grupo chico, presión alta y defensa adelantada: solo 12 de 76 juegan así. Y miren a Vucetich, de Tigres, su próximo rival: juega casi al revés. A la derecha, dos cosas en las que casi nadie se le parece: presiona más que casi todos y roba en campo rival como casi nadie.</aside>
 </section>
 
 <!-- 3 CAMPANAS -->
@@ -662,7 +662,7 @@ aside.nt{display:none}
   <p class="enl"><b>Also in English.</b> Ajustes → English, y Golito también platica en inglés.</p>
   <p class="oz blu" style="font-size:80px;line-height:1;margin-top:6px">Gracias</p>
  </div>
- <aside class="nt">25 s. [Video: la plataforma cambia a inglés] For our English-speaking judges: everything you saw is also in English, from Settings, and Golito speaks English too. [Clic] Y para no buscar pestaña por pestaña está Golito, nuestro agente de IA: le preguntas cómo jugarle a Tigres y te lleva solo a la pestaña correcta. Todo lo que vieron hoy existe para los 76 entrenadores de la liga. Escaneen el QR y pruébenla. Gracias.</aside>
+ <aside class="nt">25 s. [Video] For our English-speaking judges: the whole platform is also in English, from Settings, and Golito speaks English too. Here we ask him how Almada should play against Tigres, and he answers and takes us straight to the match plan. [Clic] Todo lo que vieron hoy existe para los 76 entrenadores de la liga. Escaneen el QR y pruébenla; con gusto les hacemos un demo. Gracias.</aside>
 </section>
 
 </div>
@@ -744,7 +744,7 @@ function animComp(){const box=document.getElementById('cmp');box.innerHTML='';co
 }
 
 /* ---------- demo: la plataforma en vivo antes de explicar cada pestaña ---------- */
-const DEMO={sW:['c_dt','Así se entra: buscas al DT y abres ¿DT o plantilla?'],s2:['c_res','En la plataforma: Resumen'],s4:['c_juego','En la plataforma: Cómo juega'],s7:['c_jug','En la plataforma: Jugadores'],sB:['c_bp','En la plataforma: Balón parado'],s9:['c_lab','En la plataforma: Laboratorio'],s8:['c_vs','En la plataforma: Cara a cara · Plan contra un rival'],s10:['c_lang','Also in English: Ajustes → English']};
+const DEMO={sW:['c_dt','Así se entra: buscas al DT y abres ¿DT o plantilla?'],s2:['c_map','En la plataforma: el mapa de estilos, su familia y los ejes que tú eliges'],s4:['c_juego','En la plataforma: Cómo juega'],s7:['c_jug','En la plataforma: Jugadores'],sB:['c_bp','En la plataforma: Balón parado'],s9:['c_lab','En la plataforma: Laboratorio'],s8:['c_vs','En la plataforma: Cara a cara · Plan contra un rival'],s10:['c_lang','Also in English · y pregúntale a Golito']};
 if(!NODEMO)Object.entries(DEMO).forEach(([id,[k,lab]])=>{const s=document.getElementById(id);if(!s||!VID[k])return;const d=document.createElement('div');d.className='demo';d.innerHTML=`<video muted playsinline preload="auto" src="${VID[k]}"></video><span class="dtag">${lab}</span><span class="dhint">clic → lo explicamos</span>`;s.appendChild(d)});
 function dismissDemo(){const s=S[cur],dm=s.querySelector('.demo');demoOn=false;if(!dm)return;dm.classList.remove('show');dm.querySelector('video').pause();s.classList.remove('on');void s.offsetWidth;ANIM[s.id]?.();later(()=>s.classList.add('on'),30)}
 

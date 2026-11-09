@@ -10,7 +10,7 @@ qr=open(f'{D}/qr.svg').read().replace('class="segno"','class="segno" viewBox="0 
 t=t.replace('__QR__',qr).replace('__ISAC__',isac).replace('__PIN__',pin).replace('__BALL__',ball)
 for k,v in img.items(): t=t.replace(f'__I_{k}__',v)
 import base64,glob
-vid={os.path.basename(f)[:-4]:'data:video/mp4;base64,'+base64.b64encode(open(f,'rb').read()).decode() for f in sorted(glob.glob(f'{D}/demo/*.mp4'))}
+vid={os.path.basename(f)[:-4]:'demo/'+os.path.basename(f) for f in sorted(glob.glob(f'{D}/demo/*.mp4'))}  # 1080p: van como archivos junto al HTML
 t=t.replace('__DATA__',data).replace('__IMGJS__',json.dumps(img)).replace('__VIDJS__',json.dumps(vid))
 left=set(re.findall(r'__[A-Z][A-Za-z_]*__',t)); assert not left, left
 open(f'{D}/coach-dna-notas.html','w').write(t)  # versión local con notas del speaker (tecla N)
