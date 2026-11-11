@@ -198,6 +198,7 @@ aside.nt{display:none}
 .demo .dhint{position:absolute;right:22px;bottom:16px;z-index:2;background:rgba(14,27,61,.85);color:#fff;font-weight:700;font-size:18px;padding:8px 14px;border-radius:10px}
 
 .pdfm #nav,.pdfm #notes{display:none!important}
+#fs{font-size:17px}
 .bpd{display:flex;flex-direction:column;gap:14px;margin-top:12px;flex:1;justify-content:center}
 .bpd .r{display:grid;grid-template-columns:150px 1fr 70px;gap:14px;align-items:center;font-size:20px}
 .bpd .r .tr{position:relative;height:30px;background:#EFECE3;border-radius:8px}
@@ -666,7 +667,7 @@ aside.nt{display:none}
 </section>
 
 </div>
-<div id="nav"><button id="pv" aria-label="Anterior">‹</button><span id="ct">1 / 10</span><button id="nx" aria-label="Siguiente">›</button><button id="nb" aria-label="Notas" title="Notas (N)">N</button></div>
+<div id="nav"><button id="pv" aria-label="Anterior">‹</button><span id="ct">1 / 10</span><button id="nx" aria-label="Siguiente">›</button><button id="nb" aria-label="Notas" title="Notas (N)">N</button><button id="fs" aria-label="Pantalla completa" title="Pantalla completa (F)">⛶</button></div>
 <div id="notes" hidden></div>
 
 <script>
@@ -683,6 +684,9 @@ let cur=0,timers=[];
 const later=(f,ms)=>timers.push(setTimeout(f,ms));
 function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080);deck.style.transform=`translate(-50%,-50%) scale(${s})`}
 addEventListener('resize',fit);fit();
+/* pantalla completa real (también dentro del link de claude.ai): botón ⛶ o tecla F */
+function fsT(){const d=document,on=d.fullscreenElement||d.webkitFullscreenElement;try{if(on)(d.exitFullscreen||d.webkitExitFullscreen).call(d);else{const e=d.documentElement,r=(e.requestFullscreen||e.webkitRequestFullscreen).call(e);if(r&&r.catch)r.catch(()=>{})}}catch(_){}}
+document.addEventListener('fullscreenchange',()=>setTimeout(fit,60));document.addEventListener('webkitfullscreenchange',()=>setTimeout(fit,60));
 const ISAC=document.querySelector('#s1 .isac').innerHTML;
 S.forEach((s,i)=>{const f=document.createElement('div');f.className='ft';f.innerHTML=`<span class="isac">${ISAC}</span><span>×</span><img src="${IMG.america}" alt="Club América"><span>Coach DNA</span><span class="sp"></span><span>${i+1} / ${S.length}</span>`;s.appendChild(f)});
 const CC={'Santos Laguna':'#1E9E5A','Pachuca':'#2A5CB8','América':'#FFC72C'};
@@ -1089,8 +1093,8 @@ const ANIM={s1:animCover,sP:animConcept,sW:animWF,sB:animBP,s2:()=>{animMap();an
 const notes=document.getElementById('notes');
 function go(i){i=Math.max(0,Math.min(S.length-1,i));timers.forEach(clearTimeout);timers=[];S.forEach(s=>s.classList.remove('on'));cur=i;const s=S[i];void s.offsetWidth;document.querySelectorAll('.demo').forEach(d=>{d.classList.remove('show');d.querySelector('video').pause()});demoOn=false;const dm=s.querySelector('.demo');if(dm){demoOn=true;dm.classList.add('show');const v=dm.querySelector('video');try{v.currentTime=0}catch(e){}v.play().catch(()=>{});later(()=>s.classList.add('on'),30)}else{ANIM[s.id]?.();later(()=>s.classList.add('on'),30)}document.getElementById('ct').textContent=`${i+1} / ${S.length}`;notes.textContent=s.querySelector('aside.nt')?.textContent||'';try{history.replaceState(null,'','#'+s.id)}catch(e){}}
 const next=()=>{if(demoOn){dismissDemo();return}if(cur===S.length-1)return;if(S[cur].id==='sW'&&wfI<D.wf.length-1){setWF(wfI+1);return}go(cur+1)};
-addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();next()}else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();go(cur-1)}else if(e.key==='n'||e.key==='N'){notes.hidden=!notes.hidden}else if(e.key==='Home')go(0);else if(e.key==='End')go(S.length-1)});
-document.getElementById('nx').onclick=()=>next();document.getElementById('pv').onclick=()=>go(cur-1);document.getElementById('nb').onclick=()=>notes.hidden=!notes.hidden;
+addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();next()}else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();go(cur-1)}else if(e.key==='f'||e.key==='F'){fsT()}else if(e.key==='n'||e.key==='N'){notes.hidden=!notes.hidden}else if(e.key==='Home')go(0);else if(e.key==='End')go(S.length-1)});
+document.getElementById('nx').onclick=()=>next();document.getElementById('pv').onclick=()=>go(cur-1);document.getElementById('nb').onclick=()=>notes.hidden=!notes.hidden;document.getElementById('fs').onclick=e=>{e.stopPropagation();fsT()};
 deck.addEventListener('click',e=>{if(e.target.closest('button'))return;e.clientX>innerWidth/3?next():go(cur-1)});
 let tx=null;addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});addEventListener('touchend',e=>{if(tx==null)return;const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>40){d<0?next():go(cur-1)};tx=null});
 const h=(location.hash||'').slice(1);const hi=S.findIndex(s=>s.id===h);
