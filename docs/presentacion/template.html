@@ -549,7 +549,7 @@ aside.nt{display:none}
 
 <section class="slide inapp" id="sB" data-mode="bp" data-sub="Córners · Cómo defiende">
  <div class="hd">
-  <div><div class="step bi"><b>6</b>Balón parado</div><h2 class="bi d1">A dónde manda sus córners y <em>dónde le hacen daño</em></h2></div>
+  <div><div class="step bi"><b>6</b>Balón parado</div><h2 class="bi d1">A dónde manda sus córners y <em>cómo los defiende</em></h2></div>
   <div class="app bi d2"><small>Esta pestaña responde</small><span class="pill q">¿Qué hace en las jugadas a balón parado?</span></div>
  </div>
  <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:26px;margin-top:26px">
@@ -560,11 +560,11 @@ aside.nt{display:none}
   <div class="card bi d3" style="padding:20px 26px;display:flex;flex-direction:column">
    <p class="ttl" style="margin-bottom:6px">Defendiendo: dónde le gana el rival el primer balón</p>
    <div class="bpd" id="bpd"></div>
-   <p class="bpin"><b>Cierra el primer palo</b>; su punto débil es <b>su propio segundo palo</b>.</p>
+   <p class="bpin" id="bpin"></p>
   </div>
  </div>
  <div class="bpst">
-  <div class="bi d4 hot"><b id="bps"></b><p>de sus córners van al <b>segundo palo</b><span id="bpsl"></span></p></div>
+  <div class="bi d4 hot"><b id="bps"></b><p>de sus córners los <b>juega en corto</b><span id="bpsl"></span></p></div>
   <div class="bi d5"><b id="bpf"></b><p>de sus córners <b>gana el primer balón</b><span id="bpfl"></span></p></div>
   <div class="bi d6"><b id="bpc"></b><p><b>córners</b> por partido<span id="bpcl"></span></p></div>
   <div class="bi d7"><b id="bpm"></b><p>defiende <b>al hombre</b>: defensores pegados<span id="bpml"></span></p></div>
@@ -616,8 +616,8 @@ aside.nt{display:none}
   </div>
   <div class="plan" style="grid-template-rows:1fr 1fr;height:650px;align-content:stretch">
    <div class="card bi d3"><div class="hh"><span class="bdg">1</span><h3>Recibir entre sus líneas</h3></div><div class="bars mini" data-mini='[["Bloque Tigres (yd)",25.7,30,"25.7",1],["Liga",24.6,30,"24.6",0]]'></div><p>Más largo que el del <b>97% de los DTs</b>: mediapunta y extremo por dentro.</p></div>
-   <div class="card bi d4"><div class="hh"><span class="bdg">2</span><h3>Cubrir el punto penal en sus córners</h3></div><div class="bars mini" data-mini='[["Vucetich al penal",52,60,"52%",1],["Liga",46,60,"46%",0]]'></div><p>Vucetich manda ahí <b>la mitad de sus córners</b>: el mejor defensor aéreo fijo en el punto penal.</p></div>
-   <div class="card bi d5"><div class="hh"><span class="bdg">3</span><h3>Córners al segundo palo</h3></div><div class="bars mini" data-mini='[["xG que concede",0.038,0.045,".038",1],["Liga",0.025,0.045,".025",0]]'></div><p>Y Almada ya manda ahí <b>el 40%</b> de sus córners (liga 27%).</p></div>
+   <div class="card bi d4"><div class="hh"><span class="bdg">2</span><h3>Cubrir el área chica en sus córners</h3></div><div class="bars mini" data-mini='[["Vucetich",35,45,"35%",1],["Liga",29,45,"29%",0]]'></div><p>Vucetich manda ahí <b>más córners que la liga</b>: el mejor defensor aéreo fijo en el área chica.</p></div>
+   <div class="card bi d5"><div class="hh"><span class="bdg">3</span><h3>Córners al segundo palo</h3></div><div class="bars mini" data-mini='[["xG que concede",0.051,0.06,".051",1],["Liga",0.035,0.06,".035",0]]'></div><p>Tigres sufre ahí, pero Almada hoy manda <b>solo el 6%</b> (liga 9%): <b>una rutina a ensayar</b>.</p></div>
    <div class="card warn bi d6"><div class="hh"><span class="bdg">!</span><h3>Ojo del 0' al 15'</h3></div><div class="bars mini" data-mini='[["Contras 0′ a 15′",21,30,"+6%",2],["Su promedio",15,30,"",0]]'></div><p>Es cuando Vucetich <b>más contragolpea</b>: cuidar la pérdida.</p></div>
   </div>
  </div>
@@ -642,8 +642,8 @@ aside.nt{display:none}
     <p class="oz" style="font-size:40px;margin-bottom:18px">Almada vs Vucetich</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:600px">
      <div class="card" style="padding:16px 18px"><p style="font-weight:800;font-size:20px">1 · Recibir entre líneas</p><div class="bars mini" data-m='[["Bloque Tigres",25.7,30,"25.7",1],["Liga",24.6,30,"24.6",0]]'></div></div>
-     <div class="card" style="padding:16px 18px"><p style="font-weight:800;font-size:20px">2 · Cubrir el penal</p><div class="bars mini" data-m='[["Sus córners",52,60,"52%",1],["Liga",46,60,"46%",0]]'></div></div>
-     <div class="card" style="padding:16px 18px"><p style="font-weight:800;font-size:20px">3 · Córners 2.º palo</p><div class="bars mini" data-m='[["xG concede",0.038,0.045,".038",1],["Liga",0.025,0.045,".025",0]]'></div></div>
+     <div class="card" style="padding:16px 18px"><p style="font-weight:800;font-size:20px">2 · Cubrir el área chica</p><div class="bars mini" data-m='[["Sus córners",35,45,"35%",1],["Liga",29,45,"29%",0]]'></div></div>
+     <div class="card" style="padding:16px 18px"><p style="font-weight:800;font-size:20px">3 · Córners 2.º palo</p><div class="bars mini" data-m='[["xG concede",0.051,0.06,".051",1],["Liga",0.035,0.06,".035",0]]'></div></div>
      <div class="card" style="padding:16px 18px"><p style="font-weight:800;font-size:20px">! · Ojo 0' a 15'</p><div class="bars mini" data-m='[["Contras 0-15",21,30,"+6%",2],["Promedio",15,30,"",0]]'></div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:600px;margin-top:12px"><div class="pitch" style="height:170px"><svg id="vcp" viewBox="40 -2 82 84" width="100%" height="170" preserveAspectRatio="xMidYMid meet"></svg></div><div class="card" style="padding:10px 14px"><p style="font-weight:800;font-size:16px">Largo del bloque · Vucetich vs 76 DTs</p><div id="vcb"></div></div></div>
@@ -808,19 +808,20 @@ function animBP(){const B=D.bp,s=document.getElementById('bpz');s.innerHTML='';
  el('path',{d:'M33 18 A8 8 0 0 0 47 18',fill:'none',stroke:'#fff','stroke-width':.35,opacity:.8},g);
  el('line',{x1:73,x2:73,y1:0,y2:-2.8,stroke:'#fff','stroke-width':.22},g);el('path',{d:'M73 -2.8 L75 -2.3 L73 -1.8 Z',fill:'#FFC72C'},g);el('path',{d:'M73 1.2 A1.2 1.2 0 0 1 71.8 0',fill:'none',stroke:'#fff','stroke-width':.3},g);
  el('circle',{cx:72.3,cy:.6,r:.55,fill:'#fff',stroke:'#0E1B3D','stroke-width':.15},g);
- const Z={'Segundo palo':[27,6,'b'],'Área chica':[40,3.3,'b'],'Primer palo':[52,5,'r'],'Punto penal':[40,12.4,'b']};
- Object.entries(Z).forEach(([z,[x,y]],i)=>{const v=B.zonas[z],hot=z==='Segundo palo';
+ const Z={'Segundo palo':[27,6,'b'],'Área chica':[40,3.3,'b'],'Primer palo':[54,7,'b'],'Punto penal':[40,12.4,'b'],'Corto':[64.5,5.5,'b']};const HOT=new Set(['Corto','Primer palo']);
+ Object.entries(Z).forEach(([z,[x,y]],i)=>{const v=B.zonas[z]||0,hot=HOT.has(z);
   const pth=el('path',{d:`M72.2 0.6 Q${(72.2+x)/2} ${-4-(72.2-x)*.05} ${x} ${y}`,fill:'none',stroke:hot?'#FFC72C':'#fff','stroke-width':.18+v/40*.42,'stroke-linecap':'round',opacity:hot?.95:.6},g);
   const L=pth.getTotalLength();pth.style.strokeDasharray=L;pth.style.strokeDashoffset=L;void getComputedStyle(pth).strokeDashoffset;pth.style.transition=`stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1)`;later(()=>{void pth.getBoundingClientRect();pth.style.strokeDashoffset=0},450+i*350);
  });
- Object.entries(Z).forEach(([z,[x,y,side]],i)=>{const v=B.zonas[z],l=B.zonas_liga[z],r=Math.sqrt(v)*.6,hot=z==='Segundo palo';
+ Object.entries(Z).forEach(([z,[x,y,side]],i)=>{const v=B.zonas[z]||0,l=B.zonas_liga[z]||0,r=Math.sqrt(v)*.6,hot=HOT.has(z);
   const c=el('circle',{cx:x,cy:y,r:.1,fill:hot?'#FFC72C':'#fff','fill-opacity':hot?.95:.38,stroke:'#fff','stroke-width':.25},g);c.style.transition='r .7s cubic-bezier(.3,1.5,.5,1)';
   const t1=el('text',{x,y:y+.75,'text-anchor':'middle','font-size':r>3?2.4:1.7,'font-weight':800,fill:hot?'#0E1B3D':'#fff','font-family':'Inter,Arial',opacity:0},g);t1.textContent=Math.round(v)+'%';
   const lp=side==='l'?{x:x-r-1,y:y+.5,'text-anchor':'end'}:side==='r'?{x:x+r+1,y:y+.5,'text-anchor':'start'}:{x,y:y+r+2,'text-anchor':'middle'};
-  const t2=el('text',{...lp,'font-size':1.45,'font-weight':700,fill:'#fff','font-family':'Inter,Arial',opacity:0},g);t2.textContent=`${z} · liga ${Math.round(l)}%`;
+  const t2=el('text',{...lp,'font-size':1.45,'font-weight':700,fill:'#fff','font-family':'Inter,Arial',opacity:0},g);t2.textContent=`${z==='Corto'?'En corto':z} · liga ${Math.round(l)}%`;
   later(()=>{c.setAttribute('r',r);t1.setAttribute('opacity',1);t2.setAttribute('opacity',.95)},1500+i*350)});
 
- document.getElementById('bps').textContent=Math.round(B.zonas['Segundo palo'])+'%';document.getElementById('bpsl').textContent=`liga ${Math.round(B.zonas_liga['Segundo palo'])}%`;
+ document.getElementById('bps').textContent=Math.round(B.zonas['Corto'])+'%';document.getElementById('bpsl').textContent=`liga ${Math.round(B.zonas_liga['Corto'])}%`;
+ {const dz=B.def_zonas,best=dz.reduce((a,b)=>(b.gl-b.g)>(a.gl-a.g)?b:a),worst=dz.reduce((a,b)=>(b.g-b.gl)>(a.g-a.gl)?b:a);document.getElementById('bpin').innerHTML=(worst.g-worst.gl>=4?`Su punto débil: <b>${worst.z.toLowerCase()}</b>. `:'No tiene una zona débil clara: ')+`donde mejor defiende es <b>${best.z==='Punto penal'?'el punto penal':best.z.toLowerCase()}</b>.`}
  document.getElementById('bpf').textContent=B.primer+'%';document.getElementById('bpfl').textContent=`liga ${B.primer_liga}%`;
  document.getElementById('bpc').textContent=B.cpp;document.getElementById('bpcl').textContent=`liga ${B.cpp_liga}`;
  document.getElementById('bpm').textContent=B.pegados+'%';document.getElementById('bpml').textContent=`liga ${B.pegados_liga}%`;
@@ -1009,7 +1010,7 @@ function animTig(){const h=document.getElementById('h2h');h.innerHTML='';['G','G
  const tig=[[112,40],[100,14],[100,30],[100,50],[100,66],[76,20],[76,40],[76,60],[70,30],[70,50],[60,40]];
  const EX=[
   {t:'Ejemplo 1 · Recibir entre sus líneas',me:[[58,40],[66,64],[89,44],[64,18]],path:'M58 40 Q72 46 89 44',zone:[80,6,17,68]},
-  {t:'Ejemplo 2 · Su córner va al punto penal: cubrirlo',me:[[11,40],[5,35],[5,46],[14,30],[14,51],[2,40]],path:'M0 79 Q10 62 12 41',zone:[6,32,12,16]},
+  {t:'Ejemplo 2 · Su córner va al área chica: cubrirla',me:[[4,38],[4,44],[8,34],[9,47],[12,40],[1,40]],path:'M0 79 Q8 60 4 42',zone:[0,30,6,20]},
   {t:'Ejemplo 3 · Córner al segundo palo',me:[[120,79],[104,30],[106,46],[100,40],[96,54]],path:'M120 79 Q112 50 106 30',zone:[100,22,18,16]}];
  let k=0;const dots=[...document.querySelectorAll('#tigd i')];lab.style.transition='opacity .45s';cards.forEach(c=>c.style.transition='border-color .5s, box-shadow .5s, opacity .6s, transform .6s');
  const show=()=>{svg.style.opacity=0;lab.style.opacity=0;later(()=>draw(),450);if(S[cur].id==='s8')later(show,4200)};

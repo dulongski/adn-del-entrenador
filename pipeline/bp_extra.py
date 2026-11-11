@@ -131,7 +131,7 @@ def marking_summary(c: pd.DataFrame, lg_cut) -> dict:
 # ---------------------------------------------------------------- vulnerabilidad
 def vulnerable(c: pd.DataFrame, lg: pd.DataFrame) -> list[dict]:
     out = []
-    zc, zl = zone_of(c.end_x.values, c.end_y.values), zone_of(lg.end_x.values, lg.end_y.values)
+    zc, zl = zone_of(c.end_x.values, c.end_y.values, c.y.values, c.short.values), zone_of(lg.end_x.values, lg.end_y.values, lg.y.values, lg.short.values)  # córners de setpieces: y = de dónde se cobró
     for z in ZONAS:
         a, b = c[zc == z], lg[zl == z]
         if not len(b):

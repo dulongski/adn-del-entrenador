@@ -14,14 +14,19 @@ ZONES = [  # zonas de destino del envío (coordenadas de ataque hacia x=120)
 ]
 
 
-def zone_of(x, y):
-    out = np.full(len(x), "Otro", dtype=object)
-    done = np.zeros(len(x), bool)
-    for n, f in ZONES:
-        m = f(x, y) & ~done
-        out[m] = n
-        done |= m
+def zone_of(x, y, y0=None, short=None):
+    """Zona de destino de un córner, igual que la pestaña Córners de la app.
+    El lado se mide respecto al córner (y0 = de dónde se cobra): primer palo = lado del córner.
+    Los córners cortos van aparte («Corto»); lo que cae fuera del área es «Otro»."""
+    x, y = np.asarray(x, float), np.asarray(y, float)
+    yy = y if y0 is None else np.where(np.asarray(y0, float) < 40, y, 80 - y)
+    sh = np.zeros(len(x), bool) if short is None else pd.Series(short).fillna(False).astype(bool).to_numpy()
+    out = np.where(yy < 36, "Primer palo", np.where(yy <= 44, "Área chica", "Segundo palo")).astype(object)
+    out[(x < 110) & (yy >= 30) & (yy <= 50)] = "Punto penal"
+    out[(x < 102) | (yy < 18) | (yy > 62)] = "Otro"
+    out[sh] = "Corto"
     return out
+
 
 
 def _summary(d: pd.DataFrame, n_matches: int) -> dict:
@@ -30,7 +35,7 @@ def _summary(d: pd.DataFrame, n_matches: int) -> dict:
     c = d[d.type == "Corner"]
     fk = d[d.type == "Free Kick"]
     th = d[d.type == "Throw-in"]
-    cz = pd.Series(zone_of(c.end_x.values, c.end_y.values)) if len(c) else pd.Series(dtype=object)
+    cz = pd.Series(zone_of(c.end_x.values, c.end_y.values, c.y.values, c.short.values)) if len(c) else pd.Series(dtype=object)
     tech = c.technique.fillna("Recto").value_counts(normalize=True).to_dict() if len(c) else {}
     return {
         "corners_por_partido": len(c) / n_matches,

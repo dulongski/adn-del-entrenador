@@ -35,18 +35,7 @@ def r(v, d=3):
     return None if v is None or not np.isfinite(v) else round(float(v), d)
 
 
-def zone_of(x, y):
-    x, y = np.asarray(x, float), np.asarray(y, float)
-    out = np.full(len(x), "Otro", dtype=object)
-    done = np.zeros(len(x), bool)
-    rules = [("Corto", x < 102), ("Primer palo", (x >= 114) & (np.abs(y - 40) >= 4) & (np.abs(y - 40) < 10)),
-             ("Área chica", (x >= 114) & (np.abs(y - 40) < 10)), ("Punto penal", (x >= 102) & (x < 114) & (np.abs(y - 40) < 10)),
-             ("Segundo palo", (x >= 102) & (np.abs(y - 40) >= 10))]
-    for n, m in rules:
-        m = m & ~done
-        out[m] = n
-        done |= m
-    return out
+from pipeline.features.setpieces import zone_of  # misma regla que la app (lado del córner, cortos aparte)
 
 
 def grid(x, y, w, x0=90.0):
@@ -86,7 +75,7 @@ def defensa(c, lg, cuts):
                     "defensores_area": r(m.def_box.mean(), 2), "en_area_chica": r(m.en_chica.mean(), 2)})
     if len(c):
         out.update({"xg_concedido": r(c.xg.mean(), 4), "remate_pct": r(c.shot.mean() * 100, 1)})
-    zc, zl = zone_of(c.end_x, c.end_y), zone_of(lg.end_x, lg.end_y)
+    zc, zl = zone_of(c.end_x, c.end_y, c.y0, c.short), zone_of(lg.end_x, lg.end_y, lg.y0, lg.short)
     out["zonas"] = []
     for z in ZONAS:
         a, b = c[zc == z], lg[zl == z]
@@ -140,6 +129,7 @@ def main(dts_dir, bp2_path, sp_path=None, actions_path=None, players_path=None):
             club_tid[club] = cnt.most_common(1)[0][0]
     print(f"{len(club_tid)} clubes con id")
     C = marking_rows(C)
+    C["y0"] = 0.0  # el marcaje ya viene normalizado: córner del lado y≈0
     per = C[C.pegados.notna()].groupby(["match_id", "team_id"]).pegados.mean()
     sp = None
     if sp_path and Path(sp_path).exists():
